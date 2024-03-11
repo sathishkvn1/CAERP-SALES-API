@@ -966,5 +966,73 @@ class MiracleFeatures(caerp_base):
     fa_icon 		= Column(String(255), nullable=False)
     title 			= Column(String(255), nullable=False)
     description     = Column(Text, nullable=False)	
+    
+#--------------------------------------------------------------------------------------------------------------#--------------------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------------
 
 
+class EmailCredentials(caerp_base):
+    __tablename__ = "app_email_api_settings"
+
+    id                      = Column(Integer, primary_key=True, index=True)
+    SMTP_auth               = Column(Enum('true', 'false'), nullable=False, default='true')
+    SMTP_sequre             = Column(Enum('ssl', 'tls'), nullable=False, default='tls')
+    SMTP_host               = Column(String(100), nullable=False)
+    SMTP_port               = Column(String(5), nullable=False)
+    username                = Column(String(100), nullable=False)
+    password                = Column(Text, nullable=False)
+    email_error_report      = Column(Integer, nullable=False)
+    IMAP_host               = Column(String(100), default=None)
+    IMAP_port               = Column(String(5), default=None)
+    IMAP_username           = Column(String(100), default=None)
+    IMAP_mail_box           = Column(String(10), default=None)
+    IMAP_path               = Column(String(30), default=None)
+    IMAP_server_encoding    = Column(String(15), default=None)
+    IMAP_attachement_dir    = Column(String(20), default=None)
+    modified_by             = Column(Integer, default=None)
+    modified_on             = Column(DateTime, default=None)
+
+
+
+class OtpGeneration(caerp_base):
+    __tablename__ = "app_site_otp"
+
+    id              = Column(Integer, primary_key=True, index=True)    
+    otp             = Column(String(50), nullable=False)
+    otp_expire_on   = Column(DateTime, nullable=False)
+    created_by          = Column(Integer, default=None)
+    created_on          = Column(DateTime, nullable=False, default=func.now())
+    modified_by             = Column(Integer, default=None)
+    modified_on             = Column(DateTime, default=None)
+    is_deleted          = Column(Enum('yes', 'no'), nullable=False, default='no')
+    deleted_by          = Column(Integer, default=None)
+    deleted_on          = Column(DateTime, default=None)
+
+class MobileCredentials(caerp_base):
+    __tablename__ = "app_sms_api_settings"
+
+    id                      = Column(Integer, primary_key=True, index=True)  
+    api_url                  = Column(String(500), nullable=False)
+    port                    = Column(String(6), nullable=False)
+    sender                  = Column(String(6), nullable=False)
+    username                = Column(String(250), nullable=False)
+    password                = Column(Text, nullable=False)
+    entity_id               = Column(String(250), nullable=False)
+    delivery_report_status  = Column(Integer, default=None)
+    is_active               = Column(Enum('yes', 'no'), nullable=False, default='yes')
+    modified_on             = Column(DateTime, default=None)
+    modified_by             = Column(Integer, default=None)
+
+class SmsTemplates(caerp_base):
+     __tablename__ = "app_site_sms_templates"
+
+     id                      = Column(Integer, primary_key=True, index=True) 
+     sms_category            = Column(Enum('TRANSACTIONAL', 'PROMOTIONAL'), nullable=False, default=None)
+     sms_type                = Column(String(100), nullable=False)
+     message_template        = Column(String(500), nullable=False)
+     template_id             = Column(String(100), nullable=False)
+     created_by              = Column(Integer, default=None)
+     created_on              = Column(DateTime, nullable=False, default=func.now())
+     modified_on             = Column(DateTime, default=None)
+     modified_by             = Column(Integer, default=None)
+     is_active               = Column(Enum('yes', 'no'), nullable=False, default='yes')

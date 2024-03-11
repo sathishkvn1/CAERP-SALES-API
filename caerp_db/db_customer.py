@@ -1,6 +1,6 @@
 from fastapi import HTTPException,status
 from sqlalchemy.orm import Session
-from caerp_db.models import CustomerCompanyProfile, CustomerInstallmentDetails, CustomerInstallmentMaster, CustomerNews, CustomerRegister, CustomerSalesQuery
+from caerp_db.models import CustomerCompanyProfile, CustomerInstallmentDetails, CustomerInstallmentMaster, CustomerNews, CustomerRegister, CustomerSalesQuery, OtpGeneration, SmsTemplates
 from caerp_schemas import CustomerCompanyProfileSchema, CustomerInstallmentDetailsBase, CustomerInstallmentMasterBase, CustomerNewsBase, CustomerRegisterBase, CustomerRegisterBaseForUpdate, CustomerSalesQueryBase
 from caerp_db.hash import Hash
 from caerp_db.database import get_db
@@ -10,6 +10,11 @@ from UserDefinedConstants.user_defined_constants import DeletedStatus,ActiveStat
 from datetime import date,datetime
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
+import send_message,send_email
+import random
+from caerp_schemas import  Email
+from datetime import date,datetime,timedelta
+from caerp_auth import oauth2
 
 import  os
 UPLOAD_DIR_COMPANYLOGO = "uploads/company_logo"
@@ -17,15 +22,117 @@ UPLOAD_DIR_COMPANYLOGO = "uploads/company_logo"
 
 
 
+# def create_customer(db: Session, customer_data: CustomerRegisterBase):
+#     customer_data_dict = customer_data.dict()
+#     customer_data_dict["created_on"] = datetime.utcnow()
+#     customer_data_dict["password"] = Hash.bcrypt(customer_data_dict["password"])
+#     new_customer = CustomerRegister(**customer_data_dict)
+#     db.add(new_customer)
+#     db.commit()
+#     db.refresh(new_customer)
+#     return new_customer
+#---------------------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------------
 def create_customer(db: Session, customer_data: CustomerRegisterBase):
     customer_data_dict = customer_data.dict()
     customer_data_dict["created_on"] = datetime.utcnow()
     customer_data_dict["password"] = Hash.bcrypt(customer_data_dict["password"])
     new_customer = CustomerRegister(**customer_data_dict)
+    
     db.add(new_customer)
     db.commit()
     db.refresh(new_customer)
-    return new_customer
+    customer_id= new_customer.id
+    #--- otp for mobile verification --------
+    # mobile_otp_data= db_send_email.generate_otp(5)  # Generate OTP data
+    # mobile_otp_value = mobile_otp_data["random_value"]
+    mobile_otp_value = random.randint(pow(10,5), pow(10,5+1)-1)  
+    new_otp = create_otp(db, mobile_otp_value,customer_id)
+    mobile_otp_id = new_otp.id    
+    message= f"{mobile_otp_value}is your SECRET One Time Password (OTP) for your mobile registration. Please use this password to complete your transaction. From:BRQ GLOB TECH"
+    temp_id= 1607100000000128308
+    
+    try:
+        send_message.send_sms_otp(new_customer.mobile_number,message,temp_id,db)
+    #  db_send_sms.send_sms(new_customer.mobile_number,message,temp_id)
+    except Exception as e:
+        # Handle sms sending failure
+        print(f"Failed to send message: {str(e)}")
+    #-------------------------------------------
+    #------otp for email verification ---------------
+    # otp_data= db_send_email.generate_otp(5)  # Generate OTP data
+    # otp_value = otp_data["random_value"]  
+    otp_value = random.randint(pow(10,5), pow(10,5+1)-1)
+    new_email_otp = create_otp(db, otp_value,customer_id)
+    email_otp_id = new_email_otp.id
+    email = Email(
+        messageTo = new_customer.email_id,
+        subject=  "Email verification",
+        messageBody = f"{otp_value} , is one time password for compleating your registration",
+        messageType= "NO_REPLY"
+    )
+    
+    try:
+        send_email.send_email(email, db)
+    except Exception as e:
+        # Handle email sending failure
+        # For example, log the error and inform the user that email verification failed
+        print(f"Failed to send email: {str(e)}")
+
+    #---------------------------------------------
+
+    data={
+                    "mobile_otp_id": mobile_otp_id,
+                    'email_otp_id': email_otp_id  ,
+                    'user_id'     : customer_id
+                }
+    access_token = oauth2.create_access_token(data=data)
+   
+    return {'access_token': access_token,
+                'token_type': 'bearer'
+                }
+   
+
+
+
+
+#---------------------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------------
+def get_otp_by_id(db: Session,otp_id:str):
+    return db.query(OtpGeneration).filter(OtpGeneration.id == otp_id).first()
+
+
+def create_otp(db: Session, otp_value: str, user_id: int):
+    current_time = datetime.utcnow()
+
+    # Calculate OTP expiry time (30 minutes from current time)
+    expiry_time = current_time + timedelta(minutes=30)
+
+    # Create a new instance of OtpGeneration
+    new_otp = OtpGeneration(
+        otp=otp_value,
+        created_on=current_time,
+        created_by=user_id,
+        otp_expire_on=expiry_time,
+    )
+    print("new otp", new_otp)
+    # Add the new OTP to the database session
+    db.add(new_otp)
+    # Commit the changes to the database
+    db.commit()
+    # Refresh the new OTP object to reflect any changes made during the commit
+    db.refresh(new_otp)
+
+    # Return the newly created OTP object
+    return new_otp
+
+
+def get_templates_by_type(db: Session, type: str):
+    return db.query(SmsTemplates).filter(SmsTemplates.sms_type == type).first()
+
+
+#---------------------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------------
 
 def update_customer(db: Session, user_id: int, customer_data: CustomerRegisterBaseForUpdate):
     customer = db.query(CustomerRegister).filter(CustomerRegister.id == user_id).first()
@@ -454,3 +561,8 @@ def get_customer_user_by_id(db: Session, user_id: int):
 
 def get_customer_company_profile(db: Session, user_id: int):
     return db.query(CustomerCompanyProfile).filter(CustomerCompanyProfile.customer_id == user_id).all()
+
+
+#---------------------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------------
+

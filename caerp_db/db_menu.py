@@ -1,6 +1,6 @@
 from fastapi import HTTPException,status
 from caerp_db.models import AdminMainMenu, AdminMainMenuPermission, AdminSubMenu,AdminSubMenuPermission, ClientMainMenu, PublicMainMenu, PublicSubMenu, PublicSubSubMenu, SiteLegalAboutUs
-from caerp_schemas import AdminMainMenuCreate, AdminMainMenuDeleteSchema, AdminSubMenuCreate, AdminSubMenuDeleteSchema, ClientMenuBase, PublicSubMenuCreate, PublicSubSubMenuCreate
+from caerp_schemas import AdminMainMenuCreate, AdminMainMenuDeleteSchema, AdminSubMenuCreate, AdminSubMenuDeleteSchema, ClientMenuBase, PublicMainMenuCreate, PublicSubMenuCreate, PublicSubSubMenuCreate
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from sqlalchemy import and_
@@ -20,12 +20,13 @@ def get_menu_data_by_role_with_sub_menu(db: Session, role_id: int):
     ).all()
     
 
+
+
 def get_sub_menu_permissions(db: Session, main_menu_id: int, role_id: int):
     sql_query = text(
         "SELECT * FROM app_view_admin_sub_menu_permission WHERE main_menu_id = :main_menu_id AND sub_menu_permission_role_id = :role_id"
     )
     return db.execute(sql_query, {"main_menu_id": main_menu_id, "role_id": role_id}).fetchall()
-
 
 def create_admin_main_menu(db: Session, request: AdminMainMenuCreate, created_by: int):
     new_menu = AdminMainMenu(
@@ -251,6 +252,19 @@ def create_public_sub_sub_menu(db: Session, sub_menu_id: int, request: PublicSub
     db.refresh(new_sub_sub_menu)
     return new_sub_sub_menu
 
+
+def create_public_main_menu(db: Session, request: PublicMainMenuCreate, created_by: int):
+    new_menu = PublicMainMenu(
+        menu=request.menu,
+        has_sub_menu=request.has_sub_menu,
+        display_order=request.display_order,
+        page_link=request.page_link,
+        created_by=created_by  
+    )
+    db.add(new_menu)
+    db.commit()
+    db.refresh(new_menu)
+    return new_menu
 
 
 

@@ -28,18 +28,17 @@ router = APIRouter(
 
 
 
-@router.get('/admin_menu/get_main_menus')
+
+
+@router.post('/admin_menu/get_main_menus')
 def get_main_menu_permission_is_granted(
-    request: Request,
+    # menuresponse: MenuResponseSchema,
     token: str = Depends(oauth2.oauth2_scheme),
     db: Session = Depends(get_db)
 ):
-    if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    if not request.session.get("user_id"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID missing in session")
 
-    role_id = request.session.get("role_id")
+    auth_info = authenticate_user(token)
+    role_id = auth_info["role_id"]
     menu_data = db_menu.get_menu_data_by_role_with_sub_menu(db, role_id)
     if not menu_data:
         raise HTTPException(status_code=404, detail="Menu data not found")
@@ -64,19 +63,16 @@ def get_main_menu_permission_is_granted(
 
 #--------------------------------------------------------------------------------------------------------------
 
+
+
 @router.get('/admin_menu/get_all_menu')
 def get_main_menu_data(
-    request: Request,
+    
     token: str = Depends(oauth2.oauth2_scheme),
     db: Session = Depends(get_db)
 ):
-    if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    if not request.session.get("user_id"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID missing in session")
-    
-    role_id = request.session.get("role_id")
-    
+    auth_info = authenticate_user(token)
+    role_id = auth_info["role_id"]
     menu_data = db_menu.get_menu_data_by_role(db, role_id)
     if not menu_data:
         raise HTTPException(status_code=404, detail="Menu data not found")
@@ -204,21 +200,17 @@ def create_admin_sub_menu(
 #--------------------------------------------------------------------------------------------------------------   
 
 
-@router.delete("/admin_menu/delete/admin_sub_menu/{id}", response_model=AdminSubMenuDeleteSchema)
-def delete_user_role(
-                     request: Request,
-                     id: int,
-                     role_input: AdminSubMenuDeleteSchema,
+@router.delete("/admin_menu/delete/admin_main_menu/{id}", response_model=AdminMainMenuDeleteSchema)
+def delete_admin_main_menu(id: int,
+                     role_input: AdminMainMenuDeleteSchema,
                      db: Session = Depends(get_db),
                      token: str = Depends(oauth2.oauth2_scheme)):
     if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-
-    if not request.session.get("user_id"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID missing in session")
+        raise HTTPException(status_code=401, detail="Token is missing")
     
-    user_id = request.session.get("user_id")
-    return db_menu.delete_admin_sub_menu(db, id, role_input, deleted_by=user_id)
+    auth_info = authenticate_user(token)
+    user_id = auth_info["user_id"] 
+    return db_menu.delete_admin_main_menu(db, id, role_input, deleted_by=user_id)
 
 
 #--------------------------------------------------------------------------------------------------------------   
@@ -232,8 +224,7 @@ def get_main_menu_data(
 ):
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    if not request.session.get("user_id"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID missing in session")
+   
     
     auth_info = authenticate_user(token)
     user_id = auth_info["user_id"]
@@ -388,11 +379,8 @@ def create_public_main_menu(
  ):
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    if not request.session.get("user_id"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID missing in session")
-    
-    user_id = request.session.get("user_id")
-    
+    auth_info = authenticate_user(token)
+    user_id = auth_info["user_id"]
     new_user = db_menu.create_public_main_menu(db, public_main_menu_create, user_id)
     
     return new_user
@@ -405,10 +393,7 @@ def get_public_main_menu_data(
     # token: str = Depends(oauth2.oauth2_scheme),
     db: Session = Depends(get_db)
  ):
-    # if not token:
-    #     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    # if not request.session.get("user_id"):
-    #     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID missing in session")
+   
     
     
     menu_data   = db_menu.get_public_menu_data(db) 
@@ -459,7 +444,7 @@ def get_public_main_menu_data(
 
 @router.post('/public_menu/add/public_sub_menu/{main_menu_id}', response_model=PublicSubMenuCreate)
 def create_public_sub_menu(
-        request: Request,
+       
         input: PublicSubMenuCreate,
         main_menu_id: int = Path(..., title="Main Menu ID"),
         token: str = Depends(oauth2.oauth2_scheme),
@@ -468,11 +453,12 @@ def create_public_sub_menu(
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
 
-    if not request.session.get("user_id"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID missing in session")
+    
     if main_menu_id == 2:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sub-menu cannot be inserted for main_menu_id=2")
-    user_id = request.session.get("user_id")
+    auth_info = authenticate_user(token)
+    user_id = auth_info["user_id"]
+   
 
     new_user = db_menu.create_public_sub_menu(db, main_menu_id, input, user_id)
     return new_user
@@ -490,15 +476,16 @@ def create_public_sub_sub_menu(
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
 
-    if not request.session.get("user_id"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID missing in session")
+    
     if sub_menu_id == 1:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="sub_sub-menu cannot be inserted for sub_menu_id=1")
     
     # STATUS_CODE_SUB_MENU_NOT_ALLOWED = 601
     # if sub_menu_id == 1:
     #     raise HTTPException(status_code=STATUS_CODE_SUB_MENU_NOT_ALLOWED, detail="Sub-menu cannot be inserted for main_menu_id=2")
-    user_id = request.session.get("user_id")
+   
+    auth_info = authenticate_user(token)
+    user_id = auth_info["user_id"]
 
     new_user = db_menu.create_public_sub_sub_menu(db, sub_menu_id, input, user_id)
     return new_user

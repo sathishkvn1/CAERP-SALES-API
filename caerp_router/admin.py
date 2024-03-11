@@ -4,8 +4,8 @@ from UserDefinedConstants.user_defined_constants import DeletedStatus
 from caerp_auth.authentication import authenticate_user
 
 
-from caerp_db.models import  AdminUser, Designation, UserRole
-from caerp_schemas import AdminUserActiveInactiveSchema, AdminUserBaseForDelete, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
+from caerp_db.models import  AdminLog, AdminUser, Designation, UserRole
+from caerp_schemas import AdminLogSchema, AdminUserActiveInactiveSchema, AdminUserBaseForDelete, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
@@ -506,6 +506,7 @@ def get_logged_in_admin_user_image_url(
 
 
 #---------------------------------------------------------------------------------------------------------------
+
 @router.post("/admin_users/activate_deactivate", response_model=AdminUserActiveInactiveSchema)
 def update_admin_user_status(user_data: AdminUserActiveInactiveSchema=Depends(), db: Session = Depends(get_db)):
     user = db.query(AdminUser).filter(AdminUser.id == user_data.id).first()
@@ -515,3 +516,72 @@ def update_admin_user_status(user_data: AdminUserActiveInactiveSchema=Depends(),
         return user_data
     else:
         raise HTTPException(status_code=404, detail="User not found")
+    
+
+
+#---------------------------------------------------------------------------------------------------------------
+
+
+@router.get("/get_admin_logs_by_user_id/", response_model=List[AdminLogSchema])
+def get_admin_logs_by_user_id(db: Session = Depends(get_db), token: str = Depends(oauth2.oauth2_scheme)):
+    """
+    Retrieve all admin log details for the currently logged-in user.
+
+    Args:
+        db (Session, optional): SQLAlchemy database session. Defaults to Depends(get_db).
+        token (str): Authentication token obtained during login.
+
+    Returns:
+        List[AdminLogSchema]: List of admin log details for the currently logged-in user.
+
+    Raises:
+        HTTPException: If the token is missing or invalid, or if there are no admin logs for the user.
+    """
+
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token is missing"
+        )
+    auth_info = authenticate_user(token)
+    user_id = auth_info["user_id"]
+
+    admin_logs = db.query(AdminLog).filter(AdminLog.user_id == user_id).all()
+    if not admin_logs:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin logs not found for this user")
+    
+    
+    admin_logs_schema = [AdminLogSchema.from_orm(admin_log) for admin_log in admin_logs]
+    
+    return admin_logs_schema
+
+#---------------------------------------------------------------------------------------------------------------
+@router.get("/get_all_admin_logs/", response_model=List[AdminLogSchema])
+def get_all_admin_logs(db: Session = Depends(get_db), token: str = Depends(oauth2.oauth2_scheme)):
+    """
+    Retrieve all admin log details from the database.
+
+    Args:
+        db (Session, optional): SQLAlchemy database session. Defaults to Depends(get_db).
+        token (str): Authentication token obtained during login.
+
+    Returns:
+        List[AdminLogSchema]: List of admin log details.
+
+    Raises:
+        HTTPException: If the token is missing or invalid.
+    """
+
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token is missing"
+        )
+
+  
+    # Query all admin logs
+    admin_logs = db.query(AdminLog).all()
+
+    return admin_logs
+#---------------------------------------------------------------------------------------------------------------
+

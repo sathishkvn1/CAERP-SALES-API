@@ -21,6 +21,7 @@ from caerp_auth.oauth2 import oauth2_scheme,SECRET_KEY, ALGORITHM
 from caerp_auth import oauth2
 import os
 from jose import JWTError, jwt
+from sqlalchemy import and_
 
 
 def save_product_video(db: Session,  request: ProductVideoSchema, user_id: int):
@@ -66,7 +67,7 @@ def update_product_video(db: Session,  request: ProductVideoSchema, video_id: in
 #  PRODUCT MODULE SECTION 
 # ==========================================================================
 
-def save_product_module(db: Session,  request: ProductModuleSchema, user_id: int ):
+def save_product_module(db: Session, request: ProductModuleSchema, user_id: int ):
 
     # if product_module_id == 0:
         # Add operation
@@ -79,10 +80,10 @@ def save_product_module(db: Session,  request: ProductModuleSchema, user_id: int
         db.refresh(new_product_module)
         return new_product_module
     
-def update_product_module(db: Session,  request: ProductModuleSchema, product_module_id: int, user_id: int):
+def update_product_module(db: Session,  request: ProductModuleSchema, module_id: int, user_id: int):
 
         # Update operation
-        product_module = db.query(ProductModule).filter(ProductModule .id == product_module_id).first()
+        product_module = db.query(ProductModule).filter(ProductModule.id == module_id).first()
         if product_module is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product Module not found")
         product_module_data_dict = request.dict(exclude_unset=True)
@@ -271,10 +272,14 @@ def get_all_product_module_by_deleted_status(db: Session, deleted_status: Delete
 
 
 
-
-def get_product_module_by_id(db: Session,id: InstallmentDetailsBase):
-        
+def get_product_module_by_id(db: Session,id: int):
         return db.query(ProductModule).filter(ProductModule.id== id).all()
+    
+    
+
+
+def get_product_module_by_product_id(db: Session,id: int):
+        return db.query(ProductModule).filter(and_(ProductModule.product_id == id, ProductModule.is_deleted == "no")).all()
 
 
 def delete_product_module(db: Session, module_id: int,deleted_by: int):
@@ -323,6 +328,12 @@ def get_all_product_video_by_deleted_status(db: Session, deleted_status: Deleted
 def get_product_video_by_id(db: Session,id: int):
         
         return db.query(ProductVideo).filter(ProductVideo.id== id).all()
+    
+
+
+
+def get_product_video_by_product_master_id(db: Session, id: int):
+    return db.query(ProductVideo).filter(and_(ProductVideo.product_master_id == id, ProductVideo.is_deleted == "no")).all()
 
 
 def delete_product_video(db: Session, video_id: int,deleted_by: int):

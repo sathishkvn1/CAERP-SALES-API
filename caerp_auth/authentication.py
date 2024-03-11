@@ -58,6 +58,91 @@ router = APIRouter(
 
 
 
+# @router.post('/customer-login')
+# def get_client_login(request_data: CustomerLoginRequest = Depends(),
+#                       user_agent: str = Header(None),
+#                       request: Request = None,
+#                       db: Session = Depends(get_db)):
+#     try:
+#         # Parse user agent string
+#         user_agent_info = parse(user_agent)
+        
+
+#         # Extract browser information
+#         browser_type = user_agent_info.browser.family
+#         browser_version = user_agent_info.browser.version_string
+        
+#         # Extract operating system information
+#         operating_system = user_agent_info.os.family
+#         os_version = user_agent_info.os.version_string
+
+#         # Fetch customer from the database
+#         customer = db.query(models.CustomerRegister).filter(models.CustomerRegister.email_id == request_data.email).first()
+#         if not customer:
+#             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Invalid credentials')
+
+#         # Verify password
+#         if not Hash.verify(customer.password, request_data.password):
+#             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid password')
+
+#         # Extract user IP address
+#         user_ip = request.client.host
+
+#         # Extract referrer from request headers
+#         referrer = request.headers.get('referer')
+
+#         # Lookup geographic location based on IP address
+#         city = region = country = None
+#         try:
+#             response = geoip2_reader.city(user_ip)
+#             city = response.city.name if response.city.name else ""
+#             region = response.subdivisions.most_specific.name if response.subdivisions.most_specific.name else ""
+#             country = response.country.name if response.country.name else ""
+#         except errors.AddressNotFoundError:
+#             pass  # Handle error if needed
+
+#         # Insert login details into customer_log table
+#         result = db.execute(
+#            text("INSERT INTO customer_log (user_id, logged_in_ip, browser_type, browser_family, browser_version, operating_system, os_family, os_version, referrer, city,region,country) "
+#             "VALUES (:user_id, :logged_in_ip, :browser_type, :browser_family, :browser_version, :operating_system, :os_family, :os_version, :referrer, :city,:region,:country)"),
+#             {
+#                 'user_id': customer.id,
+#                 'logged_in_on': datetime.utcnow(),
+#                 'logged_in_ip': user_ip,
+#                 'browser_type': browser_type,
+#                 'browser_family': browser_type, 
+#                 'browser_version': browser_version,
+#                 'operating_system': operating_system,
+#                 'os_family': operating_system,
+#                 'os_version': os_version,
+#                 'referrer': referrer,
+#                 'city': city,
+#                 'region': region,
+#                 'country': country
+#             }
+#         )
+
+#         # Retrieve the last inserted ID
+#         log_id = result.lastrowid
+
+#         # Commit the transaction
+#         db.commit()
+
+#         # Create access token containing user ID, role ID, and log ID
+#         data = {'user_id': customer.id, 'log_id': log_id}
+#         access_token = oauth2.create_access_token(data)
+
+#         # Return a JSON response with the access token and token type
+#         return {'access_token': access_token,
+#                 'token_type': 'bearer',
+#                 'log_id': log_id}
+
+#     except Exception as e:
+#         # Rollback the transaction in case of an exception
+#         db.rollback()
+#         # Raise a more specific HTTPException
+#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to log in: " + str(e))
+
 @router.post('/customer-login')
 def get_client_login(request_data: CustomerLoginRequest = Depends(),
                       user_agent: str = Header(None),
@@ -80,29 +165,36 @@ def get_client_login(request_data: CustomerLoginRequest = Depends(),
         customer = db.query(models.CustomerRegister).filter(models.CustomerRegister.email_id == request_data.email).first()
         if not customer:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Invalid credentials')
-
+        if  customer.is_mobile_number_verified=='no' and customer.is_email_id_verified=='no':
+            return {'error': 'Mobile Number and Email not verified'}
+        elif   customer.is_mobile_number_verified=='no' :
+            return {'error ': 'Mobile Number not verified'}
+        elif  customer.is_email_id_verified=='no':
+            return {'error ': 'Email not verified'}
+            # raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Email or mobile not verified')
+        else:
         # Verify password
-        if not Hash.verify(customer.password, request_data.password):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid password')
+         if not Hash.verify(customer.password, request_data.password):
+               raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid password')
 
         # Extract user IP address
-        user_ip = request.client.host
+         user_ip = request.client.host
 
         # Extract referrer from request headers
-        referrer = request.headers.get('referer')
+         referrer = request.headers.get('referer')
 
         # Lookup geographic location based on IP address
-        city = region = country = None
-        try:
+         city = region = country = None
+         try:
             response = geoip2_reader.city(user_ip)
             city = response.city.name if response.city.name else ""
             region = response.subdivisions.most_specific.name if response.subdivisions.most_specific.name else ""
             country = response.country.name if response.country.name else ""
-        except errors.AddressNotFoundError:
+         except errors.AddressNotFoundError:
             pass  # Handle error if needed
 
         # Insert login details into customer_log table
-        result = db.execute(
+         result = db.execute(
            text("INSERT INTO customer_log (user_id, logged_in_ip, browser_type, browser_family, browser_version, operating_system, os_family, os_version, referrer, city,region,country) "
             "VALUES (:user_id, :logged_in_ip, :browser_type, :browser_family, :browser_version, :operating_system, :os_family, :os_version, :referrer, :city,:region,:country)"),
             {
@@ -123,17 +215,17 @@ def get_client_login(request_data: CustomerLoginRequest = Depends(),
         )
 
         # Retrieve the last inserted ID
-        log_id = result.lastrowid
+         log_id = result.lastrowid
 
         # Commit the transaction
-        db.commit()
+         db.commit()
 
         # Create access token containing user ID, role ID, and log ID
-        data = {'user_id': customer.id, 'log_id': log_id}
-        access_token = oauth2.create_access_token(data)
+         data = {'user_id': customer.id, 'log_id': log_id}
+         access_token = oauth2.create_access_token(data)
 
         # Return a JSON response with the access token and token type
-        return {'access_token': access_token,
+         return {'access_token': access_token,
                 'token_type': 'bearer',
                 'log_id': log_id}
 
@@ -263,7 +355,9 @@ def get_token(request_data: OAuth2PasswordRequestForm = Depends(), user_agent: s
         data = {
             'user_id': user.id,
             'role_id': user.role_id,
-            'log_id': log_id
+            'log_id': log_id,
+            # 'mobile_otp_id':1,
+            # 'email_otp_id':2
         }
         
         access_token = oauth2.create_access_token(data=data)

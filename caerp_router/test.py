@@ -5,16 +5,16 @@ from caerp_db.models import CountryDB, Designation
 from sqlalchemy.orm import Session
 from caerp_auth import oauth2
 from caerp_db.database import get_db
-from caerp_schemas import CompanyMasterBase, CountryCreate
+from caerp_schemas import CAPTCHARequest, CompanyMasterBase, CountryCreate
 from typing import List
 
 from caerp_db.models import CountryDB, Designation,Voucher,Master,Detail1,Detail2
-
+import random
 
 
 
 router = APIRouter(
-    prefix="/test",
+   
     tags=["TEST API"]
 )
 
@@ -29,22 +29,7 @@ def get_all_countries(token: str = Depends(oauth2.oauth2_scheme),
     
     return countries
 
-# @router.get("/data/")
-# async def get_data(deleted_state: dele = DeletedSatus.not_deleted,db: Session = Depends(get_db)):
-#     data = get_designations_by_deleted_state(db, deleted_state)
-#     return {"data": data}
 
-
-# def get_designations_by_deleted_state(db: Session, deleted_state: YesNoEnum):
-#     if deleted_state == YesNoEnum.deleted:
-#         return db.query(Designation).filter(Designation.is_deleted == 'yes').all()
-#     elif deleted_state == YesNoEnum.not_deleted:
-#         return db.query(Designation).filter(Designation.is_deleted == 'no').all()
-#     elif deleted_state == YesNoEnum.All:
-#         return db.query(Designation).all()
-#     else:
-#         # Handle invalid state or raise an error
-#         raise ValueError("Invalid deleted_state")
 
 
 
@@ -84,3 +69,35 @@ def insert_voucher_to_all(db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
+
+def generate_captcha():
+    # Generate two random numbers between 1 and 100
+    num1 = random.randint(1, 100)
+    num2 = random.randint(1, 100)
+    
+    # Generate a random operation (+ or -)
+    operation = random.choice(['+', '-'])
+    
+    # Perform the operation
+    if operation == '+':
+        result = num1 + num2
+    else:
+        result = num1 - num2
+    
+    # Display the expression to the user
+    captcha = f"What is {num1} {operation} {num2}?"
+    return captcha, result
+
+# Generate CAPTCHA once
+captcha, expected_result = generate_captcha()
+# print("CAPTCHA:", captcha)
+# print("Expected Result:", expected_result)
+
+@router.post("/verify_captcha/")
+async def verify_captcha(captcha_request: CAPTCHARequest):
+    # Validate user's input against expected result
+    user_answer = captcha_request.answer
+    if user_answer == expected_result:
+        return {"success": True, "message": "CAPTCHA is correct!"}
+    else:
+        raise HTTPException(status_code=400, detail="Incorrect CAPTCHA answer!")

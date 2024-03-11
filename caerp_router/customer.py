@@ -1,6 +1,7 @@
+import random
 from fastapi import APIRouter ,Depends,Request,HTTPException,status,UploadFile,File,Response
 from caerp_db.models import CustomerCompanyProfile, CustomerLog, CustomerNews, CustomerRegister
-from caerp_schemas import ClientUserChangePasswordSchema, CompanyProfileSchemaForGet, CustomerCompanyProfileSchema, CustomerCompanyProfileSchemaResponse, CustomerInstallmentDetailsBase, CustomerInstallmentDetailsForGet, CustomerInstallmentMasterBase, CustomerLogSchema, CustomerLoginRequest, CustomerNewsBase, CustomerNewsBaseForGet, CustomerNewsResponse, CustomerRegisterBase, CustomerRegisterBaseForUpdate, CustomerRegisterListSchema, CustomerRegisterSchema, CustomerSalesQueryBase, CustomerSalesQueryForGet, EmailVerificationStatus, MobileVerificationStatus
+from caerp_schemas import ClientUserChangePasswordSchema, CompanyProfileSchemaForGet, CustomerCompanyProfileSchema, CustomerCompanyProfileSchemaResponse, CustomerInstallmentDetailsBase, CustomerInstallmentDetailsForGet, CustomerInstallmentMasterBase, CustomerLogSchema, CustomerLoginRequest, CustomerNewsBase, CustomerNewsBaseForGet, CustomerNewsResponse, CustomerRegisterBase, CustomerRegisterBaseForUpdate, CustomerRegisterListSchema, CustomerRegisterSchema, CustomerSalesQueryBase, CustomerSalesQueryForGet, Email, EmailVerificationStatus, MobileVerificationStatus
 from caerp_db.database import get_db
 from caerp_db import db_customer
 from sqlalchemy.orm import Session
@@ -16,6 +17,10 @@ from UserDefinedConstants.user_defined_constants import DeletedStatus,ActiveStat
 from datetime import date
 from caerp_auth.authentication import authenticate_user
 from sqlalchemy import func 
+from jose import JWTError, jwt
+from caerp_auth.oauth2 import create_access_token,SECRET_KEY, ALGORITHM
+import send_email
+import send_message
 
 UPLOAD_DIR_COMPANYLOGO = "uploads/company_logo"
 UPLOAD_DIR_CUSTOMER_NEWS = "uploads/customer_news"
@@ -26,7 +31,8 @@ router = APIRouter(
 
 #---------------------------------------------------------------------------------------------------------------
 
-@router.post('/add/customer', response_model=CustomerRegisterBase)
+# @router.post('/add/customer', response_model=CustomerRegisterBase)
+@router.post('/add/customer')
 def create_customer(customer_data: CustomerRegisterBase, db: Session = Depends(get_db)):
     new_customer = db_customer.create_customer(db, customer_data)
     return new_customer
@@ -682,7 +688,117 @@ def get_all_customer_logs(db: Session = Depends(get_db), token: str = Depends(oa
 
     return customer_logs
 
+#---------------------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------------
+@router.post("/mobile_verification/{otp}")
+def mobile_verification(
+    otp: str,
+    db:Session = Depends(get_db),
+    token :  str = Depends(oauth2.oauth2_scheme)):
 
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+  
+    mobile_otp_id = payload.get("mobile_otp_id")
+    mobile_otp = db_customer.get_otp_by_id(db, mobile_otp_id)
+    
+    if mobile_otp is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="OTP record not found")
+    
+    if mobile_otp.otp == otp:
+        update_query = db.query(CustomerRegister).filter(CustomerRegister.id == mobile_otp.created_by).update({CustomerRegister.is_mobile_number_verified: 'yes'})
+
+        # Execute the update query
+        db.commit()
+        return {"message": "Mobile Number is verified successfully.", "is_verified": True}
+    else :
+        return { "message": "Mobile Number  verification is failed.", "is_verified": False}
+    
+@router.post("/email_verification/{otp}")
+def email_verification(    
+    otp: str,
+    db:Session = Depends(get_db),
+    token :  str = Depends(oauth2.oauth2_scheme)):
+
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+   
+    email_otp_id = payload.get("email_otp_id")
+    email_otp = db_customer.get_otp_by_id(db, email_otp_id)
+   
+    if email_otp is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="OTP record not found")
+    
+    if email_otp.otp == otp :
+            update_query = db.query(CustomerRegister).filter(CustomerRegister.id ==email_otp.created_by).update({CustomerRegister.is_email_id_verified: 'yes'})
+            db.commit()
+            return { "message": "Email Id is verified successfully.", "is_verified": True}
+    else :
+        return { "message": "Email Id  verification is failed.", "is_verified": False}
+
+
+@router.post("/resend_otp_mobile/{mobile_number}")
+def resend_otp_mobile(    
+    mobile_number: str,
+    db:Session = Depends(get_db),
+    ):
+
+    
+    customer = db_customer.get_user_by_mobile(db,mobile_number)
+    mobile_otp_value = random.randint(pow(10,5), pow(10,5+1)-1)  
+    new_otp = db_customer.create_otp(db, mobile_otp_value,customer.id)
+    mobile_otp_id = new_otp.id    
+    message= f"{mobile_otp_value}is your SECRET One Time Password (OTP) for your mobile registration. Please use this password to complete your transaction. From:BRQ GLOB TECH"
+    temp_id= 1607100000000128308
+    # sms_type= 'OTP'
+    # template_data = db_customer.get_templates_by_type(db,sms_type)
+    # temp_id= template_data.template_id
+    
+    try:
+        send_message.send_sms_otp(mobile_number,message,temp_id,db)
+        data={
+                    "mobile_otp_id": mobile_otp_id,                    
+                    'user_id'     : customer.id
+                }
+        access_token = oauth2.create_access_token(data=data)
+        return {'message' : 'Success'}
+    #  db_send_sms.send_sms(new_customer.mobile_number,message,temp_id)
+    except Exception as e:
+        # Handle sms sending failure
+        print(f"Failed to send message: {str(e)}")
+   
+     
+
+@router.post("/resend_otp_email/{email_id}")
+def resend_otp_mobile(    
+    email_id: str,
+    db:Session = Depends(get_db),
+    ):
+    customer = db_customer.get_user_by_email(db,email_id)
+    email_otp_value = random.randint(pow(10,5), pow(10,5+1)-1)  
+    new_otp = db_customer.create_otp(db, email_otp_value,customer.id)
+    email_otp_id = new_otp.id    
+    email = Email(
+        messageTo = email_id,
+        subject=  "Email verification",
+        messageBody = f"{email_otp_value} , is one time password for compleating your registration",
+        messageType= "NO_REPLY"
+    )
+    
+    try:
+        send_email.send_email(email, db)
+        data={                    
+                    'email_otp_id': email_otp_id  ,
+                    'user_id'     : customer.id
+                }
+        access_token = oauth2.create_access_token(data=data)
+        return {'message': 'Success'}
+    except Exception as e:
+        # Handle email sending failure
+        # For example, log the error and inform the user that email verification failed
+        print(f"Failed to send email: {str(e)}")
 
 
 

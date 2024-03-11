@@ -23,8 +23,5 @@ class BooleanFlag(str, Enum):
     yes = "yes"
     no = "no"
     
-class ActiveStatus(str, Enum):
-    ALL = "all"
-    ACTIVE  = 'yes'
-    NOT_DELETED = "no"
+
     

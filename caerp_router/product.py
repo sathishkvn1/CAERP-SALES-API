@@ -6,7 +6,7 @@ from UserDefinedConstants.user_defined_constants import BooleanFlag, DeletedStat
 from caerp_auth.authentication import authenticate_user
 
 
-from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductMaster, UserRole
+from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductMaster, ProductModule, UserRole
 from caerp_schemas import AdminUserBaseForDelete, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
 from caerp_schemas import ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse
 from sqlalchemy.orm import Session
@@ -155,7 +155,7 @@ def upload_product_main_video(
 @router.get("/video/get_product_master_video/{id}", response_model=dict)
 def get_product_master_video(id: int):
     
-    profile_photo_filename = f"{id}.jpg"  
+    profile_photo_filename = f"{id}.mp4"  
     # BASE_URL="http://127.0.0.1:8010/"
     return {"photo_url": f"{BASE_URL}/product/save_product_master/{profile_photo_filename}"}
 
@@ -274,12 +274,9 @@ async def get_all_product_module(deleted_status: DeletedStatus = DeletedStatus.N
 
 
 
-
-
-@router.post('/save_product_module/{module_id}', response_model=ProductModuleSchema)
+@router.post('/save_product_module/', response_model=ProductModuleSchema)
 def save_product_module(
         product_module_data: ProductModuleSchema =Depends(),
-        # module_id: int =0,  # Default to 0 for add operation
         image_file: UploadFile = File(None),
         db: Session = Depends(get_db),
         token: str = Depends(oauth2.oauth2_scheme)
@@ -297,7 +294,7 @@ def save_product_module(
             
                 module_id = new_product.id
                 file_content = image_file.file.read()
-                file_path = f"{UPLOAD_DIR_MODULE}/{module_id}.jpg"
+                file_path = f"{UPLOAD_DIR_MODULE}/{module_id}.mp4"
                 with open(file_path, "wb") as f:
                     f.write(file_content)
   
@@ -311,7 +308,6 @@ def save_product_module(
 def update_product_module(
         product_module_data: ProductModuleSchema =Depends(),
         module_id: int =0,  # Default to 0 for add operation
-        # image_file: UploadFile = File(None),
         db: Session = Depends(get_db),
         token: str = Depends(oauth2.oauth2_scheme)
        
@@ -322,16 +318,41 @@ def update_product_module(
     
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
-    # try:
-    new_product = db_product.save_product_module(db, product_module_data,module_id,user_id)
-       
-  
+    new_product = db_product.update_product_module(db, product_module_data,module_id,user_id)
     return new_product    
-    # except Exception as e:
-    #     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed operation")
+
+
+#_____________________________________________________
+@router.post('/update_product_module_image/{id}', response_model=ProductModuleSchemaResponse)
+def update_admin_user_image(
+        id: int,
+        image_file: UploadFile = File(...),  # Required image file
+        db: Session = Depends(get_db),
+        token: str = Depends(oauth2.oauth2_scheme)
+):
+    # Check authorization
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+    
+    # Check if the user exists
+    user = db.query(ProductModule).filter(ProductModule.id == id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # Save the new image
+    file_content = image_file.file.read()
+    file_path = f"{UPLOAD_DIR_MODULE}/{user.id}.jpg"
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+
+    # Return the updated user data
+    return user
 
 
 
+
+#_____________________________________________________
 
 
 @router.get("/get_product_module/images/{id}", response_model=dict)
@@ -348,6 +369,16 @@ def get_product_module_by_id(
      db: Session = Depends(get_db)
      ):
     product_module_details = db_product.get_product_module_by_id(db, module_id)
+    if not product_module_details:
+        raise HTTPException(status_code=404, detail="No products found for this id")
+    return product_module_details
+
+@router.get("/get_product_module_by_product_id/{id}", response_model=List[ProductModuleSchemaResponse])
+def get_product_module_by_product_id(
+     id: int,
+     db: Session = Depends(get_db)
+     ):
+    product_module_details = db_product.get_product_module_by_product_id(db, id)
     if not product_module_details:
         raise HTTPException(status_code=404, detail="No products found for this id")
     return product_module_details
@@ -382,38 +413,12 @@ async def get_all_product_video(deleted_status: DeletedStatus = DeletedStatus.NO
     return product
 
 
-# @router.post('/save_product_additional_video/{video_id}', response_model=ProductVideoSchema)
-# def save_product_video(
-#         product_video_data: ProductVideoSchema =Depends(),
-#         video_file: UploadFile = File(None),
-#         db: Session = Depends(get_db),
-#         token: str = Depends(oauth2.oauth2_scheme)
-       
-# ):
-#     if not token:
-#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-    
-#     auth_info = authenticate_user(token) 
-#     user_id = auth_info["user_id"]
-#     try:
-#         new_product_video = db_product.save_product_video(db, product_video_data,video_id,user_id)
-#         if video_file:
-#             # if video_id==0:
-#                 video_id = new_product_video.id
-#                 file_content = video_file.file.read()
-#                 file_path = f"{UPLOAD_DIR_VIDEO}/{video_id}.jpg"
-#                 with open(file_path, "wb") as f:
-#                     f.write(file_content)
-            
-#         return new_product_video
-#     except Exception as e:
-#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed operation")
+
 
 import logging
 logger = logging.getLogger(__name__)
 
-@router.post('/save_product_additional_video/', response_model=ProductVideoSchema)
+@router.post('/save_product_additional_videos/', response_model=ProductVideoSchema)
 def save_product_video(
         product_video_data: ProductVideoSchema = Depends(),
         video_file: UploadFile = File(None),
@@ -431,7 +436,7 @@ def save_product_video(
             # if video_id==0:
             video_id = new_product_video.id
             file_content = video_file.file.read()
-            file_path = f"{UPLOAD_DIR_VIDEO}/{video_id}.jpg"
+            file_path = f"{UPLOAD_DIR_VIDEO}/{video_id}.mp4"
             with open(file_path, "wb") as f:
                 f.write(file_content)
         
@@ -439,9 +444,6 @@ def save_product_video(
     except Exception as e:
         logger.exception("Failed to save product video")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed operation")
-
-
-
 
     
 
@@ -467,15 +469,13 @@ def update_product_video(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed operation")
 
 
-
-
-
-@router.get("/video/get_product_video/{id}", response_model=dict)
-def get_product_master_video(id: int):
+@router.get("/video/get_product_additonal_video/{id}", response_model=dict)
+def get_product_additonal_video(id: int):
     
-    profile_photo_filename = f"{id}.jpg"  
-    # BASE_URL="http://127.0.0.1:8010/"
-    return {"photo_url": f"{BASE_URL}/product/save_product_video/{profile_photo_filename}"}
+    profile_photo_filename = f"{id}.mp4"  
+    # BASE_URL="http://127.0.0.1:5000"
+    return {"photo_url": f"{BASE_URL}/product/save_product_additional_videos/{profile_photo_filename}"}
+
 
 
 
@@ -488,6 +488,25 @@ def get_product_video_by_id(
     if not product_video_details:
         raise HTTPException(status_code=404, detail="No products found for this id")
     return product_video_details
+
+
+@router.get("/get_product_additinal_video_by_product_master_id/{video_id}", response_model=List[ProductVideoSchemaResponse])
+def get_product_video_by_product_master_id(
+    video_id: int,
+     db: Session = Depends(get_db)
+     ):
+    product_video_details = db_product.get_product_video_by_product_master_id(db, video_id)
+    if not product_video_details:
+        raise HTTPException(status_code=404, detail="No products found for this id")
+    return product_video_details
+
+
+# @router.get("videos/get_product_additional_video/{user_id}", response_model=dict)
+# def get_our_team_image_url(user_id: int):
+    
+#     video_filename = f"{user_id}.jpg"  
+   
+#     return {"photo_url": f"{BASE_URL}/product/save_product_additional_video/{video_filename}"}
 
 
 
@@ -535,14 +554,6 @@ def get_all_installment_master_by_status(db: Session, deleted_status: DeletedSta
        
         raise ValueError("Invalid deleted_status")
     
-
-
-
-
-
-
-
-
 
 
 @router.get("/get_installment_details_by_id/{id}", response_model=InstallmentDetailsForGet)

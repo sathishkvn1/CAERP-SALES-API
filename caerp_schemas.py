@@ -1185,7 +1185,7 @@ class ProductModuleSchemaResponse(BaseModel):
 class ProductVideoSchema(BaseModel):
 
     product_master_id: int
-    video_title: str
+    video_title: Optional[str] = None
     video_description: Optional[str] = None
 
 
@@ -1565,3 +1565,19 @@ class MiracleFeaturesSchemaResponse(BaseModel):
 
 class CAPTCHARequest(BaseModel):
     answer: int
+    
+#--------------------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------------
+class EmailCredentialsSchema(BaseModel):
+    SMTPHost: str
+    SMTPPort: int
+    SMTPAuth: bool
+    UserName: str
+    Password: Optional[str] = None
+
+class Email(BaseModel):
+    messageTo: str
+    messageToUserName: str = ""
+    messageBody: str
+    subject: str
+    messageType: str = "NO_REPLY"

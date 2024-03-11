@@ -31,10 +31,11 @@ app = FastAPI(
 )
 app_get=FastAPI()
 app_admin=FastAPI(debug=True)
-app_site_manager=FastAPI()
+app_site_manager=FastAPI(debug=True)
 app_menu=FastAPI()
 app_customer=FastAPI(debug=True)
-app_product=FastAPI()
+app_product=FastAPI(debug=True)
+app_test=FastAPI()
 
 
 
@@ -87,6 +88,8 @@ app_customer.include_router(customer.router)
 app_product.include_router(authentication.router)
 app_product.include_router(product.router)
 
+app_test.include_router(authentication.router)
+app_test.include_router(test.router)
 
 
 
@@ -101,6 +104,8 @@ app.mount("/sitemanager", app_site_manager, name="sitemanager")
 app.mount("/menu", app_menu, name="menu")
 app.mount("/customer", app_customer, name="customer")
 app.mount("/product", app_product, name="product")
+app.mount("/test", app_test, name="test")
+
 
 
 
@@ -114,7 +119,7 @@ app_site_manager.mount("/save_image_gallery", StaticFiles(directory="uploads/ima
 app_admin.mount("/add/admin_users", StaticFiles(directory="uploads/admin_profile"), name="gallery")
 app_product.mount("/save_product_module", StaticFiles(directory="uploads/product_module_images"), name="product")
 app_product.mount("/save_product_master", StaticFiles(directory="uploads/product_master_videos"), name="product")
-app_product.mount("/save_product_video", StaticFiles(directory="uploads/product_master_additional_videos"), name="product")
+app_product.mount("/save_product_additional_videos", StaticFiles(directory="uploads/product_master_additional_videos"), name="product")
 app_site_manager.mount("/save_prime_customer",StaticFiles(directory="uploads/prime_customers"), name="customer")
 
 
