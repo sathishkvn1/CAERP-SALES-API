@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends,File,HTTPException, UploadFile,status
 from typing import List
-from caerp_db.models import FaqCategoryDB, FaqDB, ImageGalleryDB, OurDirectorDB, OurTeam, SocialMediaURL, TrendingNews
+from caerp_db.models import FaqCategoryDB, FaqDB, ImageGalleryDB, OurDirectorDB, OurTeam, PrimeCustomer, SocialMediaURL, TrendingNews
 from caerp_schemas import  AboutUsResponse, AboutUsSchema, AboutUsUpdateSchema, CompanyMasterBase, ContactDetailResponse, ContactDetailsSchema, FAQBase, FAQCategoryID, FaqCategory, FaqCategoryResponse, FaqCategorySchemaForDelete, FaqResponse, FaqSchema, FaqSchemaForDelete, GeneralContactDetailsResponse, GeneralContactDetailsSchema, HomeBannerSchema, HomeBannerSchemaResponse, HomeMiracleAutomationSchema, HomeMiracleAutomationSchemaResponse, HomeTrendingNewsSchema, HomeTrendingNewsSchemaResponse, ImageGalleryResponse, ImageGallerySchema, ImageGallerySchemaForGet, JobApplicationSchema, JobApplicationSchemaResponse, JobVacancieSchema, JobVacancieSchemaResponse, MiracleFeaturesSchema, MiracleFeaturesSchemaResponse, OurDirectorResponse, OurDirectorSchema, OurDirectorSchemaforDelete, OurTeamSchema, OurTeamSchemaResponse, OurTeamSchemaforDelete, PrimeCustomerSchema, PrimeCustomerSchemaResponse, PrivacyPolicyResponse, PrivacyPolicySchema, SiteLegalAboutUsBase, SiteLegalAboutUsBaseResponse, SocialMediaResponse, SocialMediaSchema, SocialMediaURLSchema, SubContentUpdateSchema, TermsAndConditionResponse, TermsAndConditionSchema, TrendingNewsResponse, TrendingNewsSchema, TrendingNewsSchemaForDeletedStatus
 from sqlalchemy.orm import Session
 from caerp_db.database import get_db
@@ -938,7 +938,7 @@ def update_home_miracle_details(
 
 
 
-@router.get("/get_deleted_home_trending_news/", response_model=List[HomeTrendingNewsSchemaResponse])
+@router.get("/get_home_trending_news_by_status/", response_model=List[HomeTrendingNewsSchemaResponse])
 async def get_home_trending_news_details(
     deleted_status: DeletedStatus = DeletedStatus.NOT_DELETED,
                               db: Session = Depends(get_db)
@@ -1007,7 +1007,7 @@ def delete_home_trending_news(
 
 
 
-@router.get("/get_deleted_prime_customer/",response_model=List[PrimeCustomerSchemaResponse])
+@router.get("/get_prime_customer_by_status/",response_model=List[PrimeCustomerSchemaResponse])
 async def get_prime_customer_details(
     deleted_status: DeletedStatus = DeletedStatus.NOT_DELETED,
     db: Session = Depends(get_db)
@@ -1074,12 +1074,36 @@ def update_prime_customer(
         }]
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
 
-   
+#--------------------------   
+    
+@router.post('/update_prime_customer_image/{id}', response_model=PrimeCustomerSchema)
+def update_prime_customer_image(
+        id: int,
+        image_file: UploadFile = File(...),  # Required image file
+        db: Session = Depends(get_db),
+        token: str = Depends(oauth2.oauth2_scheme)
+):
+    # Check authorization
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     
     
+    # Check if the user exists
+    user = db.query(PrimeCustomer).filter(PrimeCustomer.id == id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # Save the new image
+    file_content = image_file.file.read()
+    file_path = f"{UPLOAD_DIR_CUSTOMER}/{user.id}.jpg"
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+
+    # Return the updated user data
+    return user    
 
 
-
+#--------------------------  
 
 @router.get("/image/get_prime_customer_image/{id}", response_model=dict)
 def get_prime_customer_image(
@@ -1118,7 +1142,7 @@ def delete_prime_customer(
 
 
 
-@router.get("/get_deleted_job_vacancies/", response_model=List[JobVacancieSchemaResponse])
+@router.get("/get_job_vacancies_by_status/", response_model=List[JobVacancieSchemaResponse])
 async def get_job_vacancies_details(
     deleted_status: DeletedStatus = DeletedStatus.NOT_DELETED,
     db: Session = Depends(get_db)
@@ -1243,43 +1267,99 @@ def save_job_application(
 #--------------------------------------------------------------------------------------------
 
 
-@router.get("/miracle_features", response_model=List[MiracleFeaturesSchemaResponse])
-def get_miracle_features_details(
-    db: Session = Depends(get_db),
+@router.get("/get_miracle_features/", response_model=List[MiracleFeaturesSchemaResponse])
+async def get_all_miracle_features(
+    deleted_status: DeletedStatus = DeletedStatus.NOT_DELETED,
+    db: Session = Depends(get_db)
     
 ):
     # Check authorization
-    miracle_features_details = db_sitemanager.get_all_miracle_features(db)
+   
+    miracle_features_details = db_sitemanager.get_all_miracle_features(db,deleted_status)
     return miracle_features_details
 
+
+
+
+# @router.post('/save_miracle_features', response_model=MiracleFeaturesSchema)
+# def save_miracle_features(
+#         request: Request,
+       
+#         miracle_features_details: MiracleFeaturesSchema = Depends(),
+#         db: Session = Depends(get_db),
+       
+#     ):
+    
+    
+#     try:
+       
+#             # Add operation
+#         miracle_features = db_sitemanager.save_miracle_features(db, miracle_features_details)
+           
+#         return miracle_features
+#     except Exception as e:
+#         error_detail = [{
+#             "loc": ["server"],
+#             "msg": "Internal server error",
+#             "type": "internal_server_error"
+#         }]
+#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
 
 
 @router.post('/save_miracle_features', response_model=MiracleFeaturesSchema)
 def save_miracle_features(
         request: Request,
-       
+        id: int =0,
         miracle_features_details: MiracleFeaturesSchema = Depends(),
         db: Session = Depends(get_db),
-       
+        token: str = Depends(oauth2.oauth2_scheme)
     ):
-    
-    
-    try:
+    if not token:
+        raise HTTPException(status_code=401, detail="Token is missing")
+    auth_info = authenticate_user(token) 
+    user_id = auth_info["user_id"]
+    if id ==0:
+
+      try:
        
             # Add operation
-        miracle_features = db_sitemanager.save_miracle_features(db, miracle_features_details)
+        miracle_features = db_sitemanager.save_miracle_features(db, miracle_features_details,user_id)
            
         return miracle_features
-    except Exception as e:
+      except Exception as e:
         error_detail = [{
             "loc": ["server"],
             "msg": "Internal server error",
             "type": "internal_server_error"
         }]
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
+    else:
+        try:
+       
+            # Add operation
+            miracle_features = db_sitemanager.update_miracle_features(db, miracle_features_details,id,user_id)
+           
+            return miracle_features
+        except Exception as e:
+            error_detail = [{
+                "loc": ["server"],
+                "msg": "Internal server error",
+                "type": "internal_server_error"
+            }]
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
 
 
 
+@router.delete("/delete/miracle_features/{miracle_id}")
+def delete_miracle_features(
+                     
+                     team_id: int,
+                     db: Session = Depends(get_db),
+                     token: str = Depends(oauth2.oauth2_scheme)):
 
-
-
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    auth_info = authenticate_user(token)
+    user_id = auth_info["user_id"]
+    return db_sitemanager.delete_miracle_features(db, team_id, deleted_by=user_id)
+     

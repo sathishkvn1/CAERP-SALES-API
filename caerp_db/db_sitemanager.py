@@ -784,20 +784,49 @@ def save_job_application(db: Session, job_application_data: JobApplicationSchema
 
 
 
+def get_all_miracle_features(db: Session, deleted_status: DeletedStatus):
+    if deleted_status == DeletedStatus.DELETED:
+        return db.query(MiracleFeatures).filter(MiracleFeatures.is_deleted == 'yes').all()
+    elif deleted_status == DeletedStatus.NOT_DELETED:
+        return db.query(MiracleFeatures).filter(MiracleFeatures.is_deleted == 'no').all()
+    elif deleted_status == DeletedStatus.ALL:
+        return db.query(MiracleFeatures).all()
+    else:
+        # Handle invalid state or raise an error
+        raise ValueError("Invalid deleted_status")
 
-def get_all_miracle_features(db: Session):
-    return db.query(MiracleFeatures).all()
 
 
+def save_miracle_features(
+    db: Session,
+    miracle_features_data: MiracleFeaturesSchema,
+    user_id : int
+    ):
 
-def save_miracle_features(db: Session, miracle_features_data: MiracleFeaturesSchema):
-
-    
+     
         # Add operation
         miracle_features_dict = miracle_features_data.dict()
-       
+        miracle_features_dict["created_by"] = user_id
+        miracle_features_dict["created_on"] = datetime.utcnow()
+        
         miracle_features = MiracleFeatures(**miracle_features_dict)
         db.add(miracle_features)
         db.commit()
         db.refresh(miracle_features)
         return miracle_features
+      
+def  update_miracle_features(
+    db: Session,
+    request: MiracleFeaturesSchema,
+    id: int,
+    user_id: int):
+    miracle_features = db.query(MiracleFeatures).filter(MiracleFeatures.id == id).first()
+    if miracle_features is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=" Miracle not found")
+    miracle_features_data_dict = request.dict()
+    for key, value in miracle_features_data_dict.items():
+            setattr(miracle_features, key, value)
+    
+    db.commit()
+    db.refresh(miracle_features)
+    return miracle_features

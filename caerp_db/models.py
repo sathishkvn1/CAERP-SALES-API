@@ -962,10 +962,17 @@ class JobApplication(caerp_base):
 class MiracleFeatures(caerp_base):
     __tablename__ = "app_site_miracle_features"
 
-    id              = Column(Integer, primary_key=True, index=True)
-    fa_icon 		= Column(String(255), nullable=False)
-    title 			= Column(String(255), nullable=False)
-    description     = Column(Text, nullable=False)	
+    id                  = Column(Integer, primary_key=True, index=True)
+    fa_icon 		    = Column(String(255), nullable=False)
+    title 			    = Column(String(255), nullable=False)
+    description         = Column(Text, nullable=False)	
+    created_by          = Column(Integer, default=None)
+    created_on          = Column(DateTime, nullable=False, default=func.now())
+    modified_by         = Column(Integer, default=None)
+    modified_on         = Column(DateTime, default=None)
+    is_deleted          = Column(Enum('yes', 'no'), nullable=False, default='no')
+    deleted_by          = Column(Integer, default=None)
+    deleted_on          = Column(DateTime, default=None)
     
 #--------------------------------------------------------------------------------------------------------------#--------------------------------------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------------------
