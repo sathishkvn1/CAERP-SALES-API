@@ -830,3 +830,9 @@ def  update_miracle_features(
     db.commit()
     db.refresh(miracle_features)
     return miracle_features
+
+
+
+
+def get_job_vacancies_by_id(db: Session, country_id: int):
+    return db.query(JobVacancies).filter(JobVacancies.id == country_id).first()

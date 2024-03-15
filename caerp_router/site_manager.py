@@ -1153,10 +1153,20 @@ async def get_job_vacancies_details(
     job_vacancies_details = db_sitemanager.get_all_job_vacancies(db,deleted_status)
     return job_vacancies_details
 
+#----------------
+@router.get("/get_job_vacancies_by_id/{id}", response_model=JobVacancieSchemaResponse)
+def get_country_by_id(id: int,
+                      db: Session = Depends(get_db)
+                      ):
 
 
+    country = db_sitemanager.get_job_vacancies_by_id(db, id)
+    if country is None:
+        raise HTTPException(status_code=404, detail="Country not found")
 
+    return country
 
+#----------------
 
 @router.post('/save_job_vacancies/{id}', response_model=JobVacancieSchema)
 def save_job_vacancies(
