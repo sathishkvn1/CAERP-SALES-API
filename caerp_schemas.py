@@ -1556,11 +1556,20 @@ class MiracleFeaturesSchema(BaseModel):
     title 		: str	
     description : str
 
+
+    
 class MiracleFeaturesSchemaResponse(BaseModel):
     id         : int    
     fa_icon 	: str	
     title 		: str	
     description : str
+    created_by  : int       
+    created_on  : datetime  
+    modified_by : Optional[int]        
+    modified_on : Optional[datetime]        
+    is_deleted  : bool       
+    deleted_by  : Optional[int]       
+    deleted_on  : Optional[datetime] 
 
 
 class CAPTCHARequest(BaseModel):
@@ -1574,6 +1583,7 @@ class EmailCredentialsSchema(BaseModel):
     SMTPAuth: bool
     UserName: str
     Password: Optional[str] = None
+
 
 class Email(BaseModel):
     messageTo: str
