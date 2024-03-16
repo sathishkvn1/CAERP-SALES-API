@@ -520,8 +520,6 @@ def update_admin_user_status(user_data: AdminUserActiveInactiveSchema=Depends(),
 
 
 #---------------------------------------------------------------------------------------------------------------
-
-
 @router.get("/get_admin_logs_by_user_id/", response_model=List[AdminLogSchema])
 def get_admin_logs_by_user_id(db: Session = Depends(get_db), token: str = Depends(oauth2.oauth2_scheme)):
     """
@@ -547,6 +545,10 @@ def get_admin_logs_by_user_id(db: Session = Depends(get_db), token: str = Depend
     user_id = auth_info["user_id"]
 
     admin_logs = db.query(AdminLog).filter(AdminLog.user_id == user_id).all()
+    # admin_logs = db.query(AdminLog, AdminUser.first_name, AdminUser.last_name) \
+    # .join(AdminUser, AdminLog.user_id == AdminUser.id) \
+    # .filter(AdminLog.user_id == user_id) \
+    # .all()
     if not admin_logs:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin logs not found for this user")
     
