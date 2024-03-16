@@ -123,6 +123,9 @@ app_product.mount("/save_product_additional_videos", StaticFiles(directory="uplo
 app_site_manager.mount("/save_prime_customer",StaticFiles(directory="uploads/prime_customers"), name="customer")
 
 
+app_customer.mount("/save_customer_company_profile",StaticFiles(directory="uploads/company_logo"), name="customer")
+
+
 
 
 

@@ -21,7 +21,7 @@ from jose import JWTError, jwt
 from caerp_auth.oauth2 import create_access_token,SECRET_KEY, ALGORITHM
 import send_email
 import send_message
-
+from settings import BASE_URL
 UPLOAD_DIR_COMPANYLOGO = "uploads/company_logo"
 UPLOAD_DIR_CUSTOMER_NEWS = "uploads/customer_news"
 router = APIRouter(
@@ -58,33 +58,7 @@ def update_customer(
     return updated_customer
 
 #---------------------------------------------------------------------------------------------------------------
-# @router.post('/change_password/{id}', response_model=CustomerRegisterBase)
-# def change_password(
-#         id: int,
-#         password_data: ClientUserChangePasswordSchema,
-#         db: Session = Depends(get_db),
-#         token: str = Depends(oauth2.oauth2_scheme)
-# ):
-#     if not token:
-#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
 
-#     user = db.query(CustomerRegister).filter(CustomerRegister.id == id).first()
-#     if not user:
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    
-#     # Verify old password
-#     if not Hash.verify(user.password, password_data.old_password):
-#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old password is incorrect")
-
-#     # Hash the new password
-#     hashed_new_password = Hash.bcrypt(password_data.new_password)
-
-#     # Update the user's password
-#     user.password = hashed_new_password
-#     db.commit()
-#     db.refresh(user)
-
-#     return user
 
 @router.post('/change_password/', response_model=CustomerRegisterBase)
 def change_password(
@@ -309,15 +283,63 @@ def get_customer_by_customer_id(id: int,
     return {"customer": [customer_detail]}
 
 #---------------------------------------------------------------------------------------------------------------    
-
-@router.get("/company_logo/{id}")
-def get_company_logo(id: int, db: Session = Depends(get_db)):
-    company_logo_content = db_customer.get_company_logo(db, id)
-    if company_logo_content is None:
-        raise HTTPException(status_code=404, detail="Company logo not found")
+@router.post('/update_customer_company_profile_image', response_model=CustomerCompanyProfileSchema)
+def update_customer_company_profile_image(
+       
+        image_file: UploadFile = File(...),  # Required image file
+        db: Session = Depends(get_db),
+        token: str = Depends(oauth2.oauth2_scheme)
+):
+    # Check authorization
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     
-    # Return the logo image in the HTTP response
-    return Response(content=company_logo_content, media_type="image/jpeg")
+    auth_info = authenticate_user(token)
+    user_id = auth_info.get("user_id")
+    
+    
+    
+    # Check if the user exists
+    user = db.query(CustomerCompanyProfile).filter(CustomerCompanyProfile.customer_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # Save the new image
+    file_content = image_file.file.read()
+    file_path = f"{UPLOAD_DIR_COMPANYLOGO}/{user.id}.jpg"
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+
+    # Return the updated user data
+    return user
+
+
+
+#------------------------------------------------------------------------------------------------------------
+
+@router.get("/image/company_logo")
+def get_company_logo(db: Session = Depends(get_db),
+                     token: str = Depends(oauth2.oauth2_scheme)):
+    # Check authorization
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+    auth_info = authenticate_user(token)
+    user_id = auth_info.get("user_id")
+    
+    # Query the customer company profile to get the company logo filename or URL
+    customer_profile = db.query(CustomerCompanyProfile).filter(CustomerCompanyProfile.customer_id == user_id).first()
+    
+    if customer_profile:
+        customer_profile_id = customer_profile.id
+        profile_photo_filename = f"{customer_profile_id}.jpg"  
+        return {"photo_url": f"{BASE_URL}/customer/save_customer_company_profile/{profile_photo_filename}"}
+    else:
+        # Handle case where no customer profile is found
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer profile not found")
+
+    
+    
 
 #---------------------------------------------------------------------------------------------------------------    
 
