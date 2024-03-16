@@ -283,8 +283,8 @@ def get_customer_by_customer_id(id: int,
     return {"customer": [customer_detail]}
 
 #---------------------------------------------------------------------------------------------------------------    
-@router.post('/update_customer_company_profile_image', response_model=CustomerCompanyProfileSchema)
-def update_customer_company_profile_image(
+@router.post('/update_customer_company_logo', response_model=CustomerCompanyProfileSchema)
+def update_customer_company_logo(
        
         image_file: UploadFile = File(...),  # Required image file
         db: Session = Depends(get_db),
@@ -337,10 +337,6 @@ def get_company_logo(db: Session = Depends(get_db),
     else:
         # Handle case where no customer profile is found
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer profile not found")
-
-    
-    
-
 #---------------------------------------------------------------------------------------------------------------    
 
 @router.post('/save_customer_news/{id}', response_model=CustomerNewsBase)
