@@ -764,8 +764,6 @@ def get_all_job_application(db: Session):
 
 
 def save_job_application(db: Session, job_application_data: JobApplicationSchema):
-
-    
         # Add operation
         job_application_dict = job_application_data.dict()
        
@@ -836,3 +834,22 @@ def  update_miracle_features(
 
 def get_job_vacancies_by_id(db: Session, country_id: int):
     return db.query(JobVacancies).filter(JobVacancies.id == country_id).first()
+
+
+
+def delete_miracle_features(db: Session, id: int,deleted_by: int):
+    existing_feature = db.query(MiracleFeatures).filter(MiracleFeatures.id == id).first()
+
+    if existing_feature is None:
+        raise HTTPException(status_code=404, detail="Miracle Feature not found")
+
+    existing_feature.is_deleted = 'yes'
+    existing_feature.deleted_by = deleted_by
+    existing_feature.deleted_on = datetime.utcnow()
+   
+    db.commit()
+
+    return {
+        "message": "Deleted successfully",
+
+    }

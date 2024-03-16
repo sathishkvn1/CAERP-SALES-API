@@ -1360,10 +1360,10 @@ def save_miracle_features(
 
 
 
-@router.delete("/delete/miracle_features/{miracle_id}")
+@router.delete("/delete/miracle_features/{id}")
 def delete_miracle_features(
                      
-                     team_id: int,
+                     id: int,
                      db: Session = Depends(get_db),
                      token: str = Depends(oauth2.oauth2_scheme)):
 
@@ -1371,5 +1371,5 @@ def delete_miracle_features(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     auth_info = authenticate_user(token)
     user_id = auth_info["user_id"]
-    return db_sitemanager.delete_miracle_features(db, team_id, deleted_by=user_id)
+    return db_sitemanager.delete_miracle_features(db, id, deleted_by=user_id)
      

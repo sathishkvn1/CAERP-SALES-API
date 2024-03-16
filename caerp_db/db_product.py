@@ -161,7 +161,7 @@ def get_product_master_by_code(db: Session,code: str):
 
 
 
-def delete_product(db: Session, product_id: int,deleted_by: int):
+def delete_product_master(db: Session, product_id: int,deleted_by: int):
     existing_product = db.query(ProductMaster).filter(ProductMaster.id == product_id).first()
 
     if existing_product is None:
@@ -170,6 +170,13 @@ def delete_product(db: Session, product_id: int,deleted_by: int):
     existing_product.is_deleted = 'yes'
     existing_product.deleted_by = deleted_by
     existing_product.deleted_on = datetime.utcnow()
+    
+    # Mark related installment details as deleted
+    db.query(ProductModule).filter(ProductModule.product_id == product_id).update({
+        ProductModule.is_deleted: 'yes',
+        ProductModule.deleted_by: deleted_by,
+        ProductModule.deleted_on: datetime.utcnow()
+    }, synchronize_session=False)
    
     db.commit()
 
@@ -436,21 +443,7 @@ def update_installment_details(db: Session, installment_id: int, data: dict, use
         return db_installment_details
     return None
 
-# def delete_installment_master(db: Session, id: int, deleted_by: int):
-#     existing_director = db.query(InstallmentMaster).filter(InstallmentMaster.id == id).first()
 
-#     if existing_director is None:
-#         raise HTTPException(status_code=404, detail="Director not found")
-
-#     existing_director.is_deleted = 'yes'
-#     existing_director.deleted_by = deleted_by
-#     existing_director.deleted_on = datetime.utcnow()
-
-#     db.commit()
-
-#     return {
-#         "message": "Deleted successfully",
-#     }
 
 def delete_installment_master(db: Session, id: int, deleted_by: int):
     existing_installment_master = db.query(InstallmentMaster).filter(InstallmentMaster.id == id).first()

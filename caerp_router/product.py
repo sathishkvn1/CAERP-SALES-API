@@ -179,7 +179,7 @@ def get_product_master_by_code(product_code: str, db: Session = Depends(get_db))
 
 
 @router.delete("/delete/product_master/{product_id}")
-def delete_product(
+def delete_product_master(
                      product_id: int,
                      db: Session = Depends(get_db),
                      token: str = Depends(oauth2.oauth2_scheme)
@@ -191,7 +191,7 @@ def delete_product(
     user_id = auth_info["user_id"]
     
     
-    return db_product.delete_product(db, product_id,deleted_by=user_id)
+    return db_product.delete_product_master(db, product_id,deleted_by=user_id)
 
 
 
