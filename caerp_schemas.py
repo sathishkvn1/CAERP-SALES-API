@@ -1404,6 +1404,8 @@ class JobVacancieSchema(BaseModel):
     
 
     
+  
+
 # class AdminLogSchema(BaseModel):
 #     id: int
 #     user_id: int
@@ -1411,26 +1413,29 @@ class JobVacancieSchema(BaseModel):
 #     logged_out_on: Optional[datetime]
 #     logged_in_ip: Optional[str]
 #     referrer: Optional[str]
-#     location: Optional[str]  
 #     browser_type: Optional[str]
 #     browser_family: Optional[str]
 #     browser_version: Optional[str]
 #     operating_system: Optional[str]
 #     os_family: Optional[str]
 #     os_version: Optional[str]
-    
+
 #     class Config:
 #         orm_mode = True
-#         from_orm = True  
-#         from_attributes = True  
-
+#         from_orm = True
+#         from_attributes = True
+        
 class AdminLogSchema(BaseModel):
     id: int
     user_id: int
+    user_name: str  # Combined field of first_name and last_name
     logged_in_on: datetime
     logged_out_on: Optional[datetime]
     logged_in_ip: Optional[str]
     referrer: Optional[str]
+    city: Optional[str]
+    region: Optional[str]
+    country: Optional[str]
     browser_type: Optional[str]
     browser_family: Optional[str]
     browser_version: Optional[str]
@@ -1440,17 +1445,38 @@ class AdminLogSchema(BaseModel):
 
     class Config:
         orm_mode = True
-        from_orm = True
-        from_attributes = True
         
-        
+# class CustomerLogSchema(BaseModel):
+#     id: int
+#     user_id: int
+#     logged_in_on: datetime
+#     logged_out_on: Optional[datetime]
+#     logged_in_ip: Optional[str]
+#     referrer: Optional[str]
+#     browser_type: Optional[str]
+#     browser_family: Optional[str]
+#     browser_version: Optional[str]
+#     operating_system: Optional[str]
+#     os_family: Optional[str]
+#     os_version: Optional[str]
+
+#     class Config:
+#         orm_mode = True
+#         from_orm = True
+#         from_attributes = True
+
+
 class CustomerLogSchema(BaseModel):
     id: int
     user_id: int
+    user_name: str  # Combined field of first_name and last_name
     logged_in_on: datetime
     logged_out_on: Optional[datetime]
     logged_in_ip: Optional[str]
     referrer: Optional[str]
+    city: Optional[str]
+    region: Optional[str]
+    country: Optional[str]
     browser_type: Optional[str]
     browser_family: Optional[str]
     browser_version: Optional[str]
@@ -1460,8 +1486,7 @@ class CustomerLogSchema(BaseModel):
 
     class Config:
         orm_mode = True
-        from_orm = True
-        from_attributes = True
+
         
         
 class InstallmentFilter(BaseModel):

@@ -22,6 +22,8 @@ from caerp_auth.oauth2 import create_access_token,SECRET_KEY, ALGORITHM
 import send_email
 import send_message
 from settings import BASE_URL
+from sqlalchemy import func
+
 UPLOAD_DIR_COMPANYLOGO = "uploads/company_logo"
 UPLOAD_DIR_CUSTOMER_NEWS = "uploads/customer_news"
 router = APIRouter(
@@ -671,6 +673,42 @@ def get_customer_company_profile(
 
     return company_profile
 
+#------------------------------------------------------------------------------------
+
+# @router.get("/get_customer_logs_by_user_id/", response_model=List[CustomerLogSchema])
+# def get_customer_logs_by_user_id(db: Session = Depends(get_db), token: str = Depends(oauth2.oauth2_scheme)):
+#     """
+#     Retrieve all customer log details for the currently logged-in user.
+
+#     Args:
+#         db (Session, optional): SQLAlchemy database session. Defaults to Depends(get_db).
+#         token (str): Authentication token obtained during login.
+
+#     Returns:
+#         List[CustomerLogSchema]: List of customer log details for the currently logged-in user.
+
+#     Raises:
+#         HTTPException: If the token is missing or invalid, or if there are no customer logs for the user.
+#     """
+
+#     if not token:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Token is missing"
+#         )
+#     auth_info = authenticate_user(token)
+#     user_id = auth_info["user_id"]
+
+#     customer_logs = db.query(CustomerLog).filter(CustomerLog.user_id == user_id).all()
+#     if not customer_logs:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer logs not found for this user")
+
+#     customer_logs_schema = [CustomerLogSchema.from_orm(customer_log) for customer_log in customer_logs]
+
+#     return customer_logs_schema
+
+
+
 
 
 @router.get("/get_customer_logs_by_user_id/", response_model=List[CustomerLogSchema])
@@ -697,43 +735,118 @@ def get_customer_logs_by_user_id(db: Session = Depends(get_db), token: str = Dep
     auth_info = authenticate_user(token)
     user_id = auth_info["user_id"]
 
-    customer_logs = db.query(CustomerLog).filter(CustomerLog.user_id == user_id).all()
-    if not customer_logs:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer logs not found for this user")
+    # Query all customer logs with joined user details
+    customer_logs = db.query(CustomerLog, CustomerRegister.first_name, CustomerRegister.last_name) \
+        .join(CustomerRegister, CustomerLog.user_id == CustomerRegister.id) \
+        .filter(CustomerLog.user_id == user_id) \
+        .all()
 
-    customer_logs_schema = [CustomerLogSchema.from_orm(customer_log) for customer_log in customer_logs]
+    # Process the customer logs and construct the response
+    customer_logs_schema = []
+    for customer_log, first_name, last_name in customer_logs:
+        customer_logs_schema.append(
+            CustomerLogSchema(
+                id=customer_log.id,
+                user_id=customer_log.user_id,
+                user_name=f"{first_name} {last_name}",
+                logged_in_on=customer_log.logged_in_on,
+                logged_out_on=customer_log.logged_out_on,
+                logged_in_ip=customer_log.logged_in_ip,
+                referrer=customer_log.referrer,
+                city=customer_log.city,
+                region=customer_log.region,
+                country=customer_log.country,
+                browser_type=customer_log.browser_type,
+                browser_family=customer_log.browser_family,
+                browser_version=customer_log.browser_version,
+                operating_system=customer_log.operating_system,
+                os_family=customer_log.os_family,
+                os_version=customer_log.os_version
+            )
+        )
 
     return customer_logs_schema
 
 
 
+
+
+
+#----------------------------------------------------
+
+
+
+# @router.get("/get_all_customer_logs/", response_model=List[CustomerLogSchema])
+# def get_all_customer_logs(db: Session = Depends(get_db), token: str = Depends(oauth2.oauth2_scheme)):
+#     """
+#     Retrieve all customer log details from the database.
+
+#     Args:
+#         db (Session, optional): SQLAlchemy database session. Defaults to Depends(get_db).
+#         token (str): Authentication token obtained during login.
+
+#     Returns:
+#         List[CustomerLogSchema]: List of customer log details.
+
+#     Raises:
+#         HTTPException: If the token is missing or invalid.
+#     """
+
+#     if not token:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Token is missing"
+#         )
+
+  
+#     # Query all admin logs
+#     customer_logs = db.query(CustomerLog).all()
+
+#     return customer_logs
+
+
 @router.get("/get_all_customer_logs/", response_model=List[CustomerLogSchema])
 def get_all_customer_logs(db: Session = Depends(get_db), token: str = Depends(oauth2.oauth2_scheme)):
-    """
-    Retrieve all customer log details from the database.
-
-    Args:
-        db (Session, optional): SQLAlchemy database session. Defaults to Depends(get_db).
-        token (str): Authentication token obtained during login.
-
-    Returns:
-        List[CustomerLogSchema]: List of customer log details.
-
-    Raises:
-        HTTPException: If the token is missing or invalid.
-    """
 
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token is missing"
         )
+    
+    # Query all customer logs with joined user details
+    customer_logs = db.query(CustomerLog, 
+                             CustomerRegister.first_name, 
+                             CustomerRegister.last_name) \
+                      .join(CustomerRegister, 
+                            CustomerLog.user_id == CustomerRegister.id) \
+                      .all()
 
-  
-    # Query all admin logs
-    customer_logs = db.query(CustomerLog).all()
+    # Process the customer logs and construct the response
+    customer_logs_schema = []
+    for customer_log, first_name, last_name in customer_logs:
+        customer_logs_schema.append(
+            CustomerLogSchema(
+                id=customer_log.id,
+                user_id=customer_log.user_id,
+                user_name=f"{first_name} {last_name}",
+                logged_in_on=customer_log.logged_in_on,
+                logged_out_on=customer_log.logged_out_on,
+                logged_in_ip=customer_log.logged_in_ip,
+                referrer=customer_log.referrer,
+                city=customer_log.city,
+                region=customer_log.region,
+                country=customer_log.country,
+                browser_type=customer_log.browser_type,
+                browser_family=customer_log.browser_family,
+                browser_version=customer_log.browser_version,
+                operating_system=customer_log.operating_system,
+                os_family=customer_log.os_family,
+                os_version=customer_log.os_version
+            )
+        )
 
-    return customer_logs
+    return customer_logs_schema
 
 #---------------------------------------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------------------

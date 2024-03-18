@@ -20,6 +20,7 @@ from caerp_auth.oauth2 import oauth2_scheme,SECRET_KEY, ALGORITHM
 from caerp_auth import oauth2
 import os
 from jose import JWTError, jwt
+from sqlalchemy import func
 
 UPLOAD_DIR_ADMIN_PROFILE = "uploads/admin_profile"
 
@@ -520,6 +521,46 @@ def update_admin_user_status(user_data: AdminUserActiveInactiveSchema=Depends(),
 
 
 #---------------------------------------------------------------------------------------------------------------
+# @router.get("/get_admin_logs_by_user_id/", response_model=List[AdminLogSchema])
+# def get_admin_logs_by_user_id(db: Session = Depends(get_db), token: str = Depends(oauth2.oauth2_scheme)):
+#     """
+#     Retrieve all admin log details for the currently logged-in user.
+
+#     Args:
+#         db (Session, optional): SQLAlchemy database session. Defaults to Depends(get_db).
+#         token (str): Authentication token obtained during login.
+
+#     Returns:
+#         List[AdminLogSchema]: List of admin log details for the currently logged-in user.
+
+#     Raises:
+#         HTTPException: If the token is missing or invalid, or if there are no admin logs for the user.
+#     """
+
+#     if not token:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Token is missing"
+#         )
+#     auth_info = authenticate_user(token)
+#     user_id = auth_info["user_id"]
+
+#     admin_logs = db.query(AdminLog).filter(AdminLog.user_id == user_id).all()
+#     # admin_logs = db.query(AdminLog, AdminUser.first_name, AdminUser.last_name) \
+#     # .join(AdminUser, AdminLog.user_id == AdminUser.id) \
+#     # .filter(AdminLog.user_id == user_id) \
+#     # .all()
+#     if not admin_logs:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin logs not found for this user")
+    
+    
+#     admin_logs_schema = [AdminLogSchema.from_orm(admin_log) for admin_log in admin_logs]
+    
+#     return admin_logs_schema
+
+
+
+
 @router.get("/get_admin_logs_by_user_id/", response_model=List[AdminLogSchema])
 def get_admin_logs_by_user_id(db: Session = Depends(get_db), token: str = Depends(oauth2.oauth2_scheme)):
     """
@@ -541,23 +582,131 @@ def get_admin_logs_by_user_id(db: Session = Depends(get_db), token: str = Depend
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token is missing"
         )
+    
     auth_info = authenticate_user(token)
     user_id = auth_info["user_id"]
 
-    admin_logs = db.query(AdminLog).filter(AdminLog.user_id == user_id).all()
-    # admin_logs = db.query(AdminLog, AdminUser.first_name, AdminUser.last_name) \
-    # .join(AdminUser, AdminLog.user_id == AdminUser.id) \
-    # .filter(AdminLog.user_id == user_id) \
-    # .all()
+    # Join AdminLog with AdminUser to get user details
+    admin_logs = db.query(AdminLog, AdminUser.first_name, AdminUser.last_name) \
+                    .filter(AdminLog.user_id == user_id) \
+                    .join(AdminUser, AdminLog.user_id == AdminUser.id) \
+                    .all()
+
     if not admin_logs:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin logs not found for this user")
     
+    # Process admin logs and construct the response
+    admin_logs_schema = []
+    for admin_log, first_name, last_name in admin_logs:
+        admin_logs_schema.append(
+            AdminLogSchema(
+                id=admin_log.id,
+                user_id=admin_log.user_id,
+                user_name=f"{first_name} {last_name}",
+                logged_in_on=admin_log.logged_in_on,
+                logged_out_on=admin_log.logged_out_on,
+                logged_in_ip=admin_log.logged_in_ip,
+                city=admin_log.city,
+                region=admin_log.region,
+                country=admin_log.country,
+                referrer=admin_log.referrer,
+                browser_type=admin_log.browser_type,
+                browser_family=admin_log.browser_family,
+                browser_version=admin_log.browser_version,
+                operating_system=admin_log.operating_system,
+                os_family=admin_log.os_family,
+                os_version=admin_log.os_version
+            )
+        )
     
-    admin_logs_schema = [AdminLogSchema.from_orm(admin_log) for admin_log in admin_logs]
+    return admin_logs_schema 
+
+
+# @router.get("/get_admin_logs_by_user_id/", response_model=List[AdminLogSchema])
+# def get_admin_logs_by_user_id(db: Session = Depends(get_db), token: str = Depends(oauth2.oauth2_scheme)):
+#     """
+#     Retrieve all admin log details for the currently logged-in user.
+
+#     Args:
+#         db (Session, optional): SQLAlchemy database session. Defaults to Depends(get_db).
+#         token (str): Authentication token obtained during login.
+
+#     Returns:
+#         List[AdminLogSchema]: List of admin log details for the currently logged-in user.
+
+#     Raises:
+#         HTTPException: If the token is missing or invalid, or if there are no admin logs for the user.
+#     """
+
+#     if not token:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Token is missing"
+#         )
+#     auth_info = authenticate_user(token)
+#     user_id = auth_info["user_id"]
+
+#     admin_logs = db.query(AdminLog).filter(AdminLog.user_id == user_id).all()
+
+#     if not admin_logs:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin logs not found for this user")
     
-    return admin_logs_schema
+#     admin_logs_schema = []
+#     for admin_log in admin_logs:
+#         user = db.query(AdminUser).filter(AdminUser.id == admin_log.user_id).first()
+#         user_name = f"{user.first_name} {user.last_name}" if user else "Unknown User"
+#         admin_log_data = {
+#             "id": admin_log.id,
+#             "user_id": admin_log.user_id,
+#             "user_name": user_name,
+#             "logged_in_on": admin_log.logged_in_on,
+#             "logged_out_on": admin_log.logged_out_on,
+#             "logged_in_ip": admin_log.logged_in_ip,
+#             "referrer": admin_log.referrer,
+#             "browser_type": admin_log.browser_type,
+#             "browser_family": admin_log.browser_family,
+#             "browser_version": admin_log.browser_version,
+#             "operating_system": admin_log.operating_system,
+#             "os_family": admin_log.os_family,
+#             "os_version": admin_log.os_version
+#         }
+#         admin_logs_schema.append(admin_log_data)
+    
+#     return admin_logs_schema 
 
 #---------------------------------------------------------------------------------------------------------------
+# @router.get("/get_all_admin_logs/", response_model=List[AdminLogSchema])
+# def get_all_admin_logs(db: Session = Depends(get_db), token: str = Depends(oauth2.oauth2_scheme)):
+#     """
+#     Retrieve all admin log details from the database.
+
+#     Args:
+#         db (Session, optional): SQLAlchemy database session. Defaults to Depends(get_db).
+#         token (str): Authentication token obtained during login.
+
+#     Returns:
+#         List[AdminLogSchema]: List of admin log details.
+
+#     Raises:
+#         HTTPException: If the token is missing or invalid.
+#     """
+
+#     if not token:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Token is missing"
+#         )
+
+  
+#     # Query all admin logs
+#     admin_logs = db.query(AdminLog).all()
+
+#     return admin_logs
+
+
+
+
+
 @router.get("/get_all_admin_logs/", response_model=List[AdminLogSchema])
 def get_all_admin_logs(db: Session = Depends(get_db), token: str = Depends(oauth2.oauth2_scheme)):
     """
@@ -579,11 +728,37 @@ def get_all_admin_logs(db: Session = Depends(get_db), token: str = Depends(oauth
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token is missing"
         )
+    # Query all admin logs with joined user details
+    admin_logs = db.query(AdminLog, func.concat(AdminUser.first_name, " ", AdminUser.last_name).label("user_name")) \
+    .join(AdminUser, AdminLog.user_id == AdminUser.id) \
+    .all()
 
-  
-    # Query all admin logs
-    admin_logs = db.query(AdminLog).all()
 
-    return admin_logs
+    # Process the admin logs and construct the response
+    admin_logs_schema = []
+    for admin_log, user_name in admin_logs:
+        admin_logs_schema.append(
+            AdminLogSchema(
+                id=admin_log.id,
+                user_id=admin_log.user_id,
+                user_name=user_name,  # User name obtained from the manual join
+                logged_in_on=admin_log.logged_in_on,
+                logged_out_on=admin_log.logged_out_on,
+                logged_in_ip=admin_log.logged_in_ip,
+                referrer=admin_log.referrer,
+                city=admin_log.city,
+                region=admin_log.region,
+                country=admin_log.country,
+                browser_type=admin_log.browser_type,
+                browser_family=admin_log.browser_family,
+                browser_version=admin_log.browser_version,
+                operating_system=admin_log.operating_system,
+                os_family=admin_log.os_family,
+                os_version=admin_log.os_version
+            )
+        )
+
+    return admin_logs_schema
+
 #---------------------------------------------------------------------------------------------------------------
 
