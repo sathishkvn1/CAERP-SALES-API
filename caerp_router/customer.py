@@ -26,6 +26,7 @@ from sqlalchemy import func
 
 UPLOAD_DIR_COMPANYLOGO = "uploads/company_logo"
 UPLOAD_DIR_CUSTOMER_NEWS = "uploads/customer_news"
+UPLOAD_DIR_CUSTOMER_PROFILE = "uploads/customer_profile_photo"
 router = APIRouter(
   
     tags=['CUSTOMER']
@@ -40,7 +41,35 @@ def create_customer(customer_data: CustomerRegisterBase, db: Session = Depends(g
     return new_customer
 
 #---------------------------------------------------------------------------------------------------------------
+@router.post('/image/add_customer_profile_image/{id}', response_model=CustomerRegisterBase)
+def add_customer_profile_image(
+      
+        image_file: UploadFile = File(...),  # Required image file
+        db: Session = Depends(get_db),
+        token: str = Depends(oauth2.oauth2_scheme)
+):
+    # Check authorization
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+    auth_info = authenticate_user(token)
+    user_id = auth_info["user_id"]
+    
+    # Check if the user exists
+    user = db.query(CustomerRegister).filter(CustomerRegister.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
+    # Save the new image
+    file_content = image_file.file.read()
+    file_path = f"{UPLOAD_DIR_CUSTOMER_PROFILE}/{user.id}.jpg"
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+
+    # Return the updated user data
+    return user
+
+#-------------------------------------------------------------------------------------------------------
 @router.post('/update/customer/', response_model=CustomerRegisterBaseForUpdate)
 def update_customer(
        

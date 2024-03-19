@@ -890,7 +890,7 @@ class CustomerRegisterBase(BaseModel):
     state_id: Optional[int] = None
     country_id: Optional[int] = None
     email_id: Optional[str] = None
-    password: str
+    # password: str
 
 class CustomerRegisterBaseForUpdate(BaseModel):
     
