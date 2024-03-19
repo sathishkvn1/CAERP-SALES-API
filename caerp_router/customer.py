@@ -41,7 +41,7 @@ def create_customer(customer_data: CustomerRegisterBase, db: Session = Depends(g
     return new_customer
 
 #---------------------------------------------------------------------------------------------------------------
-@router.post('/image/add_customer_profile_image/{id}', response_model=CustomerRegisterBase)
+@router.post('/image/add_customer_profile_image/', response_model=CustomerRegisterBase)
 def add_customer_profile_image(
       
         image_file: UploadFile = File(...),  # Required image file
@@ -69,6 +69,27 @@ def add_customer_profile_image(
     # Return the updated user data
     return user
 
+#-------------------------------------------------------------------------------------------------------
+@router.get("/image/customer_profile_image")
+def get_customer_profile_image(db: Session = Depends(get_db),
+                     token: str = Depends(oauth2.oauth2_scheme)):
+    # Check authorization
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+    auth_info = authenticate_user(token)
+    user_id = auth_info.get("user_id")
+    
+    # Query the customer company profile to get the company logo filename or URL
+    customer_profile = db.query(CustomerRegister).filter(CustomerRegister.id == user_id).first()
+    
+    if customer_profile:
+        customer_profile_id = customer_profile.id
+        profile_photo_filename = f"{customer_profile_id}.jpg"  
+        return {"photo_url": f"{BASE_URL}/customer/image/add_customer_profile_image/{profile_photo_filename}"}
+    else:
+        # Handle case where no customer profile is found
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer profile not found")
 #-------------------------------------------------------------------------------------------------------
 @router.post('/update/customer/', response_model=CustomerRegisterBaseForUpdate)
 def update_customer(
@@ -153,10 +174,6 @@ def get_deleted_customers(db: Session, deleted_status: DeletedStatus):
         raise ValueError("Invalid deleted_status")
 		    
 #---------------------------------------------------------------------------------------------------------------
-
-
-
-
 
 @router.get("/get_active_customers/", response_model=CustomerRegisterListSchema)
 async def get_active_customers(
@@ -314,6 +331,7 @@ def get_customer_by_customer_id(id: int,
     return {"customer": [customer_detail]}
 
 #---------------------------------------------------------------------------------------------------------------    
+
 @router.post('/update_customer_company_logo', response_model=CustomerCompanyProfileSchema)
 def update_customer_company_logo(
        
