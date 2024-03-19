@@ -124,6 +124,7 @@ app_site_manager.mount("/save_prime_customer",StaticFiles(directory="uploads/pri
 
 
 app_customer.mount("/save_customer_company_profile",StaticFiles(directory="uploads/company_logo"), name="customer")
+app_customer.mount("/image/add_customer_profile_image",StaticFiles(directory="uploads/customer_profile_photo"), name="customer")
 
 
 
