@@ -688,26 +688,7 @@ class UserRoleForDelete(BaseModel):
     deleted_by: Optional[int] = None
     deleted_on: Optional[datetime] = None
     
-# class AdminUserBaseForDelete(BaseModel):
-#     id: int
-#     first_name: str
-#     last_name: str
-#     gender_id: int
-#     user_name: str
-#     password: str
-#     role_id: int
-#     designation_id: int
-#     address: Optional[str] = None
-#     mobile_number: Optional[str] = None
-#     whatsapp_number: Optional[str] = None
-#     email_id: Optional[str] = None
-#     created_by: int
-#     created_on: datetime
-#     modified_by: Optional[int] = None
-#     modified_on: Optional[datetime] = None
-#     is_deleted: str = 'no'
-#     deleted_by: Optional[int] = None
-#     deleted_on: Optional[datetime] = None
+
 
 class AdminUserBaseForDelete(BaseModel):
     id: int
