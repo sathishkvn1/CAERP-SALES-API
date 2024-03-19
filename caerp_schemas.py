@@ -710,6 +710,7 @@ class UserRoleForDelete(BaseModel):
 #     deleted_on: Optional[datetime] = None
 
 class AdminUserBaseForDelete(BaseModel):
+    id: int
     first_name: str
     last_name: str
     gender_id: int
