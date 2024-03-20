@@ -393,9 +393,13 @@ def create_installment_master(db: Session, installment_data: InstallmentCreate, 
     return db_installment_master
 
 
-
 def create_installment_details(db: Session, installment_master_id: int, installment_data: InstallmentCreate, user_id: int):
     installment_details = []
+    print(f"installment_master_id: {installment_master_id}")
+    print(f"installment_name: {installment_data.installment_name}")
+    print(f"payment_rate: {installment_data.payment_rate}")
+    print(f"due_date: {installment_data.due_date}")
+    print(f"created_by: {user_id}")
     
     installment_detail = InstallmentDetails(
         installment_master_id=installment_master_id,
@@ -412,11 +416,6 @@ def create_installment_details(db: Session, installment_master_id: int, installm
     installment_details.append(installment_detail)
     
     return installment_details
-
-
-
-
-
 
 
 def update_installment_master(db: Session, installment_id: int, data: dict, user_id: int):

@@ -508,9 +508,6 @@ def get_product_video_by_product_master_id(
    
 #     return {"photo_url": f"{BASE_URL}/product/save_product_additional_video/{video_filename}"}
 
-
-
-
 @router.delete("/delete/product_video/{video_id}")
 def delete_product_video(
                      video_id: int,
@@ -525,18 +522,7 @@ def delete_product_video(
     
     return db_product.delete_product_video(db, video_id,deleted_by=user_id)
 
-
-
 #////
-
-
-
-
-
-
-
-
-
 @router.get("/get_all_installment_master/",response_model=List[InstallmentMasterForGet])
 async def get_all_installment_master(deleted_status: DeletedStatus = DeletedStatus.NOT_DELETED,
                               db: Session = Depends(get_db),
@@ -588,8 +574,6 @@ def get_all_installment_details_by_status(db: Session, deleted_status: DeletedSt
         raise ValueError("Invalid deleted_status")
 
 #---------------------------------------------------------------------------------------------------------------
-
-
 @router.post("/save_installments/", response_model=None)
 def create_installments(
     installment_data: InstallmentCreate=Depends(),
@@ -602,13 +586,17 @@ def create_installments(
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
     
+    print(f"User ID: {user_id}")
+    print(f"Installment Data: {installment_data}")
+    
+    
     installment_master = db_product.create_installment_master(db, installment_data, user_id)
     
     # Create the installment details records
     installment_details = []
     for _ in range(installment_data.number_of_installments):
         installment_details.append(db_product.create_installment_details(db, installment_master.id, installment_data, user_id))
-        
+    print(f"Created installment details: {installment_details}")    
     return installment_details
 
 
