@@ -129,31 +129,29 @@ def get_customer_profile_image(db: Session = Depends(get_db),
     # Query the customer company profile to get the customer's gender
     customer_profile = db.query(CustomerRegister).filter(CustomerRegister.id == user_id).first()
     
-    if customer_profile:
-        gender = customer_profile.gender_id
-        if gender == 1:
-            default_image_filename = 'male_default.jpg'
-        elif gender == 2:
-            default_image_filename = 'female_default.jpg'
-        else:
-            default_image_filename = 'default.jpg'  # Default for other genders or if gender is not specified
-        
-        profile_photo_filename = f"{user_id}.jpg"
-        profile_photo_path = os.path.join(UPLOAD_DIR_CUSTOMER_PROFILE, profile_photo_filename)
-        
-        # Check if the user has a profile image
-        if os.path.exists(profile_photo_path):
-            photo_url = f"{BASE_URL}/customer/image/add_customer_profile_image/{profile_photo_filename}"
-        else:
-            # Use the URL of the default image based on gender
-            photo_url = f"{BASE_URL}/customer/image/add_customer_profile_image/{default_image_filename}"
-        
-        return {"photo_url": photo_url}
+    # Check if the user has a profile image
+    profile_photo_filename = f"{user_id}.jpg"
+    profile_photo_path = os.path.join(UPLOAD_DIR_CUSTOMER_PROFILE, profile_photo_filename)
+    
+    if os.path.exists(profile_photo_path):
+        # User has a profile image, return its URL
+        photo_url = f"{BASE_URL}/customer/image/add_customer_profile_image/{profile_photo_filename}"
     else:
-        # Handle case where no customer profile is found
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer profile not found")
-
-
+       
+        default_image_filename = 'default.jpg'  # Default for other genders or if gender is not specified
+        if customer_profile:
+            gender = customer_profile.gender_id
+            if gender == 1:
+                default_image_filename = 'default_male.jpg'
+            elif gender == 2:
+                default_image_filename = 'default_female.jpg'
+            else:
+                default_image_filename = 'default.jpg' 
+        
+        # Return the URL of the default image based on gender
+        photo_url = f"{BASE_URL}/customer/image/add_customer_profile_image/{default_image_filename}"
+    
+    return {"photo_url": photo_url}
 
 
 
