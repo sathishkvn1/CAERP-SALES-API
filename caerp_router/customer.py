@@ -1,3 +1,4 @@
+import os
 import random
 from fastapi import APIRouter ,Depends,Request,HTTPException,status,UploadFile,File,Response
 from caerp_db.models import CustomerCompanyProfile, CustomerLog, CustomerNews, CustomerRegister
@@ -27,6 +28,7 @@ from sqlalchemy import func
 UPLOAD_DIR_COMPANYLOGO = "uploads/company_logo"
 UPLOAD_DIR_CUSTOMER_NEWS = "uploads/customer_news"
 UPLOAD_DIR_CUSTOMER_PROFILE = "uploads/customer_profile_photo"
+DEFAULT_IMAGE_FILENAME="default.jpg"
 router = APIRouter(
   
     tags=['CUSTOMER']
@@ -70,9 +72,30 @@ def add_customer_profile_image(
     return user
 
 #-------------------------------------------------------------------------------------------------------
+# @router.get("/image/customer_profile_image")
+# def get_customer_profile_image(db: Session = Depends(get_db),
+#                      token: str = Depends(oauth2.oauth2_scheme)):
+#     # Check authorization
+#     if not token:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+#     auth_info = authenticate_user(token)
+#     user_id = auth_info.get("user_id")
+    
+#     # Query the customer company profile to get the company logo filename or URL
+#     customer_profile = db.query(CustomerRegister).filter(CustomerRegister.id == user_id).first()
+    
+#     if customer_profile:
+#         customer_profile_id = customer_profile.id
+#         profile_photo_filename = f"{customer_profile_id}.jpg"  
+#         return {"photo_url": f"{BASE_URL}/customer/image/add_customer_profile_image/{profile_photo_filename}"}
+#     else:
+#         # Handle case where no customer profile is found
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer profile not found")
+
 @router.get("/image/customer_profile_image")
 def get_customer_profile_image(db: Session = Depends(get_db),
-                     token: str = Depends(oauth2.oauth2_scheme)):
+                               token: str = Depends(oauth2.oauth2_scheme)):
     # Check authorization
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
@@ -80,16 +103,22 @@ def get_customer_profile_image(db: Session = Depends(get_db),
     auth_info = authenticate_user(token)
     user_id = auth_info.get("user_id")
     
-    # Query the customer company profile to get the company logo filename or URL
-    customer_profile = db.query(CustomerRegister).filter(CustomerRegister.id == user_id).first()
-    
-    if customer_profile:
-        customer_profile_id = customer_profile.id
-        profile_photo_filename = f"{customer_profile_id}.jpg"  
-        return {"photo_url": f"{BASE_URL}/customer/image/add_customer_profile_image/{profile_photo_filename}"}
+    # Construct the profile photo filename
+    profile_photo_filename = f"{user_id}.jpg"
+    profile_photo_path = os.path.join(UPLOAD_DIR_CUSTOMER_PROFILE, profile_photo_filename)
+        
+    # Check if the user has a profile image
+    if os.path.exists(profile_photo_path):
+        photo_url = f"{BASE_URL}/customer/image/add_customer_profile_image/{profile_photo_filename}"
     else:
-        # Handle case where no customer profile is found
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer profile not found")
+        # Use the URL of the default image
+        photo_url = f"{BASE_URL}/customer/image/add_customer_profile_image/{DEFAULT_IMAGE_FILENAME}"
+    
+    return {"photo_url": photo_url}
+
+
+
+
 #-------------------------------------------------------------------------------------------------------
 @router.post('/update/customer/', response_model=CustomerRegisterBaseForUpdate)
 def update_customer(
