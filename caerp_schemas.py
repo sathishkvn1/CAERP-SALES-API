@@ -872,7 +872,7 @@ class CustomerRegisterBase(BaseModel):
     state_id: Optional[int] = None
     country_id: Optional[int] = None
     email_id: Optional[str] = None
-    # password: str
+    password: str
 
 class CustomerRegisterBaseForUpdate(BaseModel):
     
@@ -1243,14 +1243,28 @@ class AdminUserActiveInactiveSchema(BaseModel):
      is_active: BooleanFlag = 'yes'
      
      
-class InstallmentCreate(BaseModel):
-    number_of_installments: int
-    is_active: BooleanFlag 
-    active_from_date: Optional[date] = None
+# class InstallmentCreate(BaseModel):
+#     number_of_installments: int
+#     is_active: BooleanFlag 
+#     active_from_date: Optional[date] = None
+#     installment_name: str
+#     payment_rate: float
+#     due_date: date
+   
+
+#     class Config:
+#         orm_mode = True
+
+class InstallmentDetail(BaseModel):
     installment_name: str
     payment_rate: float
     due_date: date
-   
+
+class InstallmentCreate(BaseModel):
+    number_of_installments: int
+    is_active: str
+    active_from_date: Optional[date] = None
+    installment_details: List[InstallmentDetail]
 
     class Config:
         orm_mode = True

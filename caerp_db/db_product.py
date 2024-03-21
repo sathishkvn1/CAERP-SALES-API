@@ -6,7 +6,7 @@ from caerp_auth.authentication import authenticate_user
 
 
 from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
-from caerp_schemas import AdminUserBaseForDelete, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
+from caerp_schemas import AdminUserBaseForDelete, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
@@ -379,6 +379,45 @@ def get_installment_details_by_id(db: Session, id: int):
 
 
 
+# def create_installment_master(db: Session, installment_data: InstallmentCreate, user_id: int):
+#     db_installment_master = InstallmentMaster(
+#         number_of_installments=installment_data.number_of_installments,
+#         is_active=installment_data.is_active,
+#         active_from_date=datetime.utcnow(),  
+#         created_by=user_id
+#         # Add other attributes as needed
+#     )
+#     db.add(db_installment_master)
+#     db.commit()
+#     db.refresh(db_installment_master)
+#     return db_installment_master
+
+
+# def create_installment_details(db: Session, installment_master_id: int, installment_data: InstallmentCreate, user_id: int):
+#     installment_details = []
+#     print(f"installment_master_id: {installment_master_id}")
+#     print(f"installment_name: {installment_data.installment_name}")
+#     print(f"payment_rate: {installment_data.payment_rate}")
+#     print(f"due_date: {installment_data.due_date}")
+#     print(f"created_by: {user_id}")
+    
+#     installment_detail = InstallmentDetails(
+#         installment_master_id=installment_master_id,
+#         installment_name=installment_data.installment_name,
+#         payment_rate=installment_data.payment_rate,
+#         due_date=installment_data.due_date,
+#         created_by=user_id
+#     )
+    
+#     db.add(installment_detail)
+#     db.commit()
+#     db.refresh(installment_detail)
+    
+#     installment_details.append(installment_detail)
+    
+#     return installment_details
+
+
 def create_installment_master(db: Session, installment_data: InstallmentCreate, user_id: int):
     db_installment_master = InstallmentMaster(
         number_of_installments=installment_data.number_of_installments,
@@ -392,20 +431,18 @@ def create_installment_master(db: Session, installment_data: InstallmentCreate, 
     db.refresh(db_installment_master)
     return db_installment_master
 
-
-def create_installment_details(db: Session, installment_master_id: int, installment_data: InstallmentCreate, user_id: int):
-    installment_details = []
+def create_installment_details(db: Session, installment_master_id: int, installment_detail_data: InstallmentDetail, user_id: int):
     print(f"installment_master_id: {installment_master_id}")
-    print(f"installment_name: {installment_data.installment_name}")
-    print(f"payment_rate: {installment_data.payment_rate}")
-    print(f"due_date: {installment_data.due_date}")
+    print(f"installment_name: {installment_detail_data.installment_name}")
+    print(f"payment_rate: {installment_detail_data.payment_rate}")
+    print(f"due_date: {installment_detail_data.due_date}")
     print(f"created_by: {user_id}")
     
     installment_detail = InstallmentDetails(
         installment_master_id=installment_master_id,
-        installment_name=installment_data.installment_name,
-        payment_rate=installment_data.payment_rate,
-        due_date=installment_data.due_date,
+        installment_name=installment_detail_data.installment_name,
+        payment_rate=installment_detail_data.payment_rate,
+        due_date=installment_detail_data.due_date,
         created_by=user_id
     )
     
@@ -413,9 +450,8 @@ def create_installment_details(db: Session, installment_master_id: int, installm
     db.commit()
     db.refresh(installment_detail)
     
-    installment_details.append(installment_detail)
-    
-    return installment_details
+    return [installment_detail]
+
 
 
 def update_installment_master(db: Session, installment_id: int, data: dict, user_id: int):
