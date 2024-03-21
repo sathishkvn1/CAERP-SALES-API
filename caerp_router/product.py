@@ -294,7 +294,7 @@ def save_product_module(
             
                 module_id = new_product.id
                 file_content = image_file.file.read()
-                file_path = f"{UPLOAD_DIR_MODULE}/{module_id}.mp4"
+                file_path = f"{UPLOAD_DIR_MODULE}/{module_id}.jpg"
                 with open(file_path, "wb") as f:
                     f.write(file_content)
   
@@ -600,37 +600,15 @@ def get_all_installment_details_by_status(db: Session, deleted_status: DeletedSt
 #     return installment_details
 
 #-----------------------------------------------------------
+
+
+
 # @router.post("/save_installments/", response_model=None)
 # def create_installments(
 #     installment_data: InstallmentCreate,
 #     db: Session = Depends(get_db),
 #     token: str = Depends(oauth2.oauth2_scheme)
 # ):
-#     """
-#     Create installments.
-
-#     This endpoint allows users to create installment records along with their details.
-
-#     - **installment_data**: The data for creating the installment records. Should contain the following fields:
-#         - `number_of_installments` (integer): The total number of installments.
-#         - `is_active` 
-#         indicating whether the installment is active.
-#         - `active_from_date` (date, optional): The date from which the installment becomes active. (Format: YYYY-MM-DD)
-#         - `installment_details` (list): Details of each installment. Each item in the list should contain the following fields:
-#             - `installment_name` (string): The name of the installment.
-#             - `payment_rate` (float): The payment rate for the installment.
-#             - `due_date` (date): The due date for the installment payment. (Format: YYYY-MM-DD)
-
-#     - **db**: The database session dependency.
-#     - **token**: The OAuth2 token for authentication.
-
-#     Returns:
-#         - None
-
-#     Raises:
-#         - HTTPException(status_code=401): If the token is missing or invalid.
-#         - HTTPException(status_code=500): If an error occurs during the creation process.
-#     """
 #     if not token:
 #         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     
@@ -646,9 +624,8 @@ def get_all_installment_details_by_status(db: Session, deleted_status: DeletedSt
 #     # Create the installment details records
 #     installment_details = []
 #     for detail in installment_data.installment_details:
-#         # for _ in range(installment_data.number_of_installments):
-#             installment_detail = db_product.create_installment_details(db, installment_master.id, detail, user_id)
-#             installment_details.append(installment_detail)
+#         installment_detail = db_product.create_installment_details(db, installment_master.id, detail, user_id)
+#         installment_details.append(installment_detail)  # Append each installment detail once
     
 #     print(f"Created installment details: {installment_details}")    
 #     return installment_details
@@ -666,20 +643,16 @@ def create_installments(
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
     
-    print(f"User ID: {user_id}")
-    print(f"Installment Data: {installment_data}")
+    # print(f"User ID: {user_id}")
+    # print(f"Installment Data: {installment_data}")
     
-    # Create the installment master record
-    installment_master = db_product.create_installment_master(db, installment_data, user_id)
+    # Create the installment records
+    installment_master, installment_details = db_product.create_installments(db, installment_data, user_id)
     
-    # Create the installment details records
-    installment_details = []
-    for detail in installment_data.installment_details:
-        installment_detail = db_product.create_installment_details(db, installment_master.id, detail, user_id)
-        installment_details.append(installment_detail)  # Append each installment detail once
-    
-    print(f"Created installment details: {installment_details}")    
-    return installment_details
+    # print(f"Created installment master: {installment_master}")
+    # print(f"Created installment details: {installment_details}")    
+    return {"installment_master": installment_master, "installment_details": installment_details}
+
 
 
 
