@@ -256,7 +256,17 @@ def create_admin_user(
         }]
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
   
-#---------------------------------------------------------------------------------------------------------------  
+#--------------------------------------------------------------------------------------------------------------- 
+
+
+@router.get("/images/admin_profile_picture/{user_id}", response_model=dict)
+def get_admin_profile_picture_url(user_id: int):
+    
+    profile_photo_filename = f"{user_id}.jpg"  
+    return {"photo_url": f"{BASE_URL}/admin/add/admin_users/{profile_photo_filename}"} 
+
+#---------------------------------------------------------------------------------------------------------------
+
 @router.post('/update/admin_users/{id}', response_model=AdminUserUpdateSchema)
 def update_admin_user(
     id: int,
