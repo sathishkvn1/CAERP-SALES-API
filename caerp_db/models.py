@@ -1043,3 +1043,12 @@ class SmsTemplates(caerp_base):
      modified_on             = Column(DateTime, default=None)
      modified_by             = Column(Integer, default=None)
      is_active               = Column(Enum('yes', 'no'), nullable=False, default='yes')
+     
+     
+class CustomerPasswordReset(caerp_base):
+    __tablename__ = 'customer_password_reset_requests'
+
+    id                      = Column(Integer, primary_key=True, index=True)
+    customer_id             = Column(Integer, nullable=False)
+    request_token           = Column(String(500), nullable=False)
+    request_timestamp       = Column(DateTime, nullable=False, default=func.now())

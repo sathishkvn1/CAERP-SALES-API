@@ -1612,3 +1612,14 @@ class Email(BaseModel):
     messageBody: str
     subject: str
     messageType: str = "NO_REPLY"
+    
+    
+    
+class GetCustomerPasswordResetSchema(BaseModel):
+    id			    :int
+    customer_id 	:int
+    request_token 	: str
+    request_timestamp :Optional[datetime]
+
+class CustomerPasswordResetSchema(BaseModel):
+    email_id : str

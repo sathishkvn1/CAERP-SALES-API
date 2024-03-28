@@ -1002,48 +1002,6 @@ def email_verification(
 
 
 
-# @router.post("/resend_otp_mobile")
-# def resend_otp_mobile(    
-    
-#     db:Session = Depends(get_db),
-#     token: str = Depends(oauth2.oauth2_scheme)
-#     ):
-
-#     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-   
-#     user_id = payload.get("user_id")
-#     # print("user_id : ",user_id)
-#     customer = db_customer.get_customer_by_id(db, user_id)
-    
-    
-#     # customer = db_customer.get_user_by_mobile(db,mobile_number)
-#     mobile_otp_value = random.randint(pow(10,5), pow(10,5+1)-1)  
-#     new_otp = db_customer.create_otp(db, mobile_otp_value,user_id)
-#     mobile_otp_id = new_otp.id    
-#     message= f"{mobile_otp_value}is your SECRET One Time Password (OTP) for your mobile registration. Please use this password to complete your transaction. From:BRQ GLOB TECH"
-#     temp_id= 1607100000000128308
-#     # sms_type= 'OTP'
-#     # template_data = db_customer.get_templates_by_type(db,sms_type)
-#     # temp_id= template_data.template_id
-#     print("user id : ", user_id)
-#     try:
-#         send_message.send_sms_otp(customer.mobile_number,message,temp_id,db)
-#         # payload["mobile_otp_id"] = mobile_otp_id
-#         # new_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-#         data={
-#                     "mobile_otp_id": mobile_otp_id,                    
-#                     'user_id'     : user_id
-#                 }
-#         access_token = oauth2.create_access_token(data=data)
-        
-#         return {'message' : 'Success',
-#                 'access_token'  : access_token
-#                 }
-#     #  db_send_sms.send_sms(new_customer.mobile_number,message,temp_id)
-#     except Exception as e:
-#         # Handle sms sending failure
-#         print(f"Failed to send message: {str(e)}")
-
 @router.post("/resend_otp_mobile")
 def resend_otp_mobile(    
     
@@ -1081,6 +1039,8 @@ def resend_otp_mobile(
     except Exception as e:
         # Handle sms sending failure
         print(f"Failed to send message: {str(e)}")
+
+
 
 
 @router.post("/resend_otp_email/{email_id}")
@@ -1121,3 +1081,39 @@ def resend_otp_email(
         # Handle email sending failure
         # For example, log the error and inform the user that email verification failed
         print(f"Failed to send email: {str(e)}")
+
+
+
+@router.post('/customer_reset_password_request') 
+def save_customer_password_reset_request(email:str, db:Session = Depends(get_db)):
+    customer = db_customer.get_customer_by_email(db, email) 
+    if customer is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=" Please Check your Email")
+    else:
+        
+        customer_id = customer.id
+        customer_name = customer.first_name + ' ' + customer.last_name
+        new_request= db_customer.save_customer_password_reset_request(db,customer_id,email,customer_name)
+    return new_request
+
+
+@router.get("/customer_password_reset/{token}")
+def customer_password_reset(
+                     password: str,
+                     token: str,
+                     db: Session = Depends(get_db),
+                    # token: str = Depends(oauth2.oauth2_scheme)
+                    ):
+    
+    
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+   
+    customer_id = payload.get("user_id")
+    time_expire = payload.get("expiry_time")
+
+    return db_customer.customer_password_reset(db, customer_id, password,time_expire)
+   
+
+
+    
+    

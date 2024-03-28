@@ -1,6 +1,6 @@
 from fastapi import HTTPException,status
 from sqlalchemy.orm import Session
-from caerp_db.models import CustomerCompanyProfile, CustomerInstallmentDetails, CustomerInstallmentMaster, CustomerNews, CustomerRegister, CustomerSalesQuery, OtpGeneration, SmsTemplates
+from caerp_db.models import CustomerCompanyProfile, CustomerInstallmentDetails, CustomerInstallmentMaster, CustomerNews, CustomerPasswordReset, CustomerRegister, CustomerSalesQuery, OtpGeneration, SmsTemplates
 from caerp_schemas import CustomerCompanyProfileSchema, CustomerInstallmentDetailsBase, CustomerInstallmentMasterBase, CustomerNewsBase, CustomerRegisterBase, CustomerRegisterBaseForUpdate, CustomerSalesQueryBase
 from caerp_db.hash import Hash
 from caerp_db.database import get_db
@@ -17,20 +17,14 @@ from datetime import date,datetime,timedelta
 from caerp_auth import oauth2
 
 import  os
+
+from settings import WEB_BASE_URL
 UPLOAD_DIR_COMPANYLOGO = "uploads/company_logo"
 
 
 
 
-# def create_customer(db: Session, customer_data: CustomerRegisterBase):
-#     customer_data_dict = customer_data.dict()
-#     customer_data_dict["created_on"] = datetime.utcnow()
-#     customer_data_dict["password"] = Hash.bcrypt(customer_data_dict["password"])
-#     new_customer = CustomerRegister(**customer_data_dict)
-#     db.add(new_customer)
-#     db.commit()
-#     db.refresh(new_customer)
-#     return new_customer
+
 #---------------------------------------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------------------
 def create_customer(db: Session, customer_data: CustomerRegisterBase):
@@ -79,7 +73,7 @@ def create_customer(db: Session, customer_data: CustomerRegisterBase):
         # For example, log the error and inform the user that email verification failed
         print(f"Failed to send email: {str(e)}")
 
-    #---------------------------------------------
+    #------------------------------------------------------------------------------------------
 
     data={
                     "mobile_otp_id": mobile_otp_id,
@@ -210,22 +204,6 @@ def get_customer_by_expiring_date(db: Session,expiring_on: date):
 def get_customer_between_dates(db: Session, start_date: date, end_date: date):
     return db.query(CustomerRegister).filter(CustomerRegister.created_on.between(start_date, end_date)).all()
 
-# def update_customer(db: Session, customer_id: int,role_input: CustomerRegisterBase):
-#     updated_customer = db.query(CustomerRegister).filter(CustomerRegister.id == customer_id).first()
-
-#     if updated_customer is None:
-#         raise HTTPException(status_code=404, detail="customer not found")
-
-#     for field, value in role_input.dict(exclude_unset=True).items():
-#         setattr(updated_customer, field, value)
-
-#     # updated_customer.modified_by = modified_by
-#     # updated_customer.modified_on = datetime.utcnow()
-
-#     db.commit()
-#     db.refresh(updated_customer)
-
-#     return updated_customer
 
 
     
@@ -523,6 +501,10 @@ def save_customer_installment_master(db: Session, data: CustomerInstallmentMaste
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
     
 
+def get_customer_by_id(db: Session,id: int):
+        
+        return db.query(CustomerRegister).filter(CustomerRegister.id== id).first() 
+    
 
 def get_all_customer_installment_master_details(db: Session):
     return db.query(CustomerInstallmentMaster).all()
@@ -565,4 +547,99 @@ def get_customer_company_profile(db: Session, user_id: int):
 
 #---------------------------------------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------------------
+
+def save_customer_password_reset_request(db: Session, customer_id:int, email: str,customer_name: str):
+   
+    current_time = datetime.utcnow() 
+    expiry_time = current_time + timedelta(minutes=5)
+    data={
+                    'expiry_time': expiry_time.strftime("%Y-%m-%d %H:%M:%S") , # Format time as string,                   
+                    'user_id'     : customer_id
+                }
+    access_token = oauth2.create_access_token(data=data)
+    new_data=CustomerPasswordReset(
+        customer_id=customer_id,
+        request_token=access_token,
+        request_timestamp=current_time
+        
+    )
+    db.add(new_data)
+    db.commit()
+    db.refresh(new_data)
+    # return new_data
+    response_data = {
+        "id": new_data.id,
+        "customer_id": new_data.customer_id,
+        "request_token": new_data.request_token,
+        # "request_timestamp": new_data.request_timestamp.strftime("%Y-%m-%d %H:%M:%S")  # Convert datetime to string
+    } 
+    print(access_token)
+    template_content = read_template('email-verification.html')
+    dynamic_content = {"verificationUrl": f'{WEB_BASE_URL}/reset_password/?token={access_token}',
+                        "Name": f'{customer_name}'} 
+    email_body = render_template(template_content, dynamic_content)
+    email = Email(
+        messageTo=email,
+        subject='Reset Password Link',
+        messageBody=email_body,
+        messageType="NO_REPLY"
+    )
+    
+    try:
+        send_email.send_email(email, db)
+        return {"Value":"Success","Message":"Password reset link has been sent to your mail"}
+    except Exception as e:
+        # Handle email sending failure
+        # For example, log the error and inform the user that email verification failed
+        return {"Value": "Error", "Message": f"Failed to send password reset link. Error: {str(e)}. Please try again later."}
+
+
+
+
+
+# Read email template from file
+def read_template(template_name):
+    template_dir = "templates"
+    template_filename = os.path.join(template_dir, template_name)
+    with open(template_filename, "r") as template_file:
+        template_content = template_file.read()
+    return template_content
+
+# Replace placeholders with dynamic content
+def render_template(template_content, dynamic_content):
+    # Replace placeholders in the template with dynamic content
+    for key, value in dynamic_content.items():
+        template_content = template_content.replace("{{" + key + "}}", str(value))
+    return template_content
+
+
+def customer_password_reset(db: Session, customer_id: int, password: str,  time_expire: datetime):
+    existing_link = db.query(CustomerPasswordReset).filter(CustomerPasswordReset.request_timestamp == time_expire).first()
+    if existing_link is None:
+        raise HTTPException(status_code=404, detail="Link Has Expired")
+
+    hashed_password =Hash.bcrypt(password)
+    existing_customer = db.query(CustomerRegister).filter(CustomerRegister.id == customer_id).first()
+
+    if existing_customer is None:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    existing_customer.password = hashed_password
+   
+    try:
+        db.commit()  # Commit changes to the database
+    except Exception as e:
+        db.rollback()  # Rollback changes if an error occurs
+        raise HTTPException(status_code=500, detail=f"Failed to reset password: {str(e)}")
+
+
+    return {
+        "message": "Password reset successful",
+
+    }
+
+
+def get_customer_by_email(db: Session,email: str):
+        
+        return db.query(CustomerRegister).filter(CustomerRegister.email_id== email).first() 
 
