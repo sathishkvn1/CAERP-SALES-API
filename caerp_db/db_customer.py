@@ -613,29 +613,63 @@ def render_template(template_content, dynamic_content):
     return template_content
 
 
+# def customer_password_reset(db: Session, customer_id: int, password: str,  time_expire: datetime):
+#     existing_link = db.query(CustomerPasswordReset).filter(CustomerPasswordReset.request_timestamp == time_expire).first()
+#     if existing_link is None:
+#         raise HTTPException(status_code=404, detail="Link Has Expired")
+
+#     hashed_password =Hash.bcrypt(password)
+#     existing_customer = db.query(CustomerRegister).filter(CustomerRegister.id == customer_id).first()
+
+#     if existing_customer is None:
+#         raise HTTPException(status_code=404, detail="Customer not found")
+
+#     existing_customer.password = hashed_password
+   
+#     try:
+#         db.commit()  # Commit changes to the database
+#     except Exception as e:
+#         db.rollback()  # Rollback changes if an error occurs
+#         raise HTTPException(status_code=500, detail=f"Failed to reset password: {str(e)}")
+
+
+#     return {
+#         "message": "Password reset successful",
+
+#     }
+
 def customer_password_reset(db: Session, customer_id: int, password: str,  time_expire: datetime):
+    print("Searching for password reset link in the database with expiry time:", time_expire)
+    
     existing_link = db.query(CustomerPasswordReset).filter(CustomerPasswordReset.request_timestamp == time_expire).first()
+    
     if existing_link is None:
+        print("Password reset link not found or expired.")
         raise HTTPException(status_code=404, detail="Link Has Expired")
 
-    hashed_password =Hash.bcrypt(password)
+    print("Password reset link found.")
+
+    hashed_password = Hash.bcrypt(password)
     existing_customer = db.query(CustomerRegister).filter(CustomerRegister.id == customer_id).first()
 
     if existing_customer is None:
+        print("Customer not found in the database.")
         raise HTTPException(status_code=404, detail="Customer not found")
 
+    print("Customer found. Resetting password...")
+
     existing_customer.password = hashed_password
-   
+
     try:
         db.commit()  # Commit changes to the database
+        print("Password reset successful.")
     except Exception as e:
         db.rollback()  # Rollback changes if an error occurs
+        print("Failed to reset password:", str(e))
         raise HTTPException(status_code=500, detail=f"Failed to reset password: {str(e)}")
-
 
     return {
         "message": "Password reset successful",
-
     }
 
 

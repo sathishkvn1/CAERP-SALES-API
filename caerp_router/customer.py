@@ -1097,6 +1097,22 @@ def save_customer_password_reset_request(email:str, db:Session = Depends(get_db)
     return new_request
 
 
+# @router.get("/customer_password_reset/{token}")
+# def customer_password_reset(
+#                      password: str,
+#                      token: str,
+#                      db: Session = Depends(get_db),
+#                     # token: str = Depends(oauth2.oauth2_scheme)
+#                     ):
+    
+    
+#     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+   
+#     customer_id = payload.get("user_id")
+#     time_expire = payload.get("expiry_time")
+
+#     return db_customer.customer_password_reset(db, customer_id, password,time_expire)
+
 @router.get("/customer_password_reset/{token}")
 def customer_password_reset(
                      password: str,
@@ -1105,13 +1121,17 @@ def customer_password_reset(
                     # token: str = Depends(oauth2.oauth2_scheme)
                     ):
     
+    print("Received password reset request with token:", token)
     
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
    
     customer_id = payload.get("user_id")
     time_expire = payload.get("expiry_time")
+    
+    print("Decoded token payload - Customer ID:", customer_id)
+    print("Decoded token payload - Expiry Time:", time_expire)
 
-    return db_customer.customer_password_reset(db, customer_id, password,time_expire)
+    return db_customer.customer_password_reset(db, customer_id, password, time_expire)
    
 
 
