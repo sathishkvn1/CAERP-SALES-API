@@ -257,8 +257,24 @@ def create_admin_user(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
   
 #--------------------------------------------------------------------------------------------------------------- 
+@router.get('/check_username/{username}', response_model=str)
+def check_username_availability(
+    username: str,
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2.oauth2_scheme)
+):
+    # Check authorization
+    if not token:
+        raise HTTPException(status_code=401, detail="Token is missing")
+
+    user = db.query(AdminUser).filter(AdminUser.user_name == username).first()
+    if user:
+        raise HTTPException(status_code=400, detail="Username already exists. Please try another name.")
+    else:
+        return "Username available."
 
 
+#--------------------------------------------------------------------------------------------------------------- 
 @router.get("/images/admin_profile_picture/{user_id}", response_model=dict)
 def get_admin_profile_picture_url(user_id: int):
     
@@ -360,20 +376,35 @@ def update_admin_user_image(
 
 #---------------------------------------------------------------------------------------------------------------
 
-@router.delete("/delete/admin_user/{id}", response_model=AdminUserDeleteSchema)
-def delete_admin_user(
+# @router.delete("/delete/admin_user/{id}", response_model=AdminUserDeleteSchema)
+# def delete_admin_user(
                      
+#                      id: int,
+#                      role_input: AdminUserCreateSchema,
+#                      db: Session = Depends(get_db),
+#                      token: str = Depends(oauth2.oauth2_scheme)):
+#     if not token:
+#             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+
+#     auth_info = authenticate_user(token)
+#     user_id = auth_info["user_id"]
+
+#     return db_admin.delete_admin_user(db, id, role_input, deleted_by=user_id)
+
+
+@router.delete("/delete/admin_user/{id}")
+def delete_admin_user(
+                    
                      id: int,
-                     role_input: AdminUserCreateSchema,
                      db: Session = Depends(get_db),
                      token: str = Depends(oauth2.oauth2_scheme)):
-    if not token:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
 
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     auth_info = authenticate_user(token)
     user_id = auth_info["user_id"]
+    return db_admin.delete_admin_user(db, id, deleted_by=user_id)
 
-    return db_admin.delete_admin_user(db, id, role_input, deleted_by=user_id)
 
 
 #---------------------------------------------------------------------------------------------------------------

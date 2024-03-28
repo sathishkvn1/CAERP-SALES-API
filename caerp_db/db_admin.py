@@ -229,7 +229,7 @@ def get_admin_users_by_id(db: Session, id: int):
 
 
 
-def delete_admin_user(db: Session, id: int, role_input: AdminUserCreateSchema, deleted_by: int):
+def delete_admin_user(db: Session, id: int,deleted_by: int):
     deleted_user = db.query(AdminUser).filter(AdminUser.id == id).first()
     if deleted_user is None:
         raise HTTPException(status_code=404, detail="User not found")
