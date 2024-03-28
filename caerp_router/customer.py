@@ -1113,12 +1113,13 @@ def save_customer_password_reset_request(email:str, db:Session = Depends(get_db)
 
 #     return db_customer.customer_password_reset(db, customer_id, password,time_expire)
 
-@router.get("/customer_password_reset/{token}")
+
+@router.get("/customer_password_reset")
 def customer_password_reset(
                      password: str,
-                     token: str,
+                    #  token: str,
                      db: Session = Depends(get_db),
-                    # token: str = Depends(oauth2.oauth2_scheme)
+                     token: str = Depends(oauth2.oauth2_scheme)
                     ):
     
     print("Received password reset request with token:", token)
