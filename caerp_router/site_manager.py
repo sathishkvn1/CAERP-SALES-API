@@ -546,7 +546,8 @@ def save_image_gallery(
     
     gallery_id: int = 0,  # Default to 0 for add operation
     data: ImageGallerySchema = Depends(),
-    image_file: UploadFile = File(...),
+    image_file: UploadFile = File(None),  
+    
     db: Session = Depends(get_db),
     token: str = Depends(oauth2.oauth2_scheme)
 ):
