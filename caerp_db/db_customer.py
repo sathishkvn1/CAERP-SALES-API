@@ -27,6 +27,53 @@ UPLOAD_DIR_COMPANYLOGO = "uploads/company_logo"
 
 #---------------------------------------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------------------
+# def create_customer(db: Session, customer_data: CustomerRegisterBase):
+#     customer_data_dict = customer_data.dict()
+#     customer_data_dict["created_on"] = datetime.utcnow()
+#     customer_data_dict["password"] = Hash.bcrypt(customer_data_dict["password"])
+#     new_customer = CustomerRegister(**customer_data_dict)
+    
+#     db.add(new_customer)
+#     db.commit()
+#     db.refresh(new_customer)
+#     customer_id= new_customer.id
+#     #--- otp for mobile verification --------
+#     # mobile_otp_data= db_send_email.generate_otp(5)  # Generate OTP data
+#     # mobile_otp_value = mobile_otp_data["random_value"]
+#     mobile_otp_value = random.randint(pow(10,5), pow(10,5+1)-1)  
+#     new_otp = create_otp(db, mobile_otp_value,customer_id)
+#     mobile_otp_id = new_otp.id    
+#     message= f"{mobile_otp_value}is your SECRET One Time Password (OTP) for your mobile registration. Please use this password to complete your transaction. From:BRQ GLOB TECH"
+#     temp_id= 1607100000000128308
+    
+#     try:
+#         send_message.send_sms_otp(new_customer.mobile_number,message,temp_id,db)
+#     #  db_send_sms.send_sms(new_customer.mobile_number,message,temp_id)
+#     except Exception as e:
+#         # Handle sms sending failure
+#         print(f"Failed to send message: {str(e)}")
+#     #-------------------------------------------
+#     #------otp for email verification ---------------
+#     # otp_data= db_send_email.generate_otp(5)  # Generate OTP data
+#     # otp_value = otp_data["random_value"]  
+#     otp_value = random.randint(pow(10,5), pow(10,5+1)-1)
+#     new_email_otp = create_otp(db, otp_value,customer_id)
+#     email_otp_id = new_email_otp.id
+#     email = Email(
+#         messageTo = new_customer.email_id,
+#         subject=  "Email verification",
+#         messageBody = f"{otp_value} , is one time password for compleating your registration",
+#         messageType= "NO_REPLY"
+#     )
+    
+#     try:
+#         send_email.send_email(email, db)
+#     except Exception as e:
+#         # Handle email sending failure
+#         # For example, log the error and inform the user that email verification failed
+#         print(f"Failed to send email: {str(e)}")
+
+
 def create_customer(db: Session, customer_data: CustomerRegisterBase):
     customer_data_dict = customer_data.dict()
     customer_data_dict["created_on"] = datetime.utcnow()
@@ -43,11 +90,21 @@ def create_customer(db: Session, customer_data: CustomerRegisterBase):
     mobile_otp_value = random.randint(pow(10,5), pow(10,5+1)-1)  
     new_otp = create_otp(db, mobile_otp_value,customer_id)
     mobile_otp_id = new_otp.id    
-    message= f"{mobile_otp_value}is your SECRET One Time Password (OTP) for your mobile registration. Please use this password to complete your transaction. From:BRQ GLOB TECH"
-    temp_id= 1607100000000128308
-    
+    # message= f"{mobile_otp_value}is your SECRET One Time Password (OTP) for your mobile registration. Please use this password to complete your transaction. From:BRQ GLOB TECH"
+    # temp_id= 1607100000000128308
+    sms_type= 'OTP'
+    print('SMS Type : ', sms_type)
+    template_data = get_templates_by_type(db,sms_type)
+    print('template ID : ',template_data)
+    temp_id= template_data.template_id
+    template_message = template_data.message_template
+    replace_values = [ mobile_otp_value, 'mobile registration']
+    placeholder = "{#var#}"
+    for value in replace_values:
+        template_message = template_message.replace(placeholder, str(value),1)
+            
     try:
-        send_message.send_sms_otp(new_customer.mobile_number,message,temp_id,db)
+        send_message.send_sms_otp(new_customer.mobile_number,template_message,temp_id,db)
     #  db_send_sms.send_sms(new_customer.mobile_number,message,temp_id)
     except Exception as e:
         # Handle sms sending failure
@@ -73,6 +130,19 @@ def create_customer(db: Session, customer_data: CustomerRegisterBase):
         # For example, log the error and inform the user that email verification failed
         print(f"Failed to send email: {str(e)}")
 
+    #---------------------------------------------
+
+    data={
+                    "mobile_otp_id": mobile_otp_id,
+                    'email_otp_id': email_otp_id  ,
+                    'user_id'     : customer_id
+                }
+    access_token = oauth2.create_access_token(data=data)
+   
+    return {'access_token': access_token,
+                'token_type': 'bearer'
+                }
+   
     #------------------------------------------------------------------------------------------
 
     data={
@@ -613,35 +683,16 @@ def render_template(template_content, dynamic_content):
     return template_content
 
 
-# def customer_password_reset(db: Session, customer_id: int, password: str,  time_expire: datetime):
-#     existing_link = db.query(CustomerPasswordReset).filter(CustomerPasswordReset.request_timestamp == time_expire).first()
-#     if existing_link is None:
-#         raise HTTPException(status_code=404, detail="Link Has Expired")
 
-#     hashed_password =Hash.bcrypt(password)
-#     existing_customer = db.query(CustomerRegister).filter(CustomerRegister.id == customer_id).first()
-
-#     if existing_customer is None:
-#         raise HTTPException(status_code=404, detail="Customer not found")
-
-#     existing_customer.password = hashed_password
-   
-#     try:
-#         db.commit()  # Commit changes to the database
-#     except Exception as e:
-#         db.rollback()  # Rollback changes if an error occurs
-#         raise HTTPException(status_code=500, detail=f"Failed to reset password: {str(e)}")
-
-
-#     return {
-#         "message": "Password reset successful",
-
-#     }
 
 def customer_password_reset(db: Session, customer_id: int, password: str,  time_expire: datetime):
     print("Searching for password reset link in the database with expiry time:", time_expire)
     
-    existing_link = db.query(CustomerPasswordReset).filter(CustomerPasswordReset.request_timestamp == time_expire).first()
+    time_expire_datetime = datetime.strptime(time_expire, '%Y-%m-%d %H:%M:%S')
+
+# Add timedelta to the datetime object
+    time_expire_updated = time_expire_datetime - timedelta(minutes=5)
+    existing_link = db.query(CustomerPasswordReset).filter(CustomerPasswordReset.request_timestamp == time_expire_updated).first()
     
     if existing_link is None:
         print("Password reset link not found or expired.")
