@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends,HTTPException,status
 from typing import List
 from caerp_db.models import AdminSubMenuPermission, ClientMainMenu
 from caerp_auth.authentication import authenticate_user
-from caerp_schemas import AdminMainMenuCreate, AdminMainMenuDeleteSchema, AdminSubMenuCreate, AdminSubMenuDeleteSchema, ClientMenu, ClientMenuBase, ClientMenuResponse, PublicMainMenuCreate, PublicSubMenuCreate, PublicSubSubMenuCreate, SiteLegalAboutUsBaseResponse
+from caerp_schemas import AdminMainMenuCreate, AdminMainMenuDeleteSchema,  AdminSubMenuCreate, AdminSubMenuDeleteSchema, ClientMenu, ClientMenuBase, ClientMenuResponse, PublicMainMenuCreate, PublicSubMenuCreate, PublicSubSubMenuCreate, SiteLegalAboutUsBaseResponse
 
 from sqlalchemy.orm import Session
 from caerp_db.database import get_db
@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from caerp_auth.oauth2 import get_current_user,oauth2_scheme,SECRET_KEY, ALGORITHM
 from caerp_auth import oauth2
 from sqlalchemy import text
-from UserDefinedConstants.user_defined_constants import DeletedStatus
+from UserDefinedConstants.user_defined_constants import ActionType, DeletedStatus
 
 
 from jose import JWTError, jwt
@@ -117,19 +117,30 @@ def get_main_menu_data(
 #--------------------------------------------------------------------------------------------------------------
 
 
-@router.post('/admin_menu/add/admin_main_menu', response_model=AdminMainMenuCreate)
-def create_admin_main_menu(
-        request: AdminMainMenuCreate,
+
+@router.post('/admin_menu/save/admin_main_menu/{id}', response_model=AdminMainMenuCreate)
+def save_admin_main_menu(
+        data: AdminMainMenuCreate,
+        id: int =0,  # Default to 0 for add operation
         db: Session = Depends(get_db),
-        token: str = Depends(oauth2.oauth2_scheme)
-):
+        token: str = Depends(oauth2.oauth2_scheme)):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     
     
-    auth_info = authenticate_user(token)
+    auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
-    new_user = db_menu.create_admin_main_menu(db, request, user_id)
+    try:
+        new_menu = db_menu.save_admin_main_menu(db, data,id,user_id)
     
-    return new_user
+        return new_menu
+    except Exception as e:
+        error_detail = [{
+            "loc": ["server"],
+            "msg": "Internal server error",
+            "type": "internal_server_error"
+        }]
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
 
 
  #--------------------------------------------------------------------------------------------------------------   
@@ -137,80 +148,75 @@ def create_admin_main_menu(
 
 
 
-@router.post("/admin_menu/update/admin_main_menu/{id}", response_model=AdminMainMenuCreate)
-def update_user_role(id: int,
-                     role_input: AdminMainMenuCreate,
-                     db: Session = Depends(get_db),
-                     token: str = Depends(oauth2.oauth2_scheme)):
-    auth_info = authenticate_user(token)
-    user_id = auth_info["user_id"] 
-    return db_menu.update_admin_main_menu(db, id, role_input, modified_by=user_id)
-
-
-#--------------------------------------------------------------------------------------------------------------   
-
-
-
-@router.delete("/admin_menu/delete/admin_main_menu/{id}", response_model=AdminMainMenuDeleteSchema)
+@router.delete("/admin_menu/delete/admin_main_menu/{id}")
 def delete_admin_main_menu(id: int,
-                     role_input: AdminMainMenuDeleteSchema,
-                     db: Session = Depends(get_db),
-                     token: str = Depends(oauth2.oauth2_scheme)):
+                           action: ActionType = ActionType.DELETE,
+                           token: str = Depends(oauth2.oauth2_scheme),
+                           db: Session = Depends(get_db)):
     if not token:
         raise HTTPException(status_code=401, detail="Token is missing")
+    auth_info = authenticate_user(token)
     
-    auth_info = authenticate_user(token)
-    user_id = auth_info["user_id"] 
-    return db_menu.delete_admin_main_menu(db, id, role_input, deleted_by=user_id)
+    user_id = auth_info["user_id"]
+    
+    return db_menu.delete_admin_main_menu(db, id, action, user_id)
 
 
 #--------------------------------------------------------------------------------------------------------------   
 
 
-@router.post('/admin_menu/add/admin_sub_menu/{main_menu_id}', response_model=AdminSubMenuCreate)
-def create_admin_sub_menu(
-        request: AdminSubMenuCreate,
+   
+
+@router.post('/admin_menu/save/admin_sub_menu/{id}/{main_menu_id}', response_model=AdminSubMenuCreate)
+def save_admin_sub_menu(
+        data: AdminSubMenuCreate,
+        id: int =0,  # Default to 0 for add operation
         main_menu_id: int = Path(..., title="Main Menu ID"),
-        token: str = Depends(oauth2.oauth2_scheme),
-        db: Session = Depends(get_db)
-):
-    auth_info = authenticate_user(token)
-    user_id = auth_info["user_id"] 
-    new_user = db_menu.create_admin_sub_menu(db, main_menu_id, request, user_id)
-    return new_user
-
-#--------------------------------------------------------------------------------------------------------------   
-
-
-
-@router.post('/admin_menu/update/admin_sub_menu/{main_menu_id}/{id}', response_model=AdminSubMenuCreate)
-def create_admin_sub_menu(
-        id: int,
-        request: AdminSubMenuCreate,
-        main_menu_id: int = Path(..., title="Main Menu ID"),
-        token: str = Depends(oauth2.oauth2_scheme),
-        db: Session = Depends(get_db)
-):
+        db: Session = Depends(get_db),
+        token: str = Depends(oauth2.oauth2_scheme)):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
     
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
-    new_user = db_menu.update_admin_sub_menu(id,db, main_menu_id, request, user_id)
-    return new_user
+    try:
+        new_menu = db_menu.save_admin_sub_menu(db, main_menu_id, data, user_id, id)
+   
+    
+        return new_menu
+    except Exception as e:
+        error_detail = [{
+            "loc": ["server"],
+            "msg": "Internal server error",
+            "type": "internal_server_error"
+        }]
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
+
+
+
+
+
 
 #--------------------------------------------------------------------------------------------------------------   
 
-
-@router.delete("/admin_menu/delete/admin_main_menu/{id}", response_model=AdminMainMenuDeleteSchema)
-def delete_admin_main_menu(id: int,
-                     role_input: AdminMainMenuDeleteSchema,
-                     db: Session = Depends(get_db),
-                     token: str = Depends(oauth2.oauth2_scheme)):
+@router.delete("/admin_menu/delete/admin_sub_menu/{id}", response_model=dict)
+def delete_admin_sub_menu(
+    id: int,
+    action: ActionType = ActionType.DELETE,
+    token: str = Depends(oauth2.oauth2_scheme),
+    db: Session = Depends(get_db)
+):
     if not token:
-        raise HTTPException(status_code=401, detail="Token is missing")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     
     auth_info = authenticate_user(token)
-    user_id = auth_info["user_id"] 
-    return db_menu.delete_admin_main_menu(db, id, role_input, deleted_by=user_id)
+    user_id = auth_info["user_id"]
+    
+    success, message = db_menu.delete_admin_sub_menu(db, id, action, user_id)
+    return {"success": success, "message": message}
+
+
 
 
 #--------------------------------------------------------------------------------------------------------------   
@@ -321,22 +327,39 @@ def save_client_menu(
 
 #--------------------------------------------------------------------------------------------------------------      
 
-@router.delete("/client_menu/delete/client_menu/{id}")
-def delete_client_menu(
+# @router.delete("/client_menu/delete/client_menu/{id}")
+# def delete_client_menu(
                      
-                     id: int,
-                     db: Session = Depends(get_db),
-                     token: str = Depends(oauth2.oauth2_scheme)):
+#                      id: int,
+#                      db: Session = Depends(get_db),
+#                      token: str = Depends(oauth2.oauth2_scheme)):
     
     
     
+#     if not token:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+
+#     auth_info = authenticate_user(token)
+#     user_id = auth_info["user_id"]
+    
+#     return db_menu.delete_client_menu(db, id, deleted_by=user_id)
+
+
+@router.delete("/client_menu/delete/client_menu/{id}", response_model=dict)
+def delete_client_menu(
+    id: int,
+    action: ActionType = ActionType.DELETE,  # Default to DELETE action
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2.oauth2_scheme)
+):
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
 
     auth_info = authenticate_user(token)
     user_id = auth_info["user_id"]
     
-    return db_menu.delete_client_menu(db, id, deleted_by=user_id)
+    success, message = db_menu.delete_client_menu(db, id, action, deleted_by=user_id)
+    return {"success": success, "message": message}
    
 #--------------------------------------------------------------------------------------------------------------      
 
@@ -381,7 +404,7 @@ def create_public_main_menu(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     auth_info = authenticate_user(token)
     user_id = auth_info["user_id"]
-    new_user = db_menu.create_public_main_menu(db, public_main_menu_create, user_id)
+    new_user = db_menu.s(db, public_main_menu_create, user_id)
     
     return new_user
 

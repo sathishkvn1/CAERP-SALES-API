@@ -446,6 +446,7 @@ class  AdminMainMenuDeleteSchema(BaseModel):
     message: str
     deleted_by: Optional[int]
     deleted_on: Optional[datetime]
+
     
 class AdminSubMenuCreate(BaseModel):
     # main_menu_id: int
@@ -638,6 +639,7 @@ class PrivacyPolicySchema(BaseModel):
         
 class PrivacyPolicyResponse(BaseModel):
     privacy_policy: List[PrivacyPolicySchema]
+    
     
 
 class TermsAndConditionSchema(BaseModel):

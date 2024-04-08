@@ -23,5 +23,9 @@ class BooleanFlag(str, Enum):
     yes = "yes"
     no = "no"
     
+class ActionType(str, Enum):
+    DELETE = 'DELETE'
+    UNDELETE = 'UNDELETE'
+    
 
     
