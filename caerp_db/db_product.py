@@ -379,79 +379,35 @@ def get_installment_details_by_id(db: Session, id: int):
 
 
 
-# def create_installment_master(db: Session, installment_data: InstallmentCreate, user_id: int):
-#     db_installment_master = InstallmentMaster(
-#         number_of_installments=installment_data.number_of_installments,
-#         is_active=installment_data.is_active,
-#         active_from_date=datetime.utcnow(),  
-#         created_by=user_id
-#         # Add other attributes as needed
-#     )
-#     db.add(db_installment_master)
-#     db.commit()
-#     db.refresh(db_installment_master)
-#     return db_installment_master
 
-
-# def create_installment_details(db: Session, installment_master_id: int, installment_data: InstallmentCreate, user_id: int):
-#     installment_details = []
-#     print(f"installment_master_id: {installment_master_id}")
-#     print(f"installment_name: {installment_data.installment_name}")
-#     print(f"payment_rate: {installment_data.payment_rate}")
-#     print(f"due_date: {installment_data.due_date}")
-#     print(f"created_by: {user_id}")
-    
-#     installment_detail = InstallmentDetails(
-#         installment_master_id=installment_master_id,
-#         installment_name=installment_data.installment_name,
-#         payment_rate=installment_data.payment_rate,
-#         due_date=installment_data.due_date,
-#         created_by=user_id
-#     )
-    
-#     db.add(installment_detail)
-#     db.commit()
-#     db.refresh(installment_detail)
-    
-#     installment_details.append(installment_detail)
-    
-#     return installment_details
-
-
-def create_installment_master(db: Session, installment_data: InstallmentCreate, user_id: int):
+def create_installments(db: Session, installment_data: InstallmentCreate, user_id: int):
+    # Create the installment master record
     db_installment_master = InstallmentMaster(
         number_of_installments=installment_data.number_of_installments,
         is_active=installment_data.is_active,
         active_from_date=datetime.utcnow(),  
         created_by=user_id
-        # Add other attributes as needed
     )
     db.add(db_installment_master)
     db.commit()
     db.refresh(db_installment_master)
-    return db_installment_master
-
-def create_installment_details(db: Session, installment_master_id: int, installment_detail_data: InstallmentDetail, user_id: int):
-    print(f"installment_master_id: {installment_master_id}")
-    print(f"installment_name: {installment_detail_data.installment_name}")
-    print(f"payment_rate: {installment_detail_data.payment_rate}")
-    print(f"due_date: {installment_detail_data.due_date}")
-    print(f"created_by: {user_id}")
     
-    installment_detail = InstallmentDetails(
-        installment_master_id=installment_master_id,
-        installment_name=installment_detail_data.installment_name,
-        payment_rate=installment_detail_data.payment_rate,
-        due_date=installment_detail_data.due_date,
-        created_by=user_id
-    )
+    # Create the installment details records
+    installment_details = []
+    for detail in installment_data.installment_details:
+        installment_detail = InstallmentDetails(
+            installment_master_id=db_installment_master.id,
+            installment_name=detail.installment_name,
+            payment_rate=detail.payment_rate,
+            due_date=detail.due_date,
+            created_by=user_id
+        )
+        db.add(installment_detail)
+        installment_details.append(installment_detail)
     
-    db.add(installment_detail)
     db.commit()
-    db.refresh(installment_detail)
     
-    return [installment_detail]
-
+    return db_installment_master, installment_details
 
 
 def update_installment_master(db: Session, installment_id: int, data: dict, user_id: int):
