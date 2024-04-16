@@ -18,7 +18,7 @@ from caerp_db.database import get_db
 from caerp_db import db_product
 from caerp_db.hash import Hash
 import jwt
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from caerp_auth.oauth2 import oauth2_scheme,SECRET_KEY, ALGORITHM
 from caerp_auth import oauth2
 import os
@@ -197,7 +197,7 @@ def update_admin_user_image(
 @router.get("/image/get_product_master_image/{id}", response_model=dict)
 def get_product_master_image(id: int):
     
-    product_master_image_filename = f"{id}.mp4"  
+    product_master_image_filename = f"{id}.jpg"  
     # BASE_URL="http://127.0.0.1:8010/"
     return {"photo_url": f"{BASE_URL}/product/save_product_master/{product_master_image_filename}"}
 
@@ -826,16 +826,30 @@ async def get_all_price_list_product_master(deleted_status: DeletedStatus = Dele
 
 
 
-@router.get("/get_price_list_product_master_by_id/{price_list_id}/{requested_date}", response_model=List[PriceListProductMasterView])
-def get_price_list_product_master_by_id(price_list_id: int,requested_date:datetime, db: Session = Depends(get_db)):
+@router.get("/get_price_list_product_master_by_id/{price_list_id}/{requested_date}",
+            response_model=List[PriceListProductMasterView])
+def get_price_list_product_master_by_id(price_list_id: int,
+                                        requested_date:date,
+                                        db: Session = Depends(get_db),
+                                        token: str = Depends(oauth2.oauth2_scheme)):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
     price_list_master_details = db_product.get_price_list_product_master_by_id(db, price_list_id,requested_date)
     if not price_list_master_details:
         raise HTTPException(status_code=404, detail="No products found for this id")
     return price_list_master_details
 
 
-@router.get("/get_price_list_product_master_by_code/{product_code}/{requested_date}", response_model=List[PriceListProductMasterView])
-def get_price_list_product_master_by_code(product_code: str, requested_date:datetime,db: Session = Depends(get_db)):
+@router.get("/get_price_list_product_master_by_code/{product_code}/{requested_date}",
+            response_model=List[PriceListProductMasterView])
+def get_price_list_product_master_by_code(product_code: str,
+                                          requested_date:date,
+                                          db: Session = Depends(get_db),
+                                          token: str = Depends(oauth2.oauth2_scheme)):
+    
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     product_master_details = db_product.get_price_list_product_master_by_code(db, product_code,requested_date)
     if not product_master_details:
         raise HTTPException(status_code=404, detail="No products found ")
@@ -891,5 +905,14 @@ def update_price_list_product_master(
             "type": "internal_server_error"
         }]
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
+    
+    
+    
+    #  token: str = Depends(oauth2.oauth2_scheme)):
+    
+    
+    
+    # if not token:
+    #     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
 
 

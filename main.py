@@ -10,8 +10,6 @@ from caerp_router import test
 from caerp_db.database import caerp_base, caerp_engine
 from fastapi.staticfiles import StaticFiles
 
-
-
 caerp_base.metadata.create_all(bind=caerp_engine)
 
 app = FastAPI(

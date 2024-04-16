@@ -1639,8 +1639,8 @@ class PriceListProductMaster(BaseModel):
     cess_rate               : Optional[float]
     discount_percentage     : Optional[float]
     discount_amount         : Optional[float]
-    effective_from_date     : Optional[datetime]
-    effective_to_date       : Optional[datetime]
+    effective_from_date     : Optional[date]
+    effective_to_date       : Optional[date]
     
 
 class PriceListProductMasterResponse(BaseModel):
@@ -1653,8 +1653,8 @@ class PriceListProductMasterResponse(BaseModel):
     cess_rate               : float
     discount_percentage     : float
     discount_amount         : float
-    effective_from_date     : datetime
-    effective_to_date       : datetime
+    effective_from_date     : Optional[date]
+    effective_to_date       : Optional[date]
     created_by              : Optional[int]
     created_on              : Optional[datetime]
     modified_by             : Optional[int]
@@ -1684,8 +1684,8 @@ class PriceListProductMasterView(BaseModel):
     cess_rate                :    float
     discount_percentage      :    float
     discount_amount          :    float
-    effective_from_date      :  Optional[datetime] 
-    effective_to_date        :  Optional[datetime]
+    effective_from_date      :  Optional[date] 
+    effective_to_date        :  Optional[date]
     created_by               :  Optional[int]
     created_on               :  Optional[datetime]
     modified_by              :  Optional[int]
