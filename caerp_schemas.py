@@ -17,7 +17,7 @@ class CountryCreate(BaseModel):
     isd_code: Optional[str]
 
     class Config:
-        orm_mode = True
+        orm_mode  : True
 
 class CountryDetail(BaseModel):
     id: int
@@ -28,7 +28,7 @@ class CountryDetail(BaseModel):
     isd_code: Optional[str]
 
     class Config:
-        orm_mode = True
+        orm_mode  : True
         
         
 
@@ -39,7 +39,7 @@ class StateDetail(BaseModel):
     state_name: str
 
     class Config:
-        orm_mode = True
+        orm_mode  : True
  
 #  get  the states based on country       
 class StatesByCountry(BaseModel):
@@ -1095,6 +1095,8 @@ class  ProductMasterSchema(BaseModel):
     category_id      : Optional[int]
     product_description_main : Optional[str]
     product_description_sub  :Optional[str]
+    has_module       : Optional[str]
+    
 
   
 class  ProductMasterSchemaResponse(BaseModel):
@@ -1104,6 +1106,7 @@ class  ProductMasterSchemaResponse(BaseModel):
     category_id      : Optional[int]
     product_description_main : Optional[str]
     product_description_sub  :Optional[str]
+    has_module : Optional[str]
     modified_by: Optional[int]
     modified_on: Optional[datetime]
     created_by: int
@@ -1141,25 +1144,25 @@ class  ProductCategorySchemaResponse(BaseModel):
     
 class ProductModuleSchema(BaseModel):
 
-    product_id          : int
-    category_id         : int
+    product_master_id   : int
     module_name         : str
     module_description  : str
-    module_price        : float
+    display_order       : int
     
 
 class ProductModuleSchemaResponse(BaseModel):
 
     id                  : int 
-    product_id          : int
-    category_id         : int
+    product_master_id   : int
     module_name         : str
     module_description  : str
-    module_price        : float
+    display_order       : int
     modified_by         : Optional[int]
     modified_on         : Optional[datetime]
     created_by          : int
     is_deleted          : str
+    is_deleted_directly : str
+    is_deleted_with_master: str
     created_on          : datetime
     deleted_by          : Optional[int]
     deleted_on          : Optional[datetime]
@@ -1625,3 +1628,70 @@ class GetCustomerPasswordResetSchema(BaseModel):
 
 class CustomerPasswordResetSchema(BaseModel):
     email_id : str
+
+class PriceListProductMaster(BaseModel):
+    
+    product_master_id     : Optional[int]
+    price                 : Optional[float]
+    gst_rate                : Optional[float]
+    cgst_rate               : Optional[float]
+    sgst_rate               : Optional[float]
+    cess_rate               : Optional[float]
+    discount_percentage     : Optional[float]
+    discount_amount         : Optional[float]
+    effective_from_date     : Optional[datetime]
+    effective_to_date       : Optional[datetime]
+    
+
+class PriceListProductMasterResponse(BaseModel):
+    id                    :int
+    product_master_id     : int
+    price                 : float
+    gst_rate                : float
+    cgst_rate               : float
+    sgst_rate               : float
+    cess_rate               : float
+    discount_percentage     : float
+    discount_amount         : float
+    effective_from_date     : datetime
+    effective_to_date       : datetime
+    created_by              : Optional[int]
+    created_on              : Optional[datetime]
+    modified_by             : Optional[int]
+    modified_on             : Optional[datetime]
+    is_deleted              : str
+    is_deleted_directly     : str
+    is_deleted_with_master  : str
+    deleted_by              : Optional[int]
+    deleted_on              : Optional[datetime]
+
+
+class PriceListProductMasterView(BaseModel):
+   
+    product_master_id        :  int
+    price_list_product_master_id   : int   
+    product_code             :  str
+    category_id              :  int
+    category_name            :  str
+    product_name             :  str
+    product_description_main :  str
+    product_description_sub  :  str
+    has_module               :  str
+    price                    :  float 
+    gst_rate                 :    float
+    cgst_rate                :    float
+    sgst_rate                :    float
+    cess_rate                :    float
+    discount_percentage      :    float
+    discount_amount          :    float
+    effective_from_date      :  Optional[datetime] 
+    effective_to_date        :  Optional[datetime]
+    created_by               :  Optional[int]
+    created_on               :  Optional[datetime]
+    modified_by              :  Optional[int]
+    modified_on              :  Optional[datetime]
+    is_deleted               :  str
+    is_deleted_directly      :   str
+    is_deleted_with_master   :   str
+    deleted_by               : Optional[int]
+    deleted_on               : Optional[datetime]

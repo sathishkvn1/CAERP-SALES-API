@@ -5,7 +5,7 @@ from UserDefinedConstants.user_defined_constants import DeletedStatus
 from caerp_auth.authentication import authenticate_user
 
 
-from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
+from caerp_db.models import  AdminUser, Designation,PriceListProductMasterView,PriceListProductMaster, InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
 from caerp_schemas import AdminUserBaseForDelete, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
 from sqlalchemy.orm import Session
 from starlette.requests import Request
@@ -67,13 +67,14 @@ def update_product_video(db: Session,  request: ProductVideoSchema, video_id: in
 #  PRODUCT MODULE SECTION 
 # ==========================================================================
 
-def save_product_module(db: Session, request: ProductModuleSchema, user_id: int ):
+def save_product_module(db: Session, request: ProductModuleSchema,display_order:int, user_id: int ):
 
     # if product_module_id == 0:
         # Add operation
         product_module_data_dict = request.dict()
         product_module_data_dict["created_on"] = datetime.utcnow()
         product_module_data_dict["created_by"] = user_id
+        product_module_data_dict["display_order"] = display_order
         new_product_module = ProductModule(**product_module_data_dict)
         db.add(new_product_module)
         db.commit()
@@ -160,30 +161,42 @@ def get_product_master_by_code(db: Session,code: str):
 
 
 
-
-def delete_product_master(db: Session, product_id: int,deleted_by: int):
+def delete_product_master(db: Session, product_id: int,action_type:str,deleted_by: int):
     existing_product = db.query(ProductMaster).filter(ProductMaster.id == product_id).first()
 
     if existing_product is None:
         raise HTTPException(status_code=404, detail="Product not found")
+    if(action_type== 'DELETE'):
 
-    existing_product.is_deleted = 'yes'
-    existing_product.deleted_by = deleted_by
-    existing_product.deleted_on = datetime.utcnow()
-    
-    # Mark related installment details as deleted
-    db.query(ProductModule).filter(ProductModule.product_id == product_id).update({
-        ProductModule.is_deleted: 'yes',
-        ProductModule.deleted_by: deleted_by,
-        ProductModule.deleted_on: datetime.utcnow()
-    }, synchronize_session=False)
-   
-    db.commit()
+            existing_product.is_deleted = 'yes'
+            existing_product.deleted_by = deleted_by
+            existing_product.deleted_on = datetime.utcnow()
+            
+            # Mark related installment details as deleted
+            db.query(ProductModule).filter(ProductModule.product_master_id == product_id).update({
+                ProductModule.is_deleted: 'yes',
+                ProductModule.is_deleted_with_master: 'yes',
+                ProductModule.deleted_by: deleted_by,
+                ProductModule.deleted_on: datetime.utcnow()
+            }, synchronize_session=False)
+        
+            db.commit()
 
-    return {
-        "message": "Product marked as deleted successfully",
+            return {
+                "message": "Product marked as deleted successfully",
 
-    }
+            }
+    if(action_type == 'UNDELETE'):
+            existing_product.is_deleted = 'no'
+            existing_product.deleted_by = None
+            existing_product.deleted_on = None
+            db.commit()
+
+            return {
+                "message": "Product marked as Undeleted successfully",
+
+            }
+
 
 # =========================================================================
 
@@ -259,26 +272,6 @@ def delete_product_category(db: Session, category_id: int,deleted_by: int):
     }
 
 
-
-
-
-def get_all_product_module_by_deleted_status(db: Session, deleted_status: DeletedStatus):
-    if deleted_status == DeletedStatus.DELETED:
-        return db.query(ProductModule).filter(ProductModule.is_deleted == 'yes').all()
-    elif deleted_status == DeletedStatus.NOT_DELETED:
-        return db.query(ProductModule).filter(ProductModule.is_deleted == 'no').all()
-    elif deleted_status == DeletedStatus.ALL:
-        return db.query(ProductModule).all()
-    else:
-       
-        raise ValueError("Invalid deleted_status")
-
-
-
-
-
-
-
 def get_product_module_by_id(db: Session,id: int):
         return db.query(ProductModule).filter(ProductModule.id== id).all()
     
@@ -289,23 +282,37 @@ def get_product_module_by_product_id(db: Session,id: int):
         return db.query(ProductModule).filter(and_(ProductModule.product_id == id, ProductModule.is_deleted == "no")).all()
 
 
-def delete_product_module(db: Session, module_id: int,deleted_by: int):
+def delete_product_module(db: Session, module_id: int,action_type:str,deleted_by: int):
     existing_product = db.query(ProductModule).filter(ProductModule.id == module_id).first()
 
     if existing_product is None:
         raise HTTPException(status_code=404, detail="Product module not found")
+    if(action_type== 'DELETE'):
 
-    existing_product.is_deleted = 'yes'
-    existing_product.deleted_by = deleted_by
-    existing_product.deleted_on = datetime.utcnow()
-   
-    db.commit()
+        existing_product.is_deleted = 'yes'
+        existing_product.is_deleted_directly= 'yes'
+        existing_product.deleted_by = deleted_by
+        existing_product.deleted_on = datetime.utcnow()
+    
+        db.commit()
 
-    return {
-        "message": "Product module marked as deleted successfully",
+        return {
+            "message": "Product module marked as deleted successfully",
 
-    }
+        }
+    if(action_type == 'UNDELETE'):
+            existing_product.is_deleted = 'no'
+            existing_product.deleted_by = None
+            existing_product.deleted_on = None
+            existing_product.is_deleted_directly = 'no'
+            existing_product.is_deleted_with_master = 'no'
 
+            db.commit()
+
+            return {
+                "message": "Product module marked as Undeleted successfully",
+
+            }
 
 
 
@@ -461,9 +468,83 @@ def delete_installment_master(db: Session, id: int, deleted_by: int):
     }
 
 
+def get_all_price_list_product_master(db: Session, deleted_status: DeletedStatus):
+    if deleted_status == DeletedStatus.DELETED:
+        return db.query(PriceListProductMaster).filter(PriceListProductMaster.is_deleted == 'yes').all()
+    elif deleted_status == DeletedStatus.NOT_DELETED:
+        return db.query(PriceListProductMaster).filter(PriceListProductMaster.is_deleted == 'no').all()
+    elif deleted_status == DeletedStatus.ALL:
+        return db.query(PriceListProductMaster).all()
+    else:
+       
+        raise ValueError("Invalid deleted_status")
 
 
-# def get_installment_master_details(db: Session):
-#     return db.query(InstallmentMaster).all()
 
+# def get_price_list_product_master_by_id(db: Session, id: int, requested_date: datetime):
+#     return db.query(PriceListProductMaster).filter(
+#         PriceListProductMaster.id == id,
+#         PriceListProductMaster.effective_from_date <= requested_date,
+#         PriceListProductMaster.effective_to_date >= requested_date
+#     ).order_by(PriceListProductMaster.effective_from_date.desc()).limit(1).all()
 
+def get_price_list_product_master_by_id(db: Session, id: int, requested_date: datetime):
+    return db.query(PriceListProductMasterView).filter(
+        PriceListProductMasterView.price_list_product_master_id == id,
+        PriceListProductMasterView.effective_from_date <= requested_date,
+        PriceListProductMasterView.effective_to_date >= requested_date
+    ).order_by(PriceListProductMasterView.effective_from_date.desc()).limit(1).all()
+
+def get_price_list_product_master_by_code(db: Session, product_code: int, requested_date: datetime):
+   return db.query(PriceListProductMasterView).filter(
+        PriceListProductMasterView.product_code == product_code,
+        PriceListProductMasterView.effective_from_date <= requested_date,
+        PriceListProductMasterView.effective_to_date >= requested_date
+    ).order_by(PriceListProductMasterView.effective_from_date.desc()).limit(1).all()
+  
+
+def save_price_list_product_master(db: Session, request: PriceListProductMaster, price_list_id: int,user_id: int):
+     
+    if price_list_id == 0:
+        # Add operation
+        price_list_data_dict = request.dict()
+        price_list_data_dict["created_on"] = datetime.utcnow()
+        price_list_data_dict["created_by"] = user_id
+        # price_list_data_dict["effective_from_date"] = datetime.utcnow()
+        new_price_list = ProductCategory(**price_list_data_dict)
+        db.add(new_price_list)
+        db.commit()
+        db.refresh(new_price_list)
+        return new_price_list
+    
+    else:
+        # Update operation
+        price_list = db.query(PriceListProductMaster).filter(PriceListProductMaster .id == price_list_id).first()
+        if price_list is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price List not found")
+        price_list_data_dict = request.dict(exclude_unset=True)
+        for key, value in price_list_data_dict.items():
+            setattr(price_list, key, value)
+        price_list.modified_by = user_id
+        price_list.modified_on = datetime.utcnow()
+        
+        db.commit()
+        db.refresh(price_list)
+        return price_list
+    
+def update_price_list_product_master(db: Session, request:PriceListProductMaster,price_list_id:int , user_id: int):
+        
+        price_list_data_dict = request.dict()
+        price_list_data_dict["created_on"] = datetime.utcnow()
+        price_list_data_dict["created_by"] = user_id
+        new_price_list = PriceListProductMaster(**price_list_data_dict)
+        # price_list_data_dict["effective_from_date"] = datetime.utcnow()
+        existing_price_list = db.query(PriceListProductMaster).filter(PriceListProductMaster .id == price_list_id).first()
+        if existing_price_list is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price List not found")
+        
+        existing_price_list.effective_to_date = new_price_list.effective_from_date
+        db.add(new_price_list)
+        db.commit()
+        db.refresh(new_price_list)
+        return new_price_list

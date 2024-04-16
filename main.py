@@ -119,6 +119,8 @@ app_site_manager.mount("/save_image_gallery", StaticFiles(directory="uploads/ima
 app_admin.mount("/add/admin_users", StaticFiles(directory="uploads/admin_profile"), name="gallery")
 app_product.mount("/save_product_module", StaticFiles(directory="uploads/product_module_images"), name="product")
 app_product.mount("/save_product_master", StaticFiles(directory="uploads/product_master_videos"), name="product")
+app_product.mount("/save_product_master", StaticFiles(directory="uploads/product_master_images"), name="product")
+
 app_product.mount("/save_product_additional_videos", StaticFiles(directory="uploads/product_master_additional_videos"), name="product")
 app_site_manager.mount("/save_prime_customer",StaticFiles(directory="uploads/prime_customers"), name="customer")
 

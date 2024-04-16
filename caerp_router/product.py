@@ -2,13 +2,13 @@
 
 from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File,Query
 from typing import List, Optional
-from UserDefinedConstants.user_defined_constants import BooleanFlag, DeletedStatus,ActiveStatus
+from UserDefinedConstants.user_defined_constants import BooleanFlag, DeletedStatus,ActiveStatus,ActionType
 from caerp_auth.authentication import authenticate_user
 
 
 from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductMaster, ProductModule, UserRole
 from caerp_schemas import AdminUserBaseForDelete, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
-from caerp_schemas import ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse
+from caerp_schemas import PriceListProductMasterView,PriceListProductMasterResponse,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
@@ -25,9 +25,10 @@ import os
 from jose import JWTError, jwt
 from sqlalchemy import and_, or_
 
-UPLOAD_DIR_MASTER = "uploads/product_master_videos"
-UPLOAD_DIR_MODULE = "uploads/product_module_images"
-UPLOAD_DIR_VIDEO = "uploads/product_master_additional_videos"
+UPLOAD_DIR_MASTER       = "uploads/product_master_videos"
+UPLOAD_DIR_MASTER_IMAGE = "uploads/product_master_images"
+UPLOAD_DIR_MODULE       = "uploads/product_module_images"
+UPLOAD_DIR_VIDEO        = "uploads/product_master_additional_videos"
 
 
 router = APIRouter(
@@ -57,6 +58,7 @@ def save_product_master(
         product_master_data: ProductMasterSchema =Depends(),
         # product_id: int =0,  # Default to 0 for add operation
         video_file: UploadFile = File(None),
+        image_file: UploadFile = File(None),
         db: Session = Depends(get_db),
         token: str = Depends(oauth2.oauth2_scheme)
        
@@ -79,6 +81,13 @@ def save_product_master(
                 with open(file_path, "wb") as f:
                     f.write(file_content)
             
+    if image_file:
+            
+                product_id = new_product.id
+                file_content = image_file.file.read()
+                file_path = f"{UPLOAD_DIR_MASTER_IMAGE}/{product_id}.jpg"
+                with open(file_path, "wb") as f:
+                    f.write(file_content)
     return new_product
 
    
@@ -155,9 +164,42 @@ def upload_product_main_video(
 @router.get("/video/get_product_master_video/{id}", response_model=dict)
 def get_product_master_video(id: int):
     
-    profile_photo_filename = f"{id}.mp4"  
+    product_master_video_filename = f"{id}.mp4"  
     # BASE_URL="http://127.0.0.1:8010/"
-    return {"photo_url": f"{BASE_URL}/product/save_product_master/{profile_photo_filename}"}
+    return {"photo_url": f"{BASE_URL}/product/save_product_master/{product_master_video_filename}"}
+
+@router.post('/update_product_master_image/{id}', response_model=ProductMasterSchema)
+def update_admin_user_image(
+        id: int,
+        image_file: UploadFile = File(...),  # Required image file
+        db: Session = Depends(get_db),
+        token: str = Depends(oauth2.oauth2_scheme)
+):
+    # Check authorization
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+    # Check if the user exists
+    product = db.query(ProductMaster).filter(ProductMaster.id == id).first()
+    if not product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+    # Save the new image
+    file_content = image_file.file.read()
+    file_path = f"{UPLOAD_DIR_MASTER_IMAGE}/{product.id}.jpg"
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+
+    # Return the updated user data
+    return product
+
+  
+@router.get("/image/get_product_master_image/{id}", response_model=dict)
+def get_product_master_image(id: int):
+    
+    product_master_image_filename = f"{id}.mp4"  
+    # BASE_URL="http://127.0.0.1:8010/"
+    return {"photo_url": f"{BASE_URL}/product/save_product_master/{product_master_image_filename}"}
 
 
 
@@ -178,9 +220,11 @@ def get_product_master_by_code(product_code: str, db: Session = Depends(get_db))
 
 
 
+
 @router.delete("/delete/product_master/{product_id}")
 def delete_product_master(
                      product_id: int,
+                     action_type: ActionType = ActionType.UNDELETE,
                      db: Session = Depends(get_db),
                      token: str = Depends(oauth2.oauth2_scheme)
                     ):
@@ -191,7 +235,25 @@ def delete_product_master(
     user_id = auth_info["user_id"]
     
     
-    return db_product.delete_product_master(db, product_id,deleted_by=user_id)
+    return db_product.delete_product_master(db, product_id,action_type,deleted_by=user_id)
+
+
+
+
+# @router.delete("/delete/product_master/{product_id}")
+# def delete_product_master(
+#                      product_id: int,
+#                      db: Session = Depends(get_db),
+#                      token: str = Depends(oauth2.oauth2_scheme)
+#                     ):
+#     if not token:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+
+#     auth_info = authenticate_user(token)
+#     user_id = auth_info["user_id"]
+    
+    
+#     return db_product.delete_product_master(db, product_id,deleted_by=user_id)
 
 
 
@@ -261,21 +323,9 @@ def delete_product_category(
 
 
 
-
-
-
-@router.get("/get_all_product_module/", response_model=List[ProductModuleSchemaResponse])
-async def get_all_product_module(deleted_status: DeletedStatus = DeletedStatus.NOT_DELETED,
-                              db: Session = Depends(get_db),
-                             ):
-
-    product = db_product.get_all_product_module_by_deleted_status(db, deleted_status)
-    return product
-
-
-
 @router.post('/save_product_module/', response_model=ProductModuleSchema)
 def save_product_module(
+        display_order: int =1,
         product_module_data: ProductModuleSchema =Depends(),
         image_file: UploadFile = File(None),
         db: Session = Depends(get_db),
@@ -289,7 +339,7 @@ def save_product_module(
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
     try:
-        new_product = db_product.save_product_module(db, product_module_data,user_id)
+        new_product = db_product.save_product_module(db, product_module_data,display_order,user_id)
         if image_file:
             
                 module_id = new_product.id
@@ -389,6 +439,7 @@ def get_product_module_by_product_id(
 @router.delete("/delete/product_module/{module_id}")
 def delete_product_module(
                      module_id: int,
+                     action_type: ActionType = ActionType.UNDELETE,
                      db: Session = Depends(get_db),
                      token: str = Depends(oauth2.oauth2_scheme)
                      
@@ -399,7 +450,7 @@ def delete_product_module(
     user_id = auth_info["user_id"]
     
     
-    return db_product.delete_product_module(db, module_id,deleted_by=user_id)
+    return db_product.delete_product_module(db, module_id,action_type,deleted_by=user_id)
 
 
 
@@ -756,5 +807,89 @@ def get_installment_masters(
 
     return query.all()
 
+
+
+#=================================================================================
+
+
+
+@router.get("/get_all_price_list_product_master/", response_model=List[PriceListProductMasterResponse])
+async def get_all_price_list_product_master(deleted_status: DeletedStatus = DeletedStatus.NOT_DELETED,
+                              db: Session = Depends(get_db),
+                             ):
+
+    price_list = db_product.get_all_price_list_product_master(db, deleted_status)
+    return price_list
+
+
+
+
+
+
+@router.get("/get_price_list_product_master_by_id/{price_list_id}/{requested_date}", response_model=List[PriceListProductMasterView])
+def get_price_list_product_master_by_id(price_list_id: int,requested_date:datetime, db: Session = Depends(get_db)):
+    price_list_master_details = db_product.get_price_list_product_master_by_id(db, price_list_id,requested_date)
+    if not price_list_master_details:
+        raise HTTPException(status_code=404, detail="No products found for this id")
+    return price_list_master_details
+
+
+@router.get("/get_price_list_product_master_by_code/{product_code}/{requested_date}", response_model=List[PriceListProductMasterView])
+def get_price_list_product_master_by_code(product_code: str, requested_date:datetime,db: Session = Depends(get_db)):
+    product_master_details = db_product.get_price_list_product_master_by_code(db, product_code,requested_date)
+    if not product_master_details:
+        raise HTTPException(status_code=404, detail="No products found ")
+    return product_master_details
+
+
+
+@router.post('/save_price_list_product_master/{id}', response_model=PriceListProductMasterResponse)
+def save_price_list_product_master(
+        price_list_data: PriceListProductMaster ,
+        id: int =0,  # Default to 0 for add operation
+        db: Session = Depends(get_db),
+        token: str = Depends(oauth2.oauth2_scheme)):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+    
+    auth_info = authenticate_user(token) 
+    user_id = auth_info["user_id"]
+    try:
+        new_price_list = db_product.save_price_list_product_master(db, price_list_data,id,user_id)
+
+        return new_price_list
+    except Exception as e:
+        error_detail = [{
+            "loc": ["server"],
+            "msg": "Internal server error",
+            "type": "internal_server_error"
+        }]
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
+
+
+@router.post('/update_price_list_product_master/{price_list_id}', response_model=PriceListProductMasterResponse)
+def update_price_list_product_master(
+        price_list_data: PriceListProductMaster ,
+        price_list_id: int =0,  # Default to 0 for add operation
+        db: Session = Depends(get_db),
+        token: str = Depends(oauth2.oauth2_scheme)):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+    
+    auth_info = authenticate_user(token) 
+    user_id = auth_info["user_id"]
+    try:
+        new_price_list = db_product.update_price_list_product_master(db, price_list_data,price_list_id,user_id)
+
+        return new_price_list
+    except Exception as e:
+        error_detail = [{
+            "loc": ["server"],
+            "msg": "Internal server error",
+            "type": "internal_server_error"
+        }]
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
 
 

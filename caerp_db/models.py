@@ -751,7 +751,7 @@ class ProductMaster(caerp_base):
     category_id         = Column(Integer, default=None)
     product_description_main = Column(Text, default=None)
     product_description_sub = Column(Text, default=None)
-
+    has_module          = Column(Enum('yes', 'no'), nullable=False, default='no')
     created_by          = Column(Integer, default=None)
     created_on          = Column(DateTime, nullable=False, default=func.now())
     modified_by         = Column(Integer, default=None)
@@ -776,16 +776,17 @@ class ProductCategory(caerp_base):
 class ProductModule(caerp_base):
     __tablename__ = "product_module"
     id                  = Column(Integer, primary_key=True, autoincrement=True)
-    product_id          = Column(Integer, nullable=False)
-    category_id         = Column(Integer, nullable=False)
+    product_master_id   = Column(Integer, nullable=False)
     module_name         = Column(String(100), nullable=False)
     module_description  = Column(String(5000), nullable=False)
-    module_price        = Column(Float, nullable=False)
+    display_order       = Column(Integer, nullable=False,default=1)
     created_by          = Column(Integer, default=None)
     created_on          = Column(DateTime, nullable=False, default=func.now())
     modified_by         = Column(Integer, default=None)
     modified_on         = Column(DateTime, default=None)
     is_deleted          = Column(Enum('yes', 'no'), nullable=False, default='no')
+    is_deleted_directly = Column(Enum('yes', 'no'), nullable=False, default='no')
+    is_deleted_with_master = Column(Enum('yes', 'no'), nullable=False, default='no')
     deleted_by          = Column(Integer, default=None)
     deleted_on          = Column(DateTime, default=None)
 
@@ -1052,3 +1053,62 @@ class CustomerPasswordReset(caerp_base):
     customer_id             = Column(Integer, nullable=False)
     request_token           = Column(String(500), nullable=False)
     request_timestamp       = Column(DateTime, nullable=False, default=func.now())
+
+
+
+class PriceListProductMaster(caerp_base):
+    __tablename__ = 'price_list_product_master'
+
+    id                      = Column(Integer, primary_key=True, index=True)
+    product_master_id       = Column(Integer, nullable=False)
+    price                   = Column(Float, nullable=False)
+    gst_rate                = Column(Float, nullable=False)
+    cgst_rate               = Column(Float, nullable=False)
+    sgst_rate               = Column(Float, nullable=False)
+    cess_rate               = Column(Float, nullable=False)
+    discount_percentage     = Column(Float, nullable=False)
+    discount_amount         = Column(Float, nullable=False)
+    effective_from_date     = Column(DateTime, nullable=False, default=func.now())
+    effective_to_date       = Column(DateTime, default=None)
+    created_by              = Column(Integer, default=None)
+    created_on              = Column(DateTime, nullable=False, default=func.now())
+    modified_by             = Column(Integer, default=None)
+    modified_on             = Column(DateTime, default=None)
+    is_deleted              = Column(Enum('yes', 'no'), nullable=False, default='no')
+    is_deleted_directly     = Column(Enum('yes', 'no'), nullable=False, default='no')
+    is_deleted_with_master  = Column(Enum('yes', 'no'), nullable=False, default='no')
+    deleted_by              = Column(Integer, default=None)
+    deleted_on              = Column(DateTime, default=None)
+
+class PriceListProductMasterView(caerp_base):
+    __tablename__ = 'view_price_list_product_master'
+
+    product_master_id       = Column(Integer, primary_key=True, index=True)
+    price_list_product_master_id       = Column(Integer, nullable=False)
+    product_code            = Column(String, nullable=False)
+    category_id             = Column(Integer, nullable=False)
+    category_name           = Column(String, nullable=False)
+    product_name            = Column(String, nullable=False)
+    product_description_main= Column(String, nullable=False)
+    product_description_sub = Column(String, nullable=False)
+    has_module              = Column(Enum('yes', 'no'), nullable=False, default='no')
+    price                   = Column(Float, nullable=False)
+    gst_rate                = Column(Float, nullable=False)
+    cgst_rate               = Column(Float, nullable=False)
+    sgst_rate               = Column(Float, nullable=False)
+    cess_rate               = Column(Float, nullable=False)
+    discount_percentage     = Column(Float, nullable=False)
+    discount_amount         = Column(Float, nullable=False)
+    effective_from_date     = Column(DateTime, nullable=False, default=func.now())
+    effective_to_date       = Column(DateTime, default=None)
+    created_by              = Column(Integer, default=None)
+    created_on              = Column(DateTime, nullable=False, default=func.now())
+    modified_by             = Column(Integer, default=None)
+    modified_on             = Column(DateTime, default=None)
+    is_deleted              = Column(Enum('yes', 'no'), nullable=False, default='no')
+    is_deleted_directly     = Column(Enum('yes', 'no'), nullable=False, default='no')
+    is_deleted_with_master  = Column(Enum('yes', 'no'), nullable=False, default='no')
+    deleted_by              = Column(Integer, default=None)
+    deleted_on              = Column(DateTime, default=None)
+
+ 
