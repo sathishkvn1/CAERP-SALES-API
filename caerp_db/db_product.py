@@ -276,8 +276,15 @@ def get_product_module_by_id(db: Session,id: int):
     
 
 
+
+
 def get_product_module_by_product_id(db: Session,id: int):
-        return db.query(ProductModule).filter(and_(ProductModule.product_id == id, ProductModule.is_deleted == "no")).all()
+        return db.query(ProductModule).filter(and_(ProductModule.product_master_id == id, ProductModule.is_deleted == "no")).all()
+
+
+
+
+
 
 
 def delete_product_module(db: Session, module_id: int,action_type:str,deleted_by: int):
