@@ -1618,8 +1618,7 @@ class Email(BaseModel):
     subject: str
     messageType: str = "NO_REPLY"
     
-    
-    
+ 
 class GetCustomerPasswordResetSchema(BaseModel):
     id			    :int
     customer_id 	:int

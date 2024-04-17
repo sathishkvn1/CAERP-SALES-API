@@ -219,8 +219,6 @@ def get_product_master_by_code(product_code: str, db: Session = Depends(get_db))
     return product_master_details
 
 
-
-
 @router.delete("/delete/product_master/{product_id}")
 def delete_product_master(
                      product_id: int,

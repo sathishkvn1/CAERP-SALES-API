@@ -671,7 +671,6 @@ def update_price_list_product_module(db: Session, request:PriceListProductModule
         return new_price_list
 
 
-
 def delete_price_list_product_module(db: Session, price_list_product_module_id: int,action_type:str,deleted_by: int):
     existing_price_list = db.query(PriceListProductModule).filter(PriceListProductModule.id == price_list_product_module_id).first()
 
