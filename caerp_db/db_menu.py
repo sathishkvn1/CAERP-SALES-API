@@ -30,7 +30,11 @@ def get_sub_menu_permissions(db: Session, main_menu_id: int, role_id: int):
     return db.execute(sql_query, {"main_menu_id": main_menu_id, "role_id": role_id}).fetchall()
 
 
-
+def get_sub_menu_permissions_based_on_main_menu_id(db: Session, main_menu_id: int, role_id: int):
+    return db.query(AdminSubMenu).filter(
+        AdminSubMenu.main_menu_id == main_menu_id,
+        AdminSubMenu.is_deleted == "no"
+    ).order_by(AdminSubMenu.sub_menu_display_order).all()
 
 def save_admin_main_menu(db: Session, request: AdminMainMenuCreate, id: int, user_id: int):
 
@@ -130,7 +134,6 @@ def save_admin_sub_menu(db: Session, main_menu_id: int, request: AdminSubMenuCre
 
         return existing_menu
 
-    
 
 
 
