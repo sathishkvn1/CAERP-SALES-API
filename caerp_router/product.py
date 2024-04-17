@@ -894,6 +894,7 @@ def update_price_list_product_master(
 
 
 
+
 @router.delete("/delete/price_list_product_master/{price_list_master_id}")
 def delete_price_list_product_master(
                      price_list_master_id: int,

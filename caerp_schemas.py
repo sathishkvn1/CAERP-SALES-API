@@ -1724,6 +1724,7 @@ class PriceListProductModuleResponse(PriceListProductModule):
     deleted_on              : Optional[datetime]
 
 
+
 class PriceListProductModuleView(BaseModel):
     price_list_product_module_id   : int
     price_list_product_master_id   : int

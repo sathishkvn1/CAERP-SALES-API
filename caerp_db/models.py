@@ -1138,6 +1138,7 @@ class PriceListProductModule(caerp_base):
     deleted_by              = Column(Integer, default=None)
     deleted_on              = Column(DateTime, default=None)
 
+
 class PriceListProductModuleView(caerp_base):
     __tablename__ = 'view_price_list_product_module'
 

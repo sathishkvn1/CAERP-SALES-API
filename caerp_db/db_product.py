@@ -270,6 +270,7 @@ def delete_product_category(db: Session, category_id: int,deleted_by: int):
     }
 
 
+
 def get_product_module_by_id(db: Session,id: int):
         return db.query(ProductModule).filter(ProductModule.id== id).all()
     
