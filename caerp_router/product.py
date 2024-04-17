@@ -8,7 +8,7 @@ from caerp_auth.authentication import authenticate_user
 
 from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductMaster, ProductModule, UserRole
 from caerp_schemas import AdminUserBaseForDelete, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
-from caerp_schemas import PriceListProductMasterView,PriceListProductMasterResponse,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse
+from caerp_schemas import PriceListProductMasterView,PriceListProductModuleResponse,PriceListProductModuleView,PriceListProductMasterResponse,PriceListProductModule,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
@@ -18,7 +18,7 @@ from caerp_db.database import get_db
 from caerp_db import db_product
 from caerp_db.hash import Hash
 import jwt
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta,date
 from caerp_auth.oauth2 import oauth2_scheme,SECRET_KEY, ALGORITHM
 from caerp_auth import oauth2
 import os
@@ -826,30 +826,16 @@ async def get_all_price_list_product_master(deleted_status: DeletedStatus = Dele
 
 
 
-@router.get("/get_price_list_product_master_by_id/{price_list_id}/{requested_date}",
-            response_model=List[PriceListProductMasterView])
-def get_price_list_product_master_by_id(price_list_id: int,
-                                        requested_date:date,
-                                        db: Session = Depends(get_db),
-                                        token: str = Depends(oauth2.oauth2_scheme)):
-    if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
+@router.get("/get_price_list_product_master_by_id/{price_list_id}/{requested_date}", response_model=List[PriceListProductMasterView])
+def get_price_list_product_master_by_id(price_list_id: int,requested_date:datetime, db: Session = Depends(get_db)):
     price_list_master_details = db_product.get_price_list_product_master_by_id(db, price_list_id,requested_date)
     if not price_list_master_details:
         raise HTTPException(status_code=404, detail="No products found for this id")
     return price_list_master_details
 
 
-@router.get("/get_price_list_product_master_by_code/{product_code}/{requested_date}",
-            response_model=List[PriceListProductMasterView])
-def get_price_list_product_master_by_code(product_code: str,
-                                          requested_date:date,
-                                          db: Session = Depends(get_db),
-                                          token: str = Depends(oauth2.oauth2_scheme)):
-    
-    if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+@router.get("/get_price_list_product_master_by_code/{product_code}/{requested_date}", response_model=List[PriceListProductMasterView])
+def get_price_list_product_master_by_code(product_code: str, requested_date:datetime,db: Session = Depends(get_db)):
     product_master_details = db_product.get_price_list_product_master_by_code(db, product_code,requested_date)
     if not product_master_details:
         raise HTTPException(status_code=404, detail="No products found ")
@@ -905,14 +891,130 @@ def update_price_list_product_master(
             "type": "internal_server_error"
         }]
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
+
+
+
+@router.delete("/delete/price_list_product_master/{price_list_master_id}")
+def delete_price_list_product_master(
+                     price_list_master_id: int,
+                     action_type: ActionType = ActionType.UNDELETE,
+                     db: Session = Depends(get_db),
+                     token: str = Depends(oauth2.oauth2_scheme)
+                     
+                    ):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    auth_info = authenticate_user(token)
+    user_id = auth_info["user_id"]
     
     
+    return db_product.delete_price_list_product_master(db, price_list_master_id,action_type,deleted_by=user_id)
+
+
+#==========================================================================================================================
+
+
+
+
+@router.get("/get_all_price_list_product_module/", response_model=List[PriceListProductModuleView])
+async def get_all_price_list_product_module(deleted_status: DeletedStatus = DeletedStatus.NOT_DELETED,
+                              db: Session = Depends(get_db),
+                             ):
+
+    price_list = db_product.get_all_price_list_product_module(db, deleted_status)
+    return price_list
+
+
+
+
+
+
+@router.get("/get_price_list_product_module_by_id/{product_module_id}/{requested_date}", response_model=List[PriceListProductModuleView])
+def get_price_list_product_module_by_id(product_module_id: int,requested_date:date, db: Session = Depends(get_db)):
+    price_list_module_details = db_product.get_price_list_product_module_by_id(db, product_module_id,requested_date)
+    if not price_list_module_details:
+        raise HTTPException(status_code=404, detail="No products found for this id")
+    return price_list_module_details
+
+
+@router.get("/get_price_list_product_module_by_code/{product_code}/{requested_date}", response_model=List[PriceListProductModuleView])
+def get_price_list_product_module_by_code(product_code: str, requested_date:date,db: Session = Depends(get_db)):
+    product_master_details = db_product.get_price_list_product_module_by_code(db, product_code,requested_date)
+    if not product_master_details:
+        raise HTTPException(status_code=404, detail="No products found ")
+    return product_master_details
+
+
+
+@router.post('/save_price_list_product_module/{id}', response_model=PriceListProductModuleResponse)
+def save_price_list_product_module(
+        price_list_data: PriceListProductModule ,
+        id: int =0,  # Default to 0 for add operation
+        db: Session = Depends(get_db),
+        token: str = Depends(oauth2.oauth2_scheme)):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     
-    #  token: str = Depends(oauth2.oauth2_scheme)):
+    
+    auth_info = authenticate_user(token) 
+    user_id = auth_info["user_id"]
+    # try:
+    new_price_list = db_product.save_price_list_product_module(db, price_list_data,id,user_id)
+
+    return new_price_list
+    # except Exception as e:
+    #     error_detail = [{
+    #         "loc": ["server"],
+    #         "msg": "Internal server error",
+    #         "type": "internal_server_error"
+    #     }]
+    #     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
+
+
+@router.post('/update_price_list_product_module/{price_list_id}', response_model=PriceListProductModuleResponse)
+def update_price_list_product_module(
+        price_list_data: PriceListProductModule ,
+        price_list_id: int =0,  # Default to 0 for add operation
+        db: Session = Depends(get_db),
+        token: str = Depends(oauth2.oauth2_scheme)):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     
     
+    auth_info = authenticate_user(token) 
+    user_id = auth_info["user_id"]
+    try:
+        new_price_list = db_product.update_price_list_product_module(db, price_list_data,price_list_id,user_id)
+
+        return new_price_list
+    except Exception as e:
+        error_detail = [{
+            "loc": ["server"],
+            "msg": "Internal server error",
+            "type": "internal_server_error"
+        }]
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
+
+
+
+
+@router.delete("/delete/price_list_product_module/{price_list_module_id}")
+def delete_price_list_product_module(
+                     price_list_module_id: int,
+                     action_type: ActionType = ActionType.UNDELETE,
+                     db: Session = Depends(get_db),
+                     token: str = Depends(oauth2.oauth2_scheme)
+                     
+                    ):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    auth_info = authenticate_user(token)
+    user_id = auth_info["user_id"]
     
-    # if not token:
-    #     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+    return db_product.delete_price_list_product_module(db, price_list_module_id,action_type,deleted_by=user_id)
+
+
+
 
 

@@ -1695,3 +1695,93 @@ class PriceListProductMasterView(BaseModel):
     is_deleted_with_master   :   str
     deleted_by               : Optional[int]
     deleted_on               : Optional[datetime]
+
+
+class PriceListProductModule(BaseModel):
+    
+    price_list_product_master_id   :int
+    module_id                      : int
+    module_price                   : float
+    gst_rate                : float
+    cgst_rate               : float
+    sgst_rate               : float
+    cess_rate               : float
+    discount_percentage     : float
+    discount_amount         : float
+    effective_from_date     : Optional[date]
+    effective_to_date       : Optional[date]
+    
+
+class PriceListProductModuleResponse(PriceListProductModule):
+    created_by              : int
+    created_on              : datetime
+    modified_by             : Optional[int]
+    modified_on             : Optional[datetime]
+    is_deleted              : str
+    is_deleted_directly     : str
+    is_deleted_with_master  : str
+    deleted_by              : Optional[int]
+    deleted_on              : Optional[datetime]
+
+
+class PriceListProductModuleView(BaseModel):
+    price_list_product_module_id   : int
+    price_list_product_master_id   : int
+    product_master_id              : int
+    module_name                    : str
+    module_id                      : int
+    product_code                   : str
+    module_description             : str
+    module_price                   : float
+    module_gst_rate                : float
+    module_cgst_rate               : float
+    module_sgst_rate               : float
+    module_cess_rate               : float
+    module_discount_percentage     : float
+    module_discount_amount         : float
+    module_effective_from_date     : Optional[date]
+    module_effective_to_date       : Optional[date]
+    master_price                   : float
+    master_gst_rate                : float
+    master_cgst_rate               : float
+    master_sgst_rate               : float
+    master_cess_rate               : float
+    master_discount_percentage     : float
+    master_discount_amount         : float
+    master_effective_from_date     : Optional[date]
+    master_effective_to_date       :  Optional[date]
+    created_by              : int
+    created_on              : Optional[datetime]
+    modified_by             : Optional[int]
+    modified_on             : Optional[datetime]
+    is_deleted              : str
+    is_deleted_directly     : str
+    is_deleted_with_master  : str
+    deleted_by              : Optional[int]
+    deleted_on              : Optional[datetime]
+
+ 
+
+
+
+# class PriceListProductMasterResponse(BaseModel):
+#     id                    :int
+#     product_master_id     : int
+#     price                 : float
+#     gst_rate                : float
+#     cgst_rate               : float
+#     sgst_rate               : float
+#     cess_rate               : float
+#     discount_percentage     : float
+#     discount_amount         : float
+#     effective_from_date     : date
+#     effective_to_date       : date
+#     created_by              : Optional[int]
+#     created_on              : Optional[datetime]
+#     modified_by             : Optional[int]
+#     modified_on             : Optional[datetime]
+#     is_deleted              : str
+#     is_deleted_directly     : str
+#     is_deleted_with_master  : str
+#     deleted_by              : Optional[int]
+#     deleted_on              : Optional[datetime]

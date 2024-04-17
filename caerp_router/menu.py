@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends,HTTPException,status
-from typing import List, Optional
+from typing import List
 from caerp_db.models import AdminSubMenuPermission, ClientMainMenu
 from caerp_auth.authentication import authenticate_user
 from caerp_schemas import AdminMainMenuCreate, AdminMainMenuDeleteSchema,  AdminSubMenuCreate, AdminSubMenuDeleteSchema, ClientMenu, ClientMenuBase, ClientMenuResponse, PublicMainMenuCreate, PublicSubMenuCreate, PublicSubSubMenuCreate, SiteLegalAboutUsBaseResponse
@@ -115,37 +115,8 @@ def get_main_menu_data(
 
 
 #--------------------------------------------------------------------------------------------------------------
-from fastapi import Path, HTTPException
 
-@router.get('/admin_menu/get_all_sub_menu_by_main_menu_id/{main_menu_id}')
-def get_sub_menu_data(
-    main_menu_id: int = Path(..., description="Main menu ID to filter sub-menu data"),
-    token: str = Depends(oauth2.oauth2_scheme),
-    db: Session = Depends(get_db)
-):
-    auth_info = authenticate_user(token)
-    role_id = auth_info["role_id"]
-    
-    # Fetch sub-menu data based on the provided main_menu_id
-    sub_menu_data = db_menu.get_sub_menu_permissions_based_on_main_menu_id(db, main_menu_id, role_id)
-    
-    if not sub_menu_data:
-        return {"message": "No sub-menu found for the given main menu ID"}
-    
-    response_sub_menu = []
-    for sub_menu_item in sub_menu_data:
-        response_sub_menu.append({
-            "sub_menu_id": sub_menu_item.sub_menu_id,
-            "sub_menu": sub_menu_item.sub_menu,
-            "sub_menu_has_sub_menu": sub_menu_item.sub_menu_has_sub_menu,
-            "sub_menu_display_order": sub_menu_item.sub_menu_display_order,
-            "sub_menu_page_link": sub_menu_item.sub_menu_page_link,
-          
-        })
-    
-    return {"sub_menu": response_sub_menu}
 
-#--------------------------------------------------------------------------------------------------------------
 
 @router.post('/admin_menu/save/admin_main_menu/{id}', response_model=AdminMainMenuCreate)
 def save_admin_main_menu(
@@ -221,9 +192,7 @@ def save_admin_sub_menu(
             "type": "internal_server_error"
         }]
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
-    
-    
-#---------------------------ActionType-----------------------------------------------------------------
+
 
 
 
