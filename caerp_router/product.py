@@ -25,10 +25,12 @@ import os
 from jose import JWTError, jwt
 from sqlalchemy import and_, or_
 
-UPLOAD_DIR_MASTER       = "uploads/product_master_videos"
-UPLOAD_DIR_MASTER_IMAGE = "uploads/product_master_images"
+# UPLOAD_DIR_MASTER       = "uploads/product_master_videos"
+# UPLOAD_DIR_MASTER_IMAGE = "uploads/product_master_images"
 UPLOAD_DIR_MODULE       = "uploads/product_module_images"
 UPLOAD_DIR_VIDEO        = "uploads/product_master_additional_videos"
+UPLOAD_DIR_MASTER_IMAGE_VIDEO = "uploads/product_master_image_video"
+
 
 
 router = APIRouter(
@@ -77,7 +79,7 @@ def save_product_master(
             
                 product_id = new_product.id
                 file_content = video_file.file.read()
-                file_path = f"{UPLOAD_DIR_MASTER}/{product_id}.mp4"
+                file_path = f"{UPLOAD_DIR_MASTER_IMAGE_VIDEO}/{product_id}.mp4"
                 with open(file_path, "wb") as f:
                     f.write(file_content)
             
@@ -85,7 +87,7 @@ def save_product_master(
             
                 product_id = new_product.id
                 file_content = image_file.file.read()
-                file_path = f"{UPLOAD_DIR_MASTER_IMAGE}/{product_id}.jpg"
+                file_path = f"{UPLOAD_DIR_MASTER_IMAGE_VIDEO}/{product_id}.jpg"
                 with open(file_path, "wb") as f:
                     f.write(file_content)
     return new_product
@@ -147,7 +149,7 @@ def upload_product_main_video(
     try:
         # Save the new video file
         file_content = video_file.file.read()
-        file_path = f"{UPLOAD_DIR_MASTER}/{product_master.id}.mp4"
+        file_path = f"{UPLOAD_DIR_MASTER_IMAGE_VIDEO}/{product_master.id}.mp4"
         with open(file_path, "wb") as f:
             f.write(file_content)
 
@@ -165,7 +167,7 @@ def upload_product_main_video(
 def get_product_master_video(id: int):
     
     product_master_video_filename = f"{id}.mp4"  
-    # BASE_URL="http://127.0.0.1:8010/"
+    # BASE_URL="http://127.0.0.1:3000"
     return {"photo_url": f"{BASE_URL}/product/save_product_master/{product_master_video_filename}"}
 
 @router.post('/update_product_master_image/{id}', response_model=ProductMasterSchema)
@@ -186,7 +188,7 @@ def update_admin_user_image(
 
     # Save the new image
     file_content = image_file.file.read()
-    file_path = f"{UPLOAD_DIR_MASTER_IMAGE}/{product.id}.jpg"
+    file_path = f"{UPLOAD_DIR_MASTER_IMAGE_VIDEO}/{product.id}.jpg"
     with open(file_path, "wb") as f:
         f.write(file_content)
 
@@ -198,7 +200,7 @@ def update_admin_user_image(
 def get_product_master_image(id: int):
     
     product_master_image_filename = f"{id}.jpg"  
-    # BASE_URL="http://127.0.0.1:8010/"
+    # BASE_URL="http://127.0.0.1:3000"
     return {"photo_url": f"{BASE_URL}/product/save_product_master/{product_master_image_filename}"}
 
 
