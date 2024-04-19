@@ -7,7 +7,6 @@ from UserDefinedConstants.user_defined_constants import BooleanFlag
 
 
 
-
 class CountryCreate(BaseModel):
     id: int
     country_name_english: str

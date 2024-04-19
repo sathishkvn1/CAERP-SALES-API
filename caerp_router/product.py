@@ -1,5 +1,4 @@
 
-
 from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File,Query
 from typing import List, Optional
 from UserDefinedConstants.user_defined_constants import BooleanFlag, DeletedStatus,ActiveStatus,ActionType
@@ -36,7 +35,6 @@ router = APIRouter(
     # prefix="/admin",
     tags=["PRODUCTS"]
 )
-
 
 
 #/////////////////////
