@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File
 from typing import List, Optional
 from UserDefinedConstants.user_defined_constants import DeletedStatus
 from caerp_auth.authentication import authenticate_user
-from caerp_db.models import  AdminUser, Designation,PriceListProductModuleView,PriceListProductModule,PriceListProductMasterView,PriceListProductMaster, InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
+from caerp_db.models import  AdminUser, Designation,ProductRating,PriceListProductModuleView,PriceListProductModule,PriceListProductMasterView,PriceListProductMaster, InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
 from caerp_schemas import AdminUserBaseForDelete, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
 from sqlalchemy.orm import Session
 from starlette.requests import Request
@@ -502,11 +502,17 @@ def get_price_list_product_master_by_id(db: Session, id: int, requested_date: da
     ).order_by(PriceListProductMasterView.effective_from_date.desc()).all()
 
 def get_price_list_product_master_by_code(db: Session, product_code: int, requested_date: date):
-   return db.query(PriceListProductMasterView).filter(
-        PriceListProductMasterView.product_code == product_code,
-        PriceListProductMasterView.effective_from_date <= requested_date,
-        PriceListProductMasterView.effective_to_date >= requested_date
-    ).order_by(PriceListProductMasterView.effective_from_date.desc()).limit(1).all()
+   if requested_date is None:
+    return db.query(PriceListProductMasterView).filter(
+            PriceListProductMasterView.product_code == product_code,           
+        ).order_by(PriceListProductMasterView.effective_from_date.desc()).all()
+  
+   else :
+    return db.query(PriceListProductMasterView).filter(
+            PriceListProductMasterView.product_code == product_code,
+            PriceListProductMasterView.effective_from_date <= requested_date,
+            PriceListProductMasterView.effective_to_date >= requested_date
+        ).order_by(PriceListProductMasterView.effective_from_date.desc()).all()
   
 
 def save_price_list_product_master(db: Session, request: PriceListProductMaster, price_list_id: int,user_id: int):
@@ -627,7 +633,12 @@ def get_price_list_product_module_by_id(db: Session, id: int, requested_date: da
         # ).order_by(PriceListProductModuleView.effective_from_date.desc()).limit(1).all()
 
 def get_price_list_product_module_by_code(db: Session, product_code: int, requested_date: date):
-   return db.query(PriceListProductModuleView).filter(
+   if requested_date is None:
+        return db.query(PriceListProductModuleView).filter(
+        PriceListProductModuleView.product_code == product_code,
+    ).order_by(PriceListProductModuleView.module_effective_from_date.desc()).all()
+   else:
+    return db.query(PriceListProductModuleView).filter(
         PriceListProductModuleView.product_code == product_code,
         PriceListProductModuleView.module_effective_from_date <= requested_date,
         PriceListProductModuleView.module_effective_from_date >= requested_date
@@ -714,3 +725,37 @@ def delete_price_list_product_module(db: Session, price_list_product_module_id: 
                 "message": "Price list marked as Undeleted successfully",
 
             }
+
+
+#================================================================================
+
+
+
+# def save_product_rating(db: Session, request: ProductRating, id: int,user_id: int):
+     
+#     if id == 0:
+#         # Add operation
+#         product_rating_data_dict = request.dict()
+#         product_rating_data_dict["created_on"] = datetime.utcnow()
+#         product_rating_data_dict["user_id"] = user_id
+#         # price_list_data_dict["effective_from_date"] = datetime.utcnow()
+#         new_product_rating = ProductRating(**product_rating_data_dict)
+#         db.add(new_product_rating)
+#         db.commit()
+#         db.refresh(new_product_rating)
+#         return new_product_rating
+    
+#     else:
+#         # Update operation
+#         product_rating = db.query(ProductRating).filter(ProductRating .id == id).first()
+#         if product_rating is None:
+#             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price List not found")
+#         product_rating_data_dict = request.dict(exclude_unset=True)
+#         for key, value in product_rating_data_dict.items():
+#             setattr(product_rating, key, value)
+#         product_rating.modified_by = user_id
+#         product_rating.modified_on = datetime.utcnow()
+        
+#         db.commit()
+#         db.refresh(product_rating)
+#         return product_rating

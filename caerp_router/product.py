@@ -836,10 +836,10 @@ def get_price_list_product_master_by_id(
     return price_list_master_details
 
 
-@router.get("/get_price_list_product_master_by_code/{product_code}/{requested_date}", response_model=List[PriceListProductMasterView])
+@router.get("/get_price_list_product_master_by_code/{product_code}", response_model=List[PriceListProductMasterView])
 def get_price_list_product_master_by_code(
     product_code: str, 
-    requested_date:datetime,
+    requested_date:date = None,
     db: Session = Depends(get_db)):
     product_master_details = db_product.get_price_list_product_master_by_code(db, product_code,requested_date)
     if not product_master_details:
@@ -946,8 +946,11 @@ def get_price_list_product_module_by_id(
     return price_list_module_details
 
 
-@router.get("/get_price_list_product_module_by_code/{product_code}/{requested_date}", response_model=List[PriceListProductModuleView])
-def get_price_list_product_module_by_code(product_code: str, requested_date:date,db: Session = Depends(get_db)):
+@router.get("/get_price_list_product_module_by_code/{product_code}", response_model=List[PriceListProductModuleView])
+def get_price_list_product_module_by_code(
+    product_code: str, 
+    requested_date:date = None,
+    db: Session = Depends(get_db)):
     product_master_details = db_product.get_price_list_product_module_by_code(db, product_code,requested_date)
     if not product_master_details:
         raise HTTPException(status_code=404, detail="No products found ")
@@ -1023,6 +1026,28 @@ def delete_price_list_product_module(
     
     
     return db_product.delete_price_list_product_module(db, price_list_module_id,action_type,deleted_by=user_id)
+
+#==========================================================================
+
+
+
+# @router.post('/save_product_rating/{id}')
+# def save_product_rating(
+#         product_data: ProductRating ,
+#         id: int =0,  # Default to 0 for add operation
+#         db: Session = Depends(get_db),
+#         token: str = Depends(oauth2.oauth2_scheme)):
+#     if not token:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+    
+#     auth_info = authenticate_user(token) 
+#     user_id = auth_info["user_id"]
+#     # try:
+#     new_product_rating = db_product.save_product_rating(db,product_data,id,user_id)
+
+#     return new_product_rating
+
 
 
 
