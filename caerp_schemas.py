@@ -5,8 +5,6 @@ from typing import List,Optional, Union,Dict
 from datetime import date, datetime
 from UserDefinedConstants.user_defined_constants import BooleanFlag
 
-
-
 class CountryCreate(BaseModel):
     id: int
     country_name_english: str

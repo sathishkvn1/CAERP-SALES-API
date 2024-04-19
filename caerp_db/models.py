@@ -11,6 +11,7 @@ from sqlalchemy import Column, DateTime, func
 from sqlalchemy import Enum
 
 
+
 class CountryDB(caerp_base):
     __tablename__ = "app_countries"
 
