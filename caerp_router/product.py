@@ -6,7 +6,7 @@ from UserDefinedConstants.user_defined_constants import BooleanFlag, DeletedStat
 from caerp_auth.authentication import authenticate_user
 
 
-from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductMaster, ProductModule, UserRole
+from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductRating,ProductMaster, ProductModule, UserRole
 from caerp_schemas import AdminUserBaseForDelete, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
 from caerp_schemas import PriceListProductMasterView,PriceListProductModuleResponse,PriceListProductModuleView,PriceListProductMasterResponse,PriceListProductModule,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse
 from sqlalchemy.orm import Session
@@ -827,12 +827,12 @@ async def get_all_price_list_product_master(deleted_status: DeletedStatus = Dele
 
 
 
-@router.get("/get_price_list_product_master_by_id/{price_list_id}", response_model=List[PriceListProductMasterView])
+@router.get("/get_price_list_product_master_by_id/{product_master_id}", response_model=List[PriceListProductMasterView])
 def get_price_list_product_master_by_id(
-    price_list_id: int,
+    product_master_id: int,
     requested_date:date = None,
     db: Session = Depends(get_db)):
-    price_list_master_details = db_product.get_price_list_product_master_by_id(db, price_list_id,requested_date)
+    price_list_master_details = db_product.get_price_list_product_master_by_id(db, product_master_id,requested_date)
     if not price_list_master_details:
         raise HTTPException(status_code=404, detail="No products found for this id")
     return price_list_master_details
