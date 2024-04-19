@@ -1618,7 +1618,8 @@ class Email(BaseModel):
     subject: str
     messageType: str = "NO_REPLY"
     
- 
+    
+    
 class GetCustomerPasswordResetSchema(BaseModel):
     id			    :int
     customer_id 	:int
@@ -1760,7 +1761,18 @@ class PriceListProductModuleView(BaseModel):
     deleted_by              : Optional[int]
     deleted_on              : Optional[datetime]
 
- 
+
+
+class ProductRating(BaseModel):    
+
+    id              : int
+    product_master_id : int
+    user_id           : int
+    rating            : float
+    comment           : str
+    created_on        : datetime
+
+
 
 
 

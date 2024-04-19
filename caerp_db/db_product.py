@@ -487,15 +487,20 @@ def get_all_price_list_product_master(db: Session, deleted_status: DeletedStatus
 #         PriceListProductMaster.effective_to_date >= requested_date
 #     ).order_by(PriceListProductMaster.effective_from_date.desc()).limit(1).all()
 
-def get_price_list_product_master_by_id(db: Session, id: int, requested_date: datetime):
-    return db.query(PriceListProductMasterView).filter(
+def get_price_list_product_master_by_id(db: Session, id: int, requested_date: date):
+    if requested_date is None:
+        return db.query(PriceListProductMasterView).filter(
+            PriceListProductMasterView.module_id == id
+        ).order_by(PriceListProductMasterView.effective_from_date.desc()).all()
+    else :
+        return db.query(PriceListProductMasterView).filter(
         PriceListProductMasterView.product_master_id == id,
         PriceListProductMasterView.effective_from_date <= requested_date,
         PriceListProductMasterView.effective_to_date >= requested_date
     # ).order_by(PriceListProductMasterView.effective_from_date.desc()).limit(1).all()
     ).order_by(PriceListProductMasterView.effective_from_date.desc()).all()
 
-def get_price_list_product_master_by_code(db: Session, product_code: int, requested_date: datetime):
+def get_price_list_product_master_by_code(db: Session, product_code: int, requested_date: date):
    return db.query(PriceListProductMasterView).filter(
         PriceListProductMasterView.product_code == product_code,
         PriceListProductMasterView.effective_from_date <= requested_date,
@@ -588,11 +593,11 @@ def delete_price_list_product_master(db: Session, price_list_product_master_id: 
 
 def get_all_price_list_product_module(db: Session, deleted_status: DeletedStatus):
     if deleted_status == DeletedStatus.DELETED:
-        return db.query(PriceListProductModule).filter(PriceListProductModule.is_deleted == 'yes').all()
+        return db.query(PriceListProductModuleView).filter(PriceListProductModuleView.is_deleted == 'yes').all()
     elif deleted_status == DeletedStatus.NOT_DELETED:
-        return db.query(PriceListProductModule).filter(PriceListProductModule.is_deleted == 'no').all()
+        return db.query(PriceListProductModuleView).filter(PriceListProductModuleView.is_deleted == 'no').all()
     elif deleted_status == DeletedStatus.ALL:
-        return db.query(PriceListProductModule).all()
+        return db.query(PriceListProductModuleView).all()
     else:
        
         raise ValueError("Invalid deleted_status")
@@ -607,13 +612,18 @@ def get_all_price_list_product_module(db: Session, deleted_status: DeletedStatus
 # #     ).order_by(PriceListProductModule.effective_from_date.desc()).limit(1).all()
 
 def get_price_list_product_module_by_id(db: Session, id: int, requested_date: date):
-    return db.query(PriceListProductModuleView).filter(
-        PriceListProductModuleView.module_id == id,
-        PriceListProductModuleView.module_effective_from_date <= requested_date,
-        PriceListProductModuleView.module_effective_to_date >= requested_date
-    ).order_by(PriceListProductModuleView.module_effective_from_date.desc()).all()
+    if requested_date is None:
+        return db.query(PriceListProductModuleView).filter(
+            PriceListProductModuleView.module_id == id
+        ).order_by(PriceListProductModuleView.module_effective_from_date.desc()).all()
+    else :
+        return db.query(PriceListProductModuleView).filter(
+            PriceListProductModuleView.module_id == id,
+            PriceListProductModuleView.module_effective_from_date <= requested_date,
+            PriceListProductModuleView.module_effective_to_date >= requested_date
+        ).order_by(PriceListProductModuleView.module_effective_from_date.desc()).all()
 
-    # ).order_by(PriceListProductModuleView.effective_from_date.desc()).limit(1).all()
+        # ).order_by(PriceListProductModuleView.effective_from_date.desc()).limit(1).all()
 
 def get_price_list_product_module_by_code(db: Session, product_code: int, requested_date: date):
    return db.query(PriceListProductModuleView).filter(
@@ -671,6 +681,7 @@ def update_price_list_product_module(db: Session, request:PriceListProductModule
         return new_price_list
 
 
+
 def delete_price_list_product_module(db: Session, price_list_product_module_id: int,action_type:str,deleted_by: int):
     existing_price_list = db.query(PriceListProductModule).filter(PriceListProductModule.id == price_list_product_module_id).first()
 
@@ -702,4 +713,3 @@ def delete_price_list_product_module(db: Session, price_list_product_module_id: 
                 "message": "Price list marked as Undeleted successfully",
 
             }
-

@@ -32,7 +32,6 @@ UPLOAD_DIR_VIDEO        = "uploads/product_master_additional_videos"
 UPLOAD_DIR_MASTER_IMAGE_VIDEO = "uploads/product_master_image_video"
 
 
-
 router = APIRouter(
     # prefix="/admin",
     tags=["PRODUCTS"]
@@ -167,7 +166,7 @@ def upload_product_main_video(
 def get_product_master_video(id: int):
     
     product_master_video_filename = f"{id}.mp4"  
-    # BASE_URL="http://127.0.0.1:3000"
+    # BASE_URL="http://127.0.0.1:8010/"
     return {"photo_url": f"{BASE_URL}/product/save_product_master/{product_master_video_filename}"}
 
 @router.post('/update_product_master_image/{id}', response_model=ProductMasterSchema)
@@ -200,7 +199,7 @@ def update_admin_user_image(
 def get_product_master_image(id: int):
     
     product_master_image_filename = f"{id}.jpg"  
-    # BASE_URL="http://127.0.0.1:3000"
+    # BASE_URL="http://127.0.0.1:8010/"
     return {"photo_url": f"{BASE_URL}/product/save_product_master/{product_master_image_filename}"}
 
 
@@ -219,6 +218,8 @@ def get_product_master_by_code(product_code: str, db: Session = Depends(get_db))
     if not product_master_details:
         raise HTTPException(status_code=404, detail="No products found for this id")
     return product_master_details
+
+
 
 
 @router.delete("/delete/product_master/{product_id}")
@@ -826,8 +827,11 @@ async def get_all_price_list_product_master(deleted_status: DeletedStatus = Dele
 
 
 
-@router.get("/get_price_list_product_master_by_id/{price_list_id}/{requested_date}", response_model=List[PriceListProductMasterView])
-def get_price_list_product_master_by_id(price_list_id: int,requested_date:datetime, db: Session = Depends(get_db)):
+@router.get("/get_price_list_product_master_by_id/{price_list_id}", response_model=List[PriceListProductMasterView])
+def get_price_list_product_master_by_id(
+    price_list_id: int,
+    requested_date:date = None,
+    db: Session = Depends(get_db)):
     price_list_master_details = db_product.get_price_list_product_master_by_id(db, price_list_id,requested_date)
     if not price_list_master_details:
         raise HTTPException(status_code=404, detail="No products found for this id")
@@ -835,7 +839,10 @@ def get_price_list_product_master_by_id(price_list_id: int,requested_date:dateti
 
 
 @router.get("/get_price_list_product_master_by_code/{product_code}/{requested_date}", response_model=List[PriceListProductMasterView])
-def get_price_list_product_master_by_code(product_code: str, requested_date:datetime,db: Session = Depends(get_db)):
+def get_price_list_product_master_by_code(
+    product_code: str, 
+    requested_date:datetime,
+    db: Session = Depends(get_db)):
     product_master_details = db_product.get_price_list_product_master_by_code(db, product_code,requested_date)
     if not product_master_details:
         raise HTTPException(status_code=404, detail="No products found ")
@@ -930,8 +937,11 @@ async def get_all_price_list_product_module(deleted_status: DeletedStatus = Dele
 
 
 
-@router.get("/get_price_list_product_module_by_id/{product_module_id}/{requested_date}", response_model=List[PriceListProductModuleView])
-def get_price_list_product_module_by_id(product_module_id: int,requested_date:date, db: Session = Depends(get_db)):
+@router.get("/get_price_list_product_module_by_id/{product_module_id}", response_model=List[PriceListProductModuleView])
+def get_price_list_product_module_by_id(
+    product_module_id: int,
+    requested_date:date = None,
+    db: Session = Depends(get_db)):
     price_list_module_details = db_product.get_price_list_product_module_by_id(db, product_module_id,requested_date)
     if not price_list_module_details:
         raise HTTPException(status_code=404, detail="No products found for this id")
@@ -1007,6 +1017,7 @@ def delete_price_list_product_module(
                      token: str = Depends(oauth2.oauth2_scheme)
                      
                     ):
+
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     auth_info = authenticate_user(token)
@@ -1014,6 +1025,7 @@ def delete_price_list_product_module(
     
     
     return db_product.delete_price_list_product_module(db, price_list_module_id,action_type,deleted_by=user_id)
+
 
 
 
