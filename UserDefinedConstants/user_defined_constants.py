@@ -27,5 +27,15 @@ class ActionType(str, Enum):
     DELETE = 'DELETE'
     UNDELETE = 'UNDELETE'
     
+# class ActionType(str, Enum):
+#     DELETE = 'DELETE'
+#     UNDELETE = 'UNDELETE'
+#     SAVE = 'SAVE'  # New action for both insert and update
 
     
+
+    
+class RecordActions(str,Enum):
+    UPDATE_ONLY  = 'UPDATE_ONLY'
+    UPDATE_AND_INSERT ='UPDATE_AND_INSERT'
+

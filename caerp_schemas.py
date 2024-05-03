@@ -1629,15 +1629,15 @@ class CustomerPasswordResetSchema(BaseModel):
 class PriceListProductMaster(BaseModel):
     
     product_master_id     : Optional[int]
-    price                 : Optional[float]
-    gst_rate                : Optional[float]
-    cgst_rate               : Optional[float]
-    sgst_rate               : Optional[float]
-    cess_rate               : Optional[float]
-    discount_percentage     : Optional[float]
-    discount_amount         : Optional[float]
-    effective_from_date     : Optional[date]
-    effective_to_date       : Optional[date]
+    price                 : float=0
+    igst_rate                : float=0.0
+    cgst_rate               : Optional[float] = 0.0
+    sgst_rate               : Optional[float] = 0.0
+    cess_rate               : Optional[float] = 0.0
+    discount_percentage     : Optional[float] = 0.0
+    discount_amount         : Optional[float] =0.0
+    effective_from_date     : Optional[date] 
+    effective_to_date       : Optional[date] = None
     
 
 class PriceListProductMasterResponse(BaseModel):
@@ -1698,15 +1698,17 @@ class PriceListProductModule(BaseModel):
     
     price_list_product_master_id   :int
     module_id                      : int
-    module_price                   : float
-    gst_rate                : float
-    cgst_rate               : float
-    sgst_rate               : float
-    cess_rate               : float
-    discount_percentage     : float
-    discount_amount         : float
+    module_price                   : float=0
+    igst_rate                : float=0
+    cgst_rate               : float=0
+    sgst_rate               : float=0
+    cess_rate               : float=0
+    discount_percentage     : float=0
+    discount_amount         : float=0
     effective_from_date     : Optional[date]
     effective_to_date       : Optional[date]
+
+
     
 
 class PriceListProductModuleResponse(PriceListProductModule):

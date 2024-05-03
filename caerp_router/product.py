@@ -1,7 +1,7 @@
 
 from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File,Query
 from typing import List, Optional
-from UserDefinedConstants.user_defined_constants import BooleanFlag, DeletedStatus,ActiveStatus,ActionType
+from UserDefinedConstants.user_defined_constants import BooleanFlag, DeletedStatus,ActiveStatus,ActionType, RecordActions
 from caerp_auth.authentication import authenticate_user
 
 from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductMaster, ProductModule, UserRole
@@ -1028,24 +1028,172 @@ def delete_price_list_product_module(
 
 #==========================================================================
 
-
-
-# @router.post('/save_product_rating/{id}')
-# def save_product_rating(
-#         product_data: ProductRating ,
-#         id: int =0,  # Default to 0 for add operation
-#         db: Session = Depends(get_db),
-#         token: str = Depends(oauth2.oauth2_scheme)):
-#     if not token:
-#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+#----------------------Sruthy(03/05/2024)------------------------------------------
+@router.get('/get_all_price_list_by_date')
+def get_all_price_list_by_date(
+    requested_date: date =None
+):
     
-    
-#     auth_info = authenticate_user(token) 
-#     user_id = auth_info["user_id"]
-#     # try:
-#     new_product_rating = db_product.save_product_rating(db,product_data,id,user_id)
+# Dummy product data
+    products = [
+        {
+            "product_master_id": 1,
+            "product_code": "ABC123",
+            "product_name": "Product 1",
+            "price_list": [
+                {
+                    "price_list_id": 1,
+                    "price": 100,
+                    "igst_rate":10,
+                    "cgst_rate": 6,
+                    "sgst_rate": 6,
+                    "cess_rate":7,
+                    "discount_percentage": 10,
+                    "discount_amount": 10,
+                    "effective_date_from": "2024-04-01",
+                    "effective_date_to": "2024-04-15"
+                },
+                {
+                    "price_list_id": 2,
+                    "price": 120,
+                    "igst_rate":10,
+                    "cgst_rate": 6,
+                    "sgst_rate": 6,
+                    "cess_rate":7,
+                    "discount_percentage": 15,
+                    "discount_amount": 15,
+                    "effective_date_from": "2024-04-16",
+                    "effective_date_to": "2024-04-30"
+                }
+            ]
+        },
+        {
+            "product_master_id": 2,
+            "product_code": "ABC124",
+            "product_name": "Product 2",
+            "price_list": [
+                {
+                    "price_list_id": 3,
+                    "price": 100,
+                    "igst_rate":10,
+                    "cgst_rate": 5,
+                    "sgst_rate": 5,
+                    "cess_rate":7,
+                    "discount_percentage": 10,
+                    "discount_amount": 10,
+                    "effective_date_from": "2024-04-01",
+                    "effective_date_to": "2024-04-15"
+                }
+            ]
+        },
+        {
+            "product_code": "ABC125",
+            "product_name": "Product 3",
+            "price_list": [
+                {
+                    "price": 150,
+                    "igst_rate":10,
+                    "cgst_rate": 6,
+                    "sgst_rate": 6,
+                    "cess_rate":7,
+                    "discount_percentage": 12,
+                    "discount_amount": 20,
+                    "effective_date_from": "2024-04-01",
+                    "effective_date_to": "2024-04-01"
+                }
+            ]
+        }
+        # Add more products as needed
+    ]
+    return  products
 
-#     return new_product_rating
+
+@router.post('/update_price_product_master')
+def update_price_product_master(
+        record_actions  : RecordActions,  
+        price_list_data: PriceListProductMaster=Depends() ,           
+        # price_list_id: int =0,  # Default to 0 for add operation
+        db: Session = Depends(get_db),
+        token: str = Depends(oauth2.oauth2_scheme)):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    if record_actions == RecordActions.UPDATE_ONLY:
+        return {"success": True, "message": "Update price list successfully"}
+    elif record_actions == RecordActions.UPDATE_AND_INSERT:
+        return {"success": True, "message": "Add new price list successfully"}
+    else:
+        return {"success": False, "message": "Invalid action"} 
+
+@router.get('/get_all_module_price_list_by_product_id')
+def get_all_module_price_list_by_product_id(
+    product_master_id: int 
+):
+    
+# Dummy product data
+    product_module_price_list = { product_master_id:1,
+        "module": [
+        {
+        "module_id":1,
+        "module_name": "ABC123",
+        "module_price": "222",
+        "module_igst_rate":2,
+        "module_cgst_rate": 5,
+        "module_sgst_rate": 5,
+        "module_cess_rate":3,
+        "module_discount_percentage": 10,
+        "module_discount_amount": 10,
+        "module_effective_date_from": "2024-04-01",
+        "module_effective_date_to": "2024-04-15"
+        },
+        {
+        "module_id":2,
+        "module_name": "ABC124",
+        "module_price": "2222",
+        "module_igst_rate":6,
+        "module_cgst_rate": 7,
+        "module_sgst_rate": 5,
+        "module_cess_rate":3,
+        "module_discount_percentage": 10,
+        "module_discount_amount": 10,
+        "module_effective_date_from": "2024-05-01",
+        "module_effective_date_to": "2024-05-15"
+        },
+        {
+        "module_id":3,
+        "module_name": "ABC125",
+        "module_price": "20000",
+        "module_igst_rate":8,
+        "module_cgst_rate": 5,
+        "module_sgst_rate": 6,
+        "module_cess_rate":3,
+        "module_discount_percentage": 10,
+        "module_discount_amount": 10,
+        "module_effective_date_from": "2024-04-01",
+        "module_effective_date_to": "2024-04-15"
+        },
+        ]
+        }
+    return  product_module_price_list
+
+
+@router.post('/update_price_product_module')
+def update_price_product_module(
+        record_actions  : RecordActions,  
+        price_list_data: PriceListProductModule =Depends(), 
+       
+        # id: int =0,  # Default to 0 for add operation
+        db: Session = Depends(get_db),
+        token: str = Depends(oauth2.oauth2_scheme)):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    if record_actions == RecordActions.UPDATE_ONLY:
+        return {"success": True, "message": "Update price list successfully"}
+    elif record_actions == RecordActions.UPDATE_AND_INSERT:
+        return {"success": True, "message": "Add new price list successfully"}
+    else:
+        return {"success": False, "message": "Invalid action"} 
+    
+#----------------------Sruthy(03/05/2024)------------------------------------------
 
 
 
