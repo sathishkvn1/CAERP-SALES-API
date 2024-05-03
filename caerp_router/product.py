@@ -5,7 +5,7 @@ from UserDefinedConstants.user_defined_constants import BooleanFlag, DeletedStat
 from caerp_auth.authentication import authenticate_user
 
 from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductMaster, ProductModule, UserRole
-from caerp_schemas import AdminUserBaseForDelete, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
+from caerp_schemas import AdminUserBaseForDelete, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductRating, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
 from caerp_schemas import PriceListProductMasterView,PriceListProductModuleResponse,PriceListProductModuleView,PriceListProductMasterResponse,PriceListProductModule,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse
 from sqlalchemy.orm import Session
 from starlette.requests import Request
@@ -551,12 +551,6 @@ def get_product_video_by_product_master_id(
     return product_video_details
 
 
-# @router.get("videos/get_product_additional_video/{user_id}", response_model=dict)
-# def get_our_team_image_url(user_id: int):
-    
-#     video_filename = f"{user_id}.jpg"  
-   
-#     return {"photo_url": f"{BASE_URL}/product/save_product_additional_video/{video_filename}"}
 
 @router.delete("/delete/product_video/{video_id}")
 def delete_product_video(
@@ -624,61 +618,6 @@ def get_all_installment_details_by_status(db: Session, deleted_status: DeletedSt
         raise ValueError("Invalid deleted_status")
 
 #---------------------------------------------------------------------------------------------------------------
-# @router.post("/save_installments/", response_model=None)
-# def create_installments(
-#     installment_data: InstallmentCreate=Depends(),
-#     db: Session = Depends(get_db),
-#     token: str = Depends(oauth2.oauth2_scheme)):
-    
-#     if not token:
-#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-#     auth_info = authenticate_user(token) 
-#     user_id = auth_info["user_id"]
-    
-#     print(f"User ID: {user_id}")
-#     print(f"Installment Data: {installment_data}")
-    
-    
-#     installment_master = db_product.create_installment_master(db, installment_data, user_id)
-    
-#     # Create the installment details records
-#     installment_details = []
-#     for _ in range(installment_data.number_of_installments):
-#         installment_details.append(db_product.create_installment_details(db, installment_master.id, installment_data, user_id))
-#     print(f"Created installment details: {installment_details}")    
-#     return installment_details
-
-#-----------------------------------------------------------
-
-
-
-# @router.post("/save_installments/", response_model=None)
-# def create_installments(
-#     installment_data: InstallmentCreate,
-#     db: Session = Depends(get_db),
-#     token: str = Depends(oauth2.oauth2_scheme)
-# ):
-#     if not token:
-#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-#     auth_info = authenticate_user(token) 
-#     user_id = auth_info["user_id"]
-    
-#     print(f"User ID: {user_id}")
-#     print(f"Installment Data: {installment_data}")
-    
-#     # Create the installment master record
-#     installment_master = db_product.create_installment_master(db, installment_data, user_id)
-    
-#     # Create the installment details records
-#     installment_details = []
-#     for detail in installment_data.installment_details:
-#         installment_detail = db_product.create_installment_details(db, installment_master.id, detail, user_id)
-#         installment_details.append(installment_detail)  # Append each installment detail once
-    
-#     print(f"Created installment details: {installment_details}")    
-#     return installment_details
 
 
 @router.post("/save_installments/", response_model=None)
@@ -1200,6 +1139,37 @@ def update_price_product_module(
         return {"success": True, "message": "Add new price list successfully"}
     else:
         return {"success": False, "message": "Invalid action"} 
+
+
+
+@router.post('/save_product_rating/{id}',response_model=None)
+def save_product_rating(
+        product_data: ProductRating ,
+        id: int =0,  # Default to 0 for add operation
+        db: Session = Depends(get_db),
+        token: str = Depends(oauth2.oauth2_scheme)):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+    
+    auth_info = authenticate_user(token) 
+    user_id = auth_info["user_id"]
+    # try:
+    new_product_rating = db_product.save_product_rating(db,product_data,id,user_id)
+    product_rating_id = new_product_rating.id
+    # return product_rating_id
+    return {
+        "success" : True,
+        "message": "Product rating saved successfully",
+        "product_rating_id": product_rating_id}
+    
+    
+
+@router.get("/get_product_rating")
+def get_product_rating(
+    db: Session = Depends(get_db)):
+    product_rating_details = db_product.get_product_ratings(db)
+    return product_rating_details
 
     
 #----------------------Sruthy(03/05/2024)------------------------------------------

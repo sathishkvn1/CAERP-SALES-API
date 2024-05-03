@@ -7,6 +7,7 @@ from caerp_db.models import  AdminUser, Designation,ProductRating,PriceListProdu
 from caerp_schemas import AdminUserBaseForDelete, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
 from sqlalchemy.orm import Session
 from starlette.requests import Request
+from sqlalchemy import text
 
 from settings import BASE_URL
 
@@ -758,3 +759,72 @@ def delete_price_list_product_module(db: Session, price_list_product_module_id: 
 #         db.commit()
 #         db.refresh(product_rating)
 #         return product_rating
+
+
+#----------------------Sruthy(03/05/2024)------------------------------------------
+def save_product_rating(db: Session, request: ProductRating, id: int,user_id: int):
+     
+    if id == 0:
+        # Add operation
+        product_rating_data_dict = request.dict()
+        product_rating_data_dict["created_on"] = datetime.utcnow()
+        product_rating_data_dict["user_id"] = user_id
+        new_product_rating = ProductRating(**product_rating_data_dict)
+        db.add(new_product_rating)
+        db.commit()
+        db.refresh(new_product_rating)
+        return new_product_rating
+    
+    else:
+        # Update operation
+        product_rating = db.query(ProductRating).filter(ProductRating .id == id).first()
+        if product_rating is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price List not found")
+        product_rating_data_dict = request.dict(exclude_unset=True)
+        for key, value in product_rating_data_dict.items():
+            setattr(product_rating, key, value)
+        product_rating.modified_by = user_id
+        product_rating.modified_on = datetime.utcnow()
+        
+        db.commit()
+        db.refresh(product_rating)
+        return product_rating
+    
+    
+def get_product_ratings(db: Session = Depends(get_db)):
+    # Query for individual rating counts
+    individual_query = text(
+        "SELECT product_master_id, rating, COUNT(rating) AS rating_count FROM product_rating GROUP BY product_master_id, rating;"
+
+)
+    individual_results = db.execute(individual_query).fetchall()
+
+    # Query for total rating count and average rating
+    total_query = text(
+        "SELECT product_master_id, COUNT(product_master_id) AS total_rating_count, AVG(rating) AS average_rating FROM product_rating GROUP BY product_master_id;"
+
+    )
+    total_results = db.execute(total_query).fetchall()
+
+    # Create a list to store product ratings
+    product_rating_details = []
+
+    for total_row in total_results:
+        product_id = total_row[0]
+        # Find individual ratings for the current product ID
+        ratings = [{"rating": row[1], "rating_count": row[2]} for row in individual_results if row[0] == product_id]
+        # Round the average rating to one decimal point
+        average_rating = round(total_row[2], 1)
+        # Append the product details to the list
+        product_rating_details.append({
+            "product_id": product_id,
+            "ratings": ratings,
+            "total_rating_count": total_row[1],
+            # "average_rating": total_row[2]
+            "average_rating": average_rating
+        })
+
+    if not product_rating_details:
+        raise HTTPException(status_code=404, detail="No products found")
+
+    return product_rating_details

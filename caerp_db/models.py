@@ -1178,12 +1178,16 @@ class PriceListProductModuleView(caerp_base):
     deleted_on              = Column(DateTime, default=None)
 
 
+
+
+
+
 class ProductRating(caerp_base):
     __tablename__ = 'product_rating'
 
     id              = Column(Integer, primary_key=True, index=True)
-    product_master_id = Column(Integer, nullable=False),
-    user_id           = Column(Integer, nullable=False),
-    rating            = Column(Float, nullable=False),
-    comment           = Column(String, nullable=False),
-    created_on        = Column(DateTime, nullable=False,default=func.now()),
+    product_master_id = Column(Integer, nullable=False)
+    user_id           = Column(Integer, nullable=False)
+    rating            = Column(Float, nullable=False)
+    comment           = Column(String, nullable=False)
+    created_on        = Column(DateTime, nullable=False,default=func.now())

@@ -1772,7 +1772,14 @@ class ProductRating(BaseModel):
     created_on        : datetime
 
 
+class ProductRating(BaseModel):    
 
+
+    product_master_id : int
+   
+    rating            : float
+    comment           : str
+    created_on        : datetime
 
 
 # class PriceListProductMasterResponse(BaseModel):
