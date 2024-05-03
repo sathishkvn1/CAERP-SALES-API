@@ -1772,34 +1772,11 @@ class ProductRating(BaseModel):
     created_on        : datetime
 
 
+
 class ProductRating(BaseModel):    
-
-
-    product_master_id : int
-   
+    
+    product_master_id : int  
     rating            : float
     comment           : str
-    created_on        : datetime
 
 
-# class PriceListProductMasterResponse(BaseModel):
-#     id                    :int
-#     product_master_id     : int
-#     price                 : float
-#     gst_rate                : float
-#     cgst_rate               : float
-#     sgst_rate               : float
-#     cess_rate               : float
-#     discount_percentage     : float
-#     discount_amount         : float
-#     effective_from_date     : date
-#     effective_to_date       : date
-#     created_by              : Optional[int]
-#     created_on              : Optional[datetime]
-#     modified_by             : Optional[int]
-#     modified_on             : Optional[datetime]
-#     is_deleted              : str
-#     is_deleted_directly     : str
-#     is_deleted_with_master  : str
-#     deleted_by              : Optional[int]
-#     deleted_on              : Optional[datetime]

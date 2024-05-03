@@ -1164,12 +1164,13 @@ def save_product_rating(
         "product_rating_id": product_rating_id}
     
     
-
-@router.get("/get_product_rating")
-def get_product_rating(
+@router.get("/get_product_rating_by_product_id/{product_id}")
+def get_product_rating_by_product_id(
+    product_id: int,
     db: Session = Depends(get_db)):
-    product_rating_details = db_product.get_product_ratings(db)
+    product_rating_details = db_product.get_product_ratings(product_id,db)
     return product_rating_details
+
 
     
 #----------------------Sruthy(03/05/2024)------------------------------------------

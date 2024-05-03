@@ -791,17 +791,18 @@ def save_product_rating(db: Session, request: ProductRating, id: int,user_id: in
         return product_rating
     
     
-def get_product_ratings(db: Session = Depends(get_db)):
+def get_product_ratings(product_id:int,db: Session = Depends(get_db)):
     # Query for individual rating counts
     individual_query = text(
-        "SELECT product_master_id, rating, COUNT(rating) AS rating_count FROM product_rating GROUP BY product_master_id, rating;"
+                    f"SELECT product_master_id, rating, COUNT(rating) AS rating_count FROM product_rating WHERE product_master_id = {product_id} GROUP BY  rating;"
+                # "SELECT product_master_id, rating, COUNT(rating) AS rating_count FROM product_rating GROUP BY product_master_id, rating;"
 
 )
     individual_results = db.execute(individual_query).fetchall()
 
     # Query for total rating count and average rating
     total_query = text(
-        "SELECT product_master_id, COUNT(product_master_id) AS total_rating_count, AVG(rating) AS average_rating FROM product_rating GROUP BY product_master_id;"
+       f"SELECT product_master_id, COUNT(product_master_id) AS total_rating_count, AVG(rating) AS average_rating FROM product_rating WHERE product_master_id = {product_id};"
 
     )
     total_results = db.execute(total_query).fetchall()
@@ -827,4 +828,5 @@ def get_product_ratings(db: Session = Depends(get_db)):
     if not product_rating_details:
         raise HTTPException(status_code=404, detail="No products found")
 
-    return product_rating_details
+    return product_rating_details[0]
+
