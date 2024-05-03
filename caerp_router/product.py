@@ -1108,11 +1108,13 @@ def get_all_price_list_by_date(
     return  products
 
 
+
 @router.post('/update_price_product_master')
 def update_price_product_master(
-        record_actions  : RecordActions,  
+        record_actions  : RecordActions, 
+        price_list_id: int, 
         price_list_data: PriceListProductMaster=Depends() ,           
-        # price_list_id: int =0,  # Default to 0 for add operation
+          
         db: Session = Depends(get_db),
         token: str = Depends(oauth2.oauth2_scheme)):
     if not token:
@@ -1124,13 +1126,19 @@ def update_price_product_master(
     else:
         return {"success": False, "message": "Invalid action"} 
 
-@router.get('/get_all_module_price_list_by_product_id')
-def get_all_module_price_list_by_product_id(
-    product_master_id: int 
+
+
+@router.get('/get_all_module_price_list_by_price_list_product_master_id')
+def get_all_module_price_list_by_price_list_product_master_id(
+    price_list_product_master_id: int 
 ):
     
 # Dummy product data
-    product_module_price_list = { product_master_id:1,
+    product_module_price_list = { 
+
+        'product_master_id':1,
+        'product_name':'product1',  
+        'price_list_product_master_id':1,                               
         "module": [
         {
         "module_id":1,
@@ -1176,12 +1184,12 @@ def get_all_module_price_list_by_product_id(
     return  product_module_price_list
 
 
+
 @router.post('/update_price_product_module')
 def update_price_product_module(
         record_actions  : RecordActions,  
-        price_list_data: PriceListProductModule =Depends(), 
-       
-        # id: int =0,  # Default to 0 for add operation
+        price_list_data: PriceListProductModule =Depends(),        
+        price_list_product_module_id: int =0,  # Default to 0 for add operation
         db: Session = Depends(get_db),
         token: str = Depends(oauth2.oauth2_scheme)):
     if not token:
@@ -1192,6 +1200,7 @@ def update_price_product_module(
         return {"success": True, "message": "Add new price list successfully"}
     else:
         return {"success": False, "message": "Invalid action"} 
+
     
 #----------------------Sruthy(03/05/2024)------------------------------------------
 
