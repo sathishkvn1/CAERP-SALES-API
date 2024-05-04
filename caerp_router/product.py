@@ -970,16 +970,12 @@ def delete_price_list_product_module(
 #----------------------Sruthy(03/05/2024)------------------------------------------
 @router.get('/get_all_price_list_by_date')
 def get_all_price_list_by_date(
-    requested_date: date =None
+    requested_date: date =None,
+    product_id : int =None
 ):
-    
-# Dummy product data
-    products = [
-        {
-            "product_master_id": 1,
-            "product_code": "ABC123",
-            "product_name": "Product 1",
-            "price_list": [
+    if product_id is not None:
+        products =  [
+                
                 {
                     "price_list_id": 1,
                     "price": 100,
@@ -989,6 +985,7 @@ def get_all_price_list_by_date(
                     "cess_rate":7,
                     "discount_percentage": 10,
                     "discount_amount": 10,
+                    "discounted_amount": 90,
                     "effective_date_from": "2024-04-01",
                     "effective_date_to": "2024-04-15"
                 },
@@ -1001,8 +998,73 @@ def get_all_price_list_by_date(
                     "cess_rate":7,
                     "discount_percentage": 15,
                     "discount_amount": 15,
+                    "discounted_amount": 105,
                     "effective_date_from": "2024-04-16",
                     "effective_date_to": "2024-04-30"
+                }
+            ]
+# Dummy product data
+    products = [
+        {
+            "product_master_id": 1,
+            "product_code": "ABC123",
+            "product_name": "Product 1",
+            "product_discription_main":"main description",
+            "product_discription_sub":"sub description",
+            "has_module":"yes",
+            "price_list": [
+                {
+                    "price_list_id": 1,
+                    "price": 100,
+                    "igst_rate":10,
+                    "cgst_rate": 6,
+                    "sgst_rate": 6,
+                    "cess_rate":7,
+                    "discount_percentage": 10,
+                    "discount_amount": 10,
+                    "discounted_amount": 90,
+                    "effective_date_from": "2024-04-01",
+                    "effective_date_to": "2024-04-15"
+                },
+                {
+                    "price_list_id": 2,
+                    "price": 120,
+                    "igst_rate":10,
+                    "cgst_rate": 6,
+                    "sgst_rate": 6,
+                    "cess_rate":7,
+                    "discount_percentage": 15,
+                    "discount_amount": 15,
+                    "discounted_amount": 90,
+                    "effective_date_from": "2024-04-16",
+                    "effective_date_to": "2024-04-30"
+                }
+                
+            ],
+            "rating": [
+                {
+                    "rating": 1,
+                    "rating_count": 100,
+                    "review_count":10,
+                    "total_rating": 6,
+                    "average_rating": 6,
+                    
+                },
+                {
+                    "rating": 3,
+                    "rating_count": 100,
+                    "review_count":10,
+                    "total_rating": 6,
+                    "average_rating": 6,
+                    
+                },
+                 {
+                    "rating": 5,
+                    "rating_count": 100,
+                    "review_count":10,
+                    "total_rating": 6,
+                    "average_rating": 6,
+                    
                 }
             ]
         },
@@ -1010,6 +1072,9 @@ def get_all_price_list_by_date(
             "product_master_id": 2,
             "product_code": "ABC124",
             "product_name": "Product 2",
+            "product_discription_main":"main description",
+            "product_discription_sub":"sub description",
+            "has_module":"yes",
             "price_list": [
                 {
                     "price_list_id": 3,
@@ -1020,14 +1085,44 @@ def get_all_price_list_by_date(
                     "cess_rate":7,
                     "discount_percentage": 10,
                     "discount_amount": 10,
+                    "discounted_amount": 90,
                     "effective_date_from": "2024-04-01",
                     "effective_date_to": "2024-04-15"
+                }
+            ],
+            "rating": [
+                {
+                    "rating": 1,
+                    "rating_count": 100,
+                    "review_count":10,
+                    "total_rating": 6,
+                    "average_rating": 6,
+                    
+                },
+                 {
+                    "rating": 2,
+                    "rating_count": 100,
+                    "review_count":10,
+                    "total_rating": 6,
+                    "average_rating": 6,
+                    
+                },
+                 {
+                    "rating": 4,
+                    "rating_count": 100,
+                    "review_count":10,
+                    "total_rating": 6,
+                    "average_rating": 6,
+                    
                 }
             ]
         },
         {
             "product_code": "ABC125",
             "product_name": "Product 3",
+            "product_discription_main":"main description",
+            "product_discription_sub":"sub description",
+            "has_module":"yes",
             "price_list": [
                 {
                     "price": 150,
@@ -1037,14 +1132,42 @@ def get_all_price_list_by_date(
                     "cess_rate":7,
                     "discount_percentage": 12,
                     "discount_amount": 20,
+                    "discounted_amount": 90,
                     "effective_date_from": "2024-04-01",
                     "effective_date_to": "2024-04-01"
+                }
+            ],
+            "rating": [
+                {
+                    "rating": 1,
+                    "rating_count": 100,
+                    "review_count":10,
+                    "total_rating": 6,
+                    "average_rating": 6,
+                    
+                },
+                {
+                    "rating": 2,
+                    "rating_count": 100,
+                    "review_count":10,
+                    "total_rating": 6,
+                    "average_rating": 6,
+                    
+                },
+                 {
+                    "rating": 3,
+                    "rating_count": 90,
+                    "review_count":10,
+                    "total_rating": 100,
+                    "average_rating": 60,
+                    
                 }
             ]
         }
         # Add more products as needed
     ]
     return  products
+
 
 
 
@@ -1170,6 +1293,40 @@ def get_product_rating_by_product_id(
     db: Session = Depends(get_db)):
     product_rating_details = db_product.get_product_ratings(product_id,db)
     return product_rating_details
+
+@router.get("/get_product_rating_comments_by_product_id")
+def get_product_rating_comments_by_product_id(
+      product_id : int,
+    db: Session = Depends(get_db)):
+    # product_rating_comments = db_product.get_product_rating_comments_by_product_id(db,product_id)
+    product_rating_comments =[
+        {
+            "product_master_id": 1,
+            "product_code": "ABC123",
+            "product_name": "Product 1", 
+            "Comments":[{
+                "user_name": "user1",
+                "comment" : "comment 1",
+                "date_of_comment":"2024-04-20"
+                
+            },
+            {
+                "user_name": "user2",
+                "comment" : "comment 2",
+                "date_of_comment":"2024-04-20"
+                
+            },
+            {
+                "user_name": "user3",
+                "comment" : "comment 3",
+                "date_of_comment":"2024-05-20"
+                
+            },
+            ]
+
+    }
+    ]
+    return product_rating_comments
 
 
     
