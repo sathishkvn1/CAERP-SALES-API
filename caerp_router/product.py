@@ -1190,60 +1190,206 @@ def update_price_product_master(
 
 
 
-@router.get('/get_all_module_price_list_by_price_list_product_master_id')
-def get_all_module_price_list_by_price_list_product_master_id(
-    price_list_product_master_id: int 
+@router.get('/get_all_price_list_by_date')
+def get_all_price_list_by_date(
+    requested_date: date =None,
+    product_id : int =None
 ):
-    
+    if product_id is not None:
+        products =  [
+                
+                {
+                    "price_list_id": 1,
+                    "price": 100,
+                    "igst_rate":10,
+                    "cgst_rate": 6,
+                    "sgst_rate": 6,
+                    "cess_rate":7,
+                    "discount_percentage": 10,
+                    "discount_amount": 10,
+                    "discounted_amount": 90,
+                    "effective_date_from": "2024-04-01",
+                    "effective_date_to": "2024-04-15"
+                },
+                {
+                    "price_list_id": 2,
+                    "price": 120,
+                    "igst_rate":10,
+                    "cgst_rate": 6,
+                    "sgst_rate": 6,
+                    "cess_rate":7,
+                    "discount_percentage": 15,
+                    "discount_amount": 15,
+                    "discounted_amount": 105,
+                    "effective_date_from": "2024-04-16",
+                    "effective_date_to": "2024-04-30"
+                }
+            ]
 # Dummy product data
-    product_module_price_list = { 
-
-        'product_master_id':1,
-        'product_name':'product1',  
-        'price_list_product_master_id':1,                               
-        "module": [
-        {
-        "module_id":1,
-        "module_name": "ABC123",
-        "module_price": "222",
-        "module_igst_rate":2,
-        "module_cgst_rate": 5,
-        "module_sgst_rate": 5,
-        "module_cess_rate":3,
-        "module_discount_percentage": 10,
-        "module_discount_amount": 10,
-        "module_effective_date_from": "2024-04-01",
-        "module_effective_date_to": "2024-04-15"
-        },
-        {
-        "module_id":2,
-        "module_name": "ABC124",
-        "module_price": "2222",
-        "module_igst_rate":6,
-        "module_cgst_rate": 7,
-        "module_sgst_rate": 5,
-        "module_cess_rate":3,
-        "module_discount_percentage": 10,
-        "module_discount_amount": 10,
-        "module_effective_date_from": "2024-05-01",
-        "module_effective_date_to": "2024-05-15"
-        },
-        {
-        "module_id":3,
-        "module_name": "ABC125",
-        "module_price": "20000",
-        "module_igst_rate":8,
-        "module_cgst_rate": 5,
-        "module_sgst_rate": 6,
-        "module_cess_rate":3,
-        "module_discount_percentage": 10,
-        "module_discount_amount": 10,
-        "module_effective_date_from": "2024-04-01",
-        "module_effective_date_to": "2024-04-15"
-        },
+    else:
+        products = [
+            {
+                "product_master_id": 1,
+                "product_code": "ABC123",
+                "product_name": "Product 1",
+                "product_discription_main":"main description",
+                "product_discription_sub":"sub description",
+                "has_module":"yes",
+                "price_list": [
+                    {
+                        "price_list_id": 1,
+                        "price": 100,
+                        "igst_rate":10,
+                        "cgst_rate": 6,
+                        "sgst_rate": 6,
+                        "cess_rate":7,
+                        "discount_percentage": 10,
+                        "discount_amount": 10,
+                        "discounted_amount": 90,
+                        "effective_date_from": "2024-04-01",
+                        "effective_date_to": "2024-04-15"
+                    },
+                    {
+                        "price_list_id": 2,
+                        "price": 120,
+                        "igst_rate":10,
+                        "cgst_rate": 6,
+                        "sgst_rate": 6,
+                        "cess_rate":7,
+                        "discount_percentage": 15,
+                        "discount_amount": 15,
+                        "discounted_amount": 90,
+                        "effective_date_from": "2024-04-16",
+                        "effective_date_to": "2024-04-30"
+                    }
+                    
+                ],
+                "rating": [
+                    {
+                        "rating": 1,
+                        "rating_count": 100,
+                        "review_count":10,
+                        "total_rating": 6,
+                        "average_rating": 6,
+                        
+                    },
+                    {
+                        "rating": 3,
+                        "rating_count": 100,
+                        "review_count":10,
+                        "total_rating": 6,
+                        "average_rating": 6,
+                        
+                    },
+                    {
+                        "rating": 5,
+                        "rating_count": 100,
+                        "review_count":10,
+                        "total_rating": 6,
+                        "average_rating": 6,
+                        
+                    }
+                ]
+            },
+            {
+                "product_master_id": 2,
+                "product_code": "ABC124",
+                "product_name": "Product 2",
+                "product_discription_main":"main description",
+                "product_discription_sub":"sub description",
+                "has_module":"yes",
+                "price_list": [
+                    {
+                        "price_list_id": 3,
+                        "price": 100,
+                        "igst_rate":10,
+                        "cgst_rate": 5,
+                        "sgst_rate": 5,
+                        "cess_rate":7,
+                        "discount_percentage": 10,
+                        "discount_amount": 10,
+                        "discounted_amount": 90,
+                        "effective_date_from": "2024-04-01",
+                        "effective_date_to": "2024-04-15"
+                    }
+                ],
+                "rating": [
+                    {
+                        "rating": 1,
+                        "rating_count": 100,
+                        "review_count":10,
+                        "total_rating": 6,
+                        "average_rating": 6,
+                        
+                    },
+                    {
+                        "rating": 2,
+                        "rating_count": 100,
+                        "review_count":10,
+                        "total_rating": 6,
+                        "average_rating": 6,
+                        
+                    },
+                    {
+                        "rating": 4,
+                        "rating_count": 100,
+                        "review_count":10,
+                        "total_rating": 6,
+                        "average_rating": 6,
+                        
+                    }
+                ]
+            },
+            {
+                "product_code": "ABC125",
+                "product_name": "Product 3",
+                "product_discription_main":"main description",
+                "product_discription_sub":"sub description",
+                "has_module":"yes",
+                "price_list": [
+                    {
+                        "price": 150,
+                        "igst_rate":10,
+                        "cgst_rate": 6,
+                        "sgst_rate": 6,
+                        "cess_rate":7,
+                        "discount_percentage": 12,
+                        "discount_amount": 20,
+                        "discounted_amount": 90,
+                        "effective_date_from": "2024-04-01",
+                        "effective_date_to": "2024-04-01"
+                    }
+                ],
+                "rating": [
+                    {
+                        "rating": 1,
+                        "rating_count": 100,
+                        "review_count":10,
+                        "total_rating": 6,
+                        "average_rating": 6,
+                        
+                    },
+                    {
+                        "rating": 2,
+                        "rating_count": 100,
+                        "review_count":10,
+                        "total_rating": 6,
+                        "average_rating": 6,
+                        
+                    },
+                    {
+                        "rating": 3,
+                        "rating_count": 90,
+                        "review_count":10,
+                        "total_rating": 100,
+                        "average_rating": 60,
+                        
+                    }
+                ]
+            }
+            # Add more products as needed
         ]
-        }
-    return  product_module_price_list
+    return  products
 
 
 
