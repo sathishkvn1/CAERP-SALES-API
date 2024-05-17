@@ -1,12 +1,14 @@
 
-from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File,Query
-from typing import List, Optional
-from UserDefinedConstants.user_defined_constants import BooleanFlag, DeletedStatus,ActiveStatus,ActionType, RecordActions
-from caerp_auth.authentication import authenticate_user
 
-from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductMaster, ProductModule, UserRole
-from caerp_schemas import AdminUserBaseForDelete, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductRating, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
-from caerp_schemas import PriceListProductMasterView,PriceListProductModuleResponse,PriceListProductModuleView,PriceListProductMasterResponse,PriceListProductModule,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse
+from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File,Query,Request
+from typing import List, Optional,Dict
+from UserDefinedConstants.user_defined_constants import BooleanFlag, DeletedStatus,Operator,ActiveStatus,ActionType,RecordActions
+from caerp_auth.authentication import authenticate_user
+from typing import Union
+
+from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductRating,ProductMaster, ProductModule, UserRole
+from caerp_schemas import AdminUserBaseForDelete, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
+from caerp_schemas import ProductMasterPriceSchema,PriceListProductMasterView,ProductRating,PriceListProductModuleResponse,PriceListProductModuleView,PriceListProductMasterResponse,PriceListProductModule,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
@@ -34,6 +36,7 @@ router = APIRouter(
     # prefix="/admin",
     tags=["PRODUCTS"]
 )
+
 
 
 #/////////////////////
@@ -551,6 +554,12 @@ def get_product_video_by_product_master_id(
     return product_video_details
 
 
+# @router.get("videos/get_product_additional_video/{user_id}", response_model=dict)
+# def get_our_team_image_url(user_id: int):
+    
+#     video_filename = f"{user_id}.jpg"  
+   
+#     return {"photo_url": f"{BASE_URL}/product/save_product_additional_video/{video_filename}"}
 
 @router.delete("/delete/product_video/{video_id}")
 def delete_product_video(
@@ -618,6 +627,61 @@ def get_all_installment_details_by_status(db: Session, deleted_status: DeletedSt
         raise ValueError("Invalid deleted_status")
 
 #---------------------------------------------------------------------------------------------------------------
+# @router.post("/save_installments/", response_model=None)
+# def create_installments(
+#     installment_data: InstallmentCreate=Depends(),
+#     db: Session = Depends(get_db),
+#     token: str = Depends(oauth2.oauth2_scheme)):
+    
+#     if not token:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+#     auth_info = authenticate_user(token) 
+#     user_id = auth_info["user_id"]
+    
+#     print(f"User ID: {user_id}")
+#     print(f"Installment Data: {installment_data}")
+    
+    
+#     installment_master = db_product.create_installment_master(db, installment_data, user_id)
+    
+#     # Create the installment details records
+#     installment_details = []
+#     for _ in range(installment_data.number_of_installments):
+#         installment_details.append(db_product.create_installment_details(db, installment_master.id, installment_data, user_id))
+#     print(f"Created installment details: {installment_details}")    
+#     return installment_details
+
+#-----------------------------------------------------------
+
+
+
+# @router.post("/save_installments/", response_model=None)
+# def create_installments(
+#     installment_data: InstallmentCreate,
+#     db: Session = Depends(get_db),
+#     token: str = Depends(oauth2.oauth2_scheme)
+# ):
+#     if not token:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+#     auth_info = authenticate_user(token) 
+#     user_id = auth_info["user_id"]
+    
+#     print(f"User ID: {user_id}")
+#     print(f"Installment Data: {installment_data}")
+    
+#     # Create the installment master record
+#     installment_master = db_product.create_installment_master(db, installment_data, user_id)
+    
+#     # Create the installment details records
+#     installment_details = []
+#     for detail in installment_data.installment_details:
+#         installment_detail = db_product.create_installment_details(db, installment_master.id, detail, user_id)
+#         installment_details.append(installment_detail)  # Append each installment detail once
+    
+#     print(f"Created installment details: {installment_details}")    
+#     return installment_details
 
 
 @router.post("/save_installments/", response_model=None)
@@ -745,653 +809,7 @@ def get_installment_masters(
     return query.all()
 
 
-
-#=================================================================================
-
-
-
-@router.get("/get_all_price_list_product_master/", response_model=List[PriceListProductMasterResponse])
-async def get_all_price_list_product_master(deleted_status: DeletedStatus = DeletedStatus.NOT_DELETED,
-                              db: Session = Depends(get_db),
-                             ):
-
-    price_list = db_product.get_all_price_list_product_master(db, deleted_status)
-    return price_list
-
-
-
-
-
-
-@router.get("/get_price_list_product_master_by_id/{price_list_id}", response_model=List[PriceListProductMasterView])
-def get_price_list_product_master_by_id(
-    product_master_id: int,
-    requested_date:date = None,
-    db: Session = Depends(get_db)):
-    price_list_master_details = db_product.get_price_list_product_master_by_id(db,product_master_id,requested_date)
-    if not price_list_master_details:
-        raise HTTPException(status_code=404, detail="No products found for this id")
-    return price_list_master_details
-
-
-@router.get("/get_price_list_product_master_by_code/{product_code}", response_model=List[PriceListProductMasterView])
-def get_price_list_product_master_by_code(
-    product_code: str, 
-    requested_date:date = None,
-    db: Session = Depends(get_db)):
-    product_master_details = db_product.get_price_list_product_master_by_code(db, product_code,requested_date)
-    if not product_master_details:
-        raise HTTPException(status_code=404, detail="No products found ")
-    return product_master_details
-
-
-
-@router.post('/save_price_list_product_master/{id}', response_model=PriceListProductMasterResponse)
-def save_price_list_product_master(
-        price_list_data: PriceListProductMaster ,
-        id: int =0,  # Default to 0 for add operation
-        db: Session = Depends(get_db),
-        token: str = Depends(oauth2.oauth2_scheme)):
-    if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-    
-    auth_info = authenticate_user(token) 
-    user_id = auth_info["user_id"]
-    try:
-        new_price_list = db_product.save_price_list_product_master(db, price_list_data,id,user_id)
-
-        return new_price_list
-    except Exception as e:
-        error_detail = [{
-            "loc": ["server"],
-            "msg": "Internal server error",
-            "type": "internal_server_error"
-        }]
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
-
-
-@router.post('/update_price_list_product_master/{price_list_id}', response_model=PriceListProductMasterResponse)
-def update_price_list_product_master(
-        price_list_data: PriceListProductMaster ,
-        price_list_id: int =0,  # Default to 0 for add operation
-        db: Session = Depends(get_db),
-        token: str = Depends(oauth2.oauth2_scheme)):
-    if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-    
-    auth_info = authenticate_user(token) 
-    user_id = auth_info["user_id"]
-    try:
-        new_price_list = db_product.update_price_list_product_master(db, price_list_data,price_list_id,user_id)
-
-        return new_price_list
-    except Exception as e:
-        error_detail = [{
-            "loc": ["server"],
-            "msg": "Internal server error",
-            "type": "internal_server_error"
-        }]
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
-
-
-
-
-@router.delete("/delete/price_list_product_master/{price_list_master_id}")
-def delete_price_list_product_master(
-                     price_list_master_id: int,
-                     action_type: ActionType = ActionType.UNDELETE,
-                     db: Session = Depends(get_db),
-                     token: str = Depends(oauth2.oauth2_scheme)
-                     
-                    ):
-    if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    auth_info = authenticate_user(token)
-    user_id = auth_info["user_id"]
-    
-    
-    return db_product.delete_price_list_product_master(db, price_list_master_id,action_type,deleted_by=user_id)
-
-
-#==========================================================================================================================
-
-
-
-
-@router.get("/get_all_price_list_product_module/", response_model=List[PriceListProductModuleView])
-async def get_all_price_list_product_module(deleted_status: DeletedStatus = DeletedStatus.NOT_DELETED,
-                              db: Session = Depends(get_db),
-                             ):
-
-    price_list = db_product.get_all_price_list_product_module(db, deleted_status)
-    return price_list
-
-
-
-
-
-
-@router.get("/get_price_list_product_module_by_id/{product_module_id}", response_model=List[PriceListProductModuleView])
-def get_price_list_product_module_by_id(
-    product_module_id: int,
-    requested_date:date = None,
-    db: Session = Depends(get_db)):
-    price_list_module_details = db_product.get_price_list_product_module_by_id(db, product_module_id,requested_date)
-    if not price_list_module_details:
-        raise HTTPException(status_code=404, detail="No products found for this id")
-    return price_list_module_details
-
-
-@router.get("/get_price_list_product_module_by_code/{product_code}", response_model=List[PriceListProductModuleView])
-def get_price_list_product_module_by_code(
-    product_code: str, 
-    requested_date:date = None,
-    db: Session = Depends(get_db)):
-    product_master_details = db_product.get_price_list_product_module_by_code(db, product_code,requested_date)
-    if not product_master_details:
-        raise HTTPException(status_code=404, detail="No products found ")
-    return product_master_details
-
-
-
-@router.post('/save_price_list_product_module/{id}', response_model=PriceListProductModuleResponse)
-def save_price_list_product_module(
-        price_list_data: PriceListProductModule ,
-        id: int =0,  # Default to 0 for add operation
-        db: Session = Depends(get_db),
-        token: str = Depends(oauth2.oauth2_scheme)):
-    if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-    
-    auth_info = authenticate_user(token) 
-    user_id = auth_info["user_id"]
-    # try:
-    new_price_list = db_product.save_price_list_product_module(db, price_list_data,id,user_id)
-
-    return new_price_list
-    # except Exception as e:
-    #     error_detail = [{
-    #         "loc": ["server"],
-    #         "msg": "Internal server error",
-    #         "type": "internal_server_error"
-    #     }]
-    #     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
-
-
-@router.post('/update_price_list_product_module/{price_list_id}', response_model=PriceListProductModuleResponse)
-def update_price_list_product_module(
-        price_list_data: PriceListProductModule ,
-        price_list_id: int =0,  # Default to 0 for add operation
-        db: Session = Depends(get_db),
-        token: str = Depends(oauth2.oauth2_scheme)):
-    if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-    
-    auth_info = authenticate_user(token) 
-    user_id = auth_info["user_id"]
-    try:
-        new_price_list = db_product.update_price_list_product_module(db, price_list_data,price_list_id,user_id)
-
-        return new_price_list
-    except Exception as e:
-        error_detail = [{
-            "loc": ["server"],
-            "msg": "Internal server error",
-            "type": "internal_server_error"
-        }]
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_detail)
-
-
-
-
-@router.delete("/delete/price_list_product_module/{price_list_module_id}")
-def delete_price_list_product_module(
-                     price_list_module_id: int,
-                     action_type: ActionType = ActionType.UNDELETE,
-                     db: Session = Depends(get_db),
-                     token: str = Depends(oauth2.oauth2_scheme)
-                     
-                    ):
-
-    if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    auth_info = authenticate_user(token)
-    user_id = auth_info["user_id"]
-    
-    
-    return db_product.delete_price_list_product_module(db, price_list_module_id,action_type,deleted_by=user_id)
-
-#==========================================================================
-
-#----------------------Sruthy(03/05/2024)------------------------------------------
-@router.get('/get_all_price_list_by_date')
-def get_all_price_list_by_date(
-    requested_date: date =None,
-    product_id : int =None
-):
-    if product_id is not None:
-        products =  [
-                
-                {
-                    "price_list_id": 1,
-                    "price": 100,
-                    "igst_rate":10,
-                    "cgst_rate": 6,
-                    "sgst_rate": 6,
-                    "cess_rate":7,
-                    "discount_percentage": 10,
-                    "discount_amount": 10,
-                    "discounted_amount": 90,
-                    "effective_date_from": "2024-04-01",
-                    "effective_date_to": "2024-04-15"
-                },
-                {
-                    "price_list_id": 2,
-                    "price": 120,
-                    "igst_rate":10,
-                    "cgst_rate": 6,
-                    "sgst_rate": 6,
-                    "cess_rate":7,
-                    "discount_percentage": 15,
-                    "discount_amount": 15,
-                    "discounted_amount": 105,
-                    "effective_date_from": "2024-04-16",
-                    "effective_date_to": "2024-04-30"
-                }
-            ]
-# Dummy product data
-    products = [
-        {
-            "product_master_id": 1,
-            "product_code": "ABC123",
-            "product_name": "Product 1",
-            "product_discription_main":"main description",
-            "product_discription_sub":"sub description",
-            "has_module":"yes",
-            "price_list": [
-                {
-                    "price_list_id": 1,
-                    "price": 100,
-                    "igst_rate":10,
-                    "cgst_rate": 6,
-                    "sgst_rate": 6,
-                    "cess_rate":7,
-                    "discount_percentage": 10,
-                    "discount_amount": 10,
-                    "discounted_amount": 90,
-                    "effective_date_from": "2024-04-01",
-                    "effective_date_to": "2024-04-15"
-                },
-                {
-                    "price_list_id": 2,
-                    "price": 120,
-                    "igst_rate":10,
-                    "cgst_rate": 6,
-                    "sgst_rate": 6,
-                    "cess_rate":7,
-                    "discount_percentage": 15,
-                    "discount_amount": 15,
-                    "discounted_amount": 90,
-                    "effective_date_from": "2024-04-16",
-                    "effective_date_to": "2024-04-30"
-                }
-                
-            ],
-            "rating": [
-                {
-                    "rating": 1,
-                    "rating_count": 100,
-                    "review_count":10,
-                    "total_rating": 6,
-                    "average_rating": 6,
-                    
-                },
-                {
-                    "rating": 3,
-                    "rating_count": 100,
-                    "review_count":10,
-                    "total_rating": 6,
-                    "average_rating": 6,
-                    
-                },
-                 {
-                    "rating": 5,
-                    "rating_count": 100,
-                    "review_count":10,
-                    "total_rating": 6,
-                    "average_rating": 6,
-                    
-                }
-            ]
-        },
-        {
-            "product_master_id": 2,
-            "product_code": "ABC124",
-            "product_name": "Product 2",
-            "product_discription_main":"main description",
-            "product_discription_sub":"sub description",
-            "has_module":"yes",
-            "price_list": [
-                {
-                    "price_list_id": 3,
-                    "price": 100,
-                    "igst_rate":10,
-                    "cgst_rate": 5,
-                    "sgst_rate": 5,
-                    "cess_rate":7,
-                    "discount_percentage": 10,
-                    "discount_amount": 10,
-                    "discounted_amount": 90,
-                    "effective_date_from": "2024-04-01",
-                    "effective_date_to": "2024-04-15"
-                }
-            ],
-            "rating": [
-                {
-                    "rating": 1,
-                    "rating_count": 100,
-                    "review_count":10,
-                    "total_rating": 6,
-                    "average_rating": 6,
-                    
-                },
-                 {
-                    "rating": 2,
-                    "rating_count": 100,
-                    "review_count":10,
-                    "total_rating": 6,
-                    "average_rating": 6,
-                    
-                },
-                 {
-                    "rating": 4,
-                    "rating_count": 100,
-                    "review_count":10,
-                    "total_rating": 6,
-                    "average_rating": 6,
-                    
-                }
-            ]
-        },
-        {
-            "product_code": "ABC125",
-            "product_name": "Product 3",
-            "product_discription_main":"main description",
-            "product_discription_sub":"sub description",
-            "has_module":"yes",
-            "price_list": [
-                {
-                    "price": 150,
-                    "igst_rate":10,
-                    "cgst_rate": 6,
-                    "sgst_rate": 6,
-                    "cess_rate":7,
-                    "discount_percentage": 12,
-                    "discount_amount": 20,
-                    "discounted_amount": 90,
-                    "effective_date_from": "2024-04-01",
-                    "effective_date_to": "2024-04-01"
-                }
-            ],
-            "rating": [
-                {
-                    "rating": 1,
-                    "rating_count": 100,
-                    "review_count":10,
-                    "total_rating": 6,
-                    "average_rating": 6,
-                    
-                },
-                {
-                    "rating": 2,
-                    "rating_count": 100,
-                    "review_count":10,
-                    "total_rating": 6,
-                    "average_rating": 6,
-                    
-                },
-                 {
-                    "rating": 3,
-                    "rating_count": 90,
-                    "review_count":10,
-                    "total_rating": 100,
-                    "average_rating": 60,
-                    
-                }
-            ]
-        }
-        # Add more products as needed
-    ]
-    return  products
-
-
-
-
-@router.post('/update_price_product_master')
-def update_price_product_master(
-        record_actions  : RecordActions, 
-        price_list_id: int, 
-        price_list_data: PriceListProductMaster=Depends() ,           
-          
-        db: Session = Depends(get_db),
-        token: str = Depends(oauth2.oauth2_scheme)):
-    if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    if record_actions == RecordActions.UPDATE_ONLY:
-        return {"success": True, "message": "Update price list successfully"}
-    elif record_actions == RecordActions.UPDATE_AND_INSERT:
-        return {"success": True, "message": "Add new price list successfully"}
-    else:
-        return {"success": False, "message": "Invalid action"} 
-
-
-
-@router.get('/get_all_price_list_by_date')
-def get_all_price_list_by_date(
-    requested_date: date =None,
-    product_id : int =None
-):
-    if product_id is not None:
-        products =  [
-                
-                {
-                    "price_list_id": 1,
-                    "price": 100,
-                    "igst_rate":10,
-                    "cgst_rate": 6,
-                    "sgst_rate": 6,
-                    "cess_rate":7,
-                    "discount_percentage": 10,
-                    "discount_amount": 10,
-                    "discounted_amount": 90,
-                    "effective_date_from": "2024-04-01",
-                    "effective_date_to": "2024-04-15"
-                },
-                {
-                    "price_list_id": 2,
-                    "price": 120,
-                    "igst_rate":10,
-                    "cgst_rate": 6,
-                    "sgst_rate": 6,
-                    "cess_rate":7,
-                    "discount_percentage": 15,
-                    "discount_amount": 15,
-                    "discounted_amount": 105,
-                    "effective_date_from": "2024-04-16",
-                    "effective_date_to": "2024-04-30"
-                }
-            ]
-# Dummy product data
-    else:
-        products = [
-            {
-                "product_master_id": 1,
-                "product_code": "ABC123",
-                "product_name": "Product 1",
-                "product_discription_main":"main description",
-                "product_discription_sub":"sub description",
-                "has_module":"yes",
-                "price_list": [
-                    {
-                        "price_list_id": 1,
-                        "price": 100,
-                        "igst_rate":10,
-                        "cgst_rate": 6,
-                        "sgst_rate": 6,
-                        "cess_rate":7,
-                        "discount_percentage": 10,
-                        "discount_amount": 10,
-                        "discounted_amount": 90,
-                        "effective_date_from": "2024-04-01",
-                        "effective_date_to": "2024-04-15"
-                    },
-                    {
-                        "price_list_id": 2,
-                        "price": 120,
-                        "igst_rate":10,
-                        "cgst_rate": 6,
-                        "sgst_rate": 6,
-                        "cess_rate":7,
-                        "discount_percentage": 15,
-                        "discount_amount": 15,
-                        "discounted_amount": 90,
-                        "effective_date_from": "2024-04-16",
-                        "effective_date_to": "2024-04-30"
-                    }
-                    
-                ],
-                "rating": [
-                    {
-                        "rating": 1,
-                        "rating_count": 100,
-                        "review_count":10,
-                        "total_rating": 6,
-                        "average_rating": 6,
-                        
-                    },
-                    {
-                        "rating": 3,
-                        "rating_count": 100,
-                        "review_count":10,
-                        "total_rating": 6,
-                        "average_rating": 6,
-                        
-                    },
-                    {
-                        "rating": 5,
-                        "rating_count": 100,
-                        "review_count":10,
-                        "total_rating": 6,
-                        "average_rating": 6,
-                        
-                    }
-                ]
-            },
-            {
-                "product_master_id": 2,
-                "product_code": "ABC124",
-                "product_name": "Product 2",
-                "product_discription_main":"main description",
-                "product_discription_sub":"sub description",
-                "has_module":"yes",
-                "price_list": [
-                    {
-                        "price_list_id": 3,
-                        "price": 100,
-                        "igst_rate":10,
-                        "cgst_rate": 5,
-                        "sgst_rate": 5,
-                        "cess_rate":7,
-                        "discount_percentage": 10,
-                        "discount_amount": 10,
-                        "discounted_amount": 90,
-                        "effective_date_from": "2024-04-01",
-                        "effective_date_to": "2024-04-15"
-                    }
-                ],
-                "rating": [
-                    {
-                        "rating": 1,
-                        "rating_count": 100,
-                        "review_count":10,
-                        "total_rating": 6,
-                        "average_rating": 6,
-                        
-                    },
-                    {
-                        "rating": 2,
-                        "rating_count": 100,
-                        "review_count":10,
-                        "total_rating": 6,
-                        "average_rating": 6,
-                        
-                    },
-                    {
-                        "rating": 4,
-                        "rating_count": 100,
-                        "review_count":10,
-                        "total_rating": 6,
-                        "average_rating": 6,
-                        
-                    }
-                ]
-            },
-            {
-                "product_code": "ABC125",
-                "product_name": "Product 3",
-                "product_discription_main":"main description",
-                "product_discription_sub":"sub description",
-                "has_module":"yes",
-                "price_list": [
-                    {
-                        "price": 150,
-                        "igst_rate":10,
-                        "cgst_rate": 6,
-                        "sgst_rate": 6,
-                        "cess_rate":7,
-                        "discount_percentage": 12,
-                        "discount_amount": 20,
-                        "discounted_amount": 90,
-                        "effective_date_from": "2024-04-01",
-                        "effective_date_to": "2024-04-01"
-                    }
-                ],
-                "rating": [
-                    {
-                        "rating": 1,
-                        "rating_count": 100,
-                        "review_count":10,
-                        "total_rating": 6,
-                        "average_rating": 6,
-                        
-                    },
-                    {
-                        "rating": 2,
-                        "rating_count": 100,
-                        "review_count":10,
-                        "total_rating": 6,
-                        "average_rating": 6,
-                        
-                    },
-                    {
-                        "rating": 3,
-                        "rating_count": 90,
-                        "review_count":10,
-                        "total_rating": 100,
-                        "average_rating": 60,
-                        
-                    }
-                ]
-            }
-            # Add more products as needed
-        ]
-    return  products
-
-
+#====================================================================================================
 
 @router.post('/update_price_product_module')
 def update_price_product_module(
@@ -1409,78 +827,49 @@ def update_price_product_module(
     else:
         return {"success": False, "message": "Invalid action"} 
 
+@router.get('/get_price_list_master')
+def get_price_list_master(
+    product_id: Optional[int] = None,
+    product_name: Optional[str] = None,
+    requested_date: Optional[date] =None,
+    operator : Operator = Operator.EQUAL_TO, # date filter parameter, 
+    db: Session = Depends(get_db)
+):
+        price_list_results =db_product.get_price_list_master(db,product_id,product_name,requested_date,operator)
 
+        if not price_list_results:
+           raise HTTPException(status_code=404, detail="No price list found for the given criteria")
 
-@router.post('/save_product_rating/{id}',response_model=None)
-def save_product_rating(
-        product_data: ProductRating ,
-        id: int =0,  # Default to 0 for add operation
-        db: Session = Depends(get_db),
-        token: str = Depends(oauth2.oauth2_scheme)):
+        # return price_list_results
+        products: Dict[int, Dict[str, any]] = {}
+
+        for result in price_list_results:
+            product_master_id  =  result.product_master_id
+        # Create a dictionary to represent the product and its price list
+            product_data = [{
+                "product_master_id": result.product_master_id,
+                "product_code": result.product_code,               
+                "product_name": result.product_name, 
+                "price": result.price,
+                "gst_rate": result.gst_rate,
+                "cess_rate": result.cess_rate,
+                "effective_from_date": result.effective_from_date,
+                "effective_to_date": result.effective_to_date
+               
+            }]
+        return product_data
+
+@router.post('/set_new_price')
+def set_new_price(
+    price_data: ProductMasterPriceSchema , 
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2.oauth2_scheme)
+    ):
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     
-    
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
-    # try:
-    new_product_rating = db_product.save_product_rating(db,product_data,id,user_id)
-    product_rating_id = new_product_rating.id
-    # return product_rating_id
-    return {
-        "success" : True,
-        "message": "Product rating saved successfully",
-        "product_rating_id": product_rating_id}
-    
-    
-@router.get("/get_product_rating_by_product_id/{product_id}")
-def get_product_rating_by_product_id(
-    product_id: int,
-    db: Session = Depends(get_db)):
-    product_rating_details = db_product.get_product_ratings(product_id,db)
-    return product_rating_details
+    new_price = db_product.set_new_price(db,price_data,user_id)
 
-@router.get("/get_product_rating_comments_by_product_id")
-def get_product_rating_comments_by_product_id(
-      product_id : int,
-    db: Session = Depends(get_db)):
-    # product_rating_comments = db_product.get_product_rating_comments_by_product_id(db,product_id)
-    product_rating_comments =[
-        {
-            "product_master_id": 1,
-            "product_code": "ABC123",
-            "product_name": "Product 1", 
-            "Comments":[{
-                "user_name": "user1",
-                "comment" : "comment 1",
-                "date_of_comment":"2024-04-20"
-                
-            },
-            {
-                "user_name": "user2",
-                "comment" : "comment 2",
-                "date_of_comment":"2024-04-20"
-                
-            },
-            {
-                "user_name": "user3",
-                "comment" : "comment 3",
-                "date_of_comment":"2024-05-20"
-                
-            },
-            ]
-
-    }
-    ]
-    return product_rating_comments
-
-
-    
-#----------------------Sruthy(03/05/2024)------------------------------------------
-
-
-
-
-
-
-
+    pass

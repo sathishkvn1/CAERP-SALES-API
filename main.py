@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware 
 
 from caerp_auth import authentication
-from caerp_router import get,site_manager,admin,menu,customer,product
+from caerp_router import get,site_manager,admin,menu,customer,product,common_functions
 
 from caerp_router import test
 from caerp_db.database import caerp_base, caerp_engine
@@ -38,6 +38,7 @@ app_test=FastAPI()
 
 
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -61,7 +62,7 @@ app.include_router(authentication.router)
 app.include_router(test.router)
 
 
-app.include_router(product.router)
+# app.include_router(product.router)
 
 # for app_tables
 app_get.include_router(authentication.router)
@@ -90,9 +91,7 @@ app_test.include_router(authentication.router)
 app_test.include_router(test.router)
 
 
-
-
-
+app.include_router(common_functions.router)
 
 
 

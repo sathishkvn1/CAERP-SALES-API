@@ -1191,3 +1191,40 @@ class ProductRating(caerp_base):
     rating            = Column(Float, nullable=False)
     comment           = Column(String, nullable=False)
     created_on        = Column(DateTime, nullable=False,default=func.now())
+
+
+class ProductMasterPrice(caerp_base):
+    __tablename__ = 'product_master_price'
+
+    id                      = Column(Integer, primary_key=True, index=True)
+    product_master_id       = Column(Integer, nullable=False)
+    price                   = Column(Float, nullable=False) 
+    gst_rate                = Column(Float, nullable=False) 
+    cess_rate               = Column(Float, nullable=False)  
+    effective_from_date     = Column(Date, nullable=False)
+    effective_to_date       = Column(Date, default=None)
+
+class ViewProductMasterPrice(caerp_base):
+    __tablename__ = 'view_product_master_price'
+
+    product_master_id              = Column(Integer, primary_key=True, index=True)
+    # product_master_id = Column(Integer, nullable=False)
+    category_id     = Column(Integer, nullable=False)
+    product_code    = Column(String, nullable=False)
+    product_name    = Column(String, nullable=False)
+    product_description_main = Column(String, nullable=False)
+    product_description_sub = Column(String, nullable=False)
+    has_module         = Column(Enum('yes', 'no'), nullable=False, default='no')
+    created_by       = Column(Integer, nullable=False)
+    created_on              = Column(DateTime, nullable=False, default=func.now())
+    modified_by             = Column(Integer, default=None)
+    modified_on             = Column(DateTime, default=None)
+    is_deleted              = Column(Enum('yes', 'no'), nullable=False, default='no')
+    deleted_by              = Column(Integer, default=None)
+    deleted_on              = Column(DateTime, default=None)
+    price                   = Column(Float, nullable=False) 
+    gst_rate                = Column(Float, nullable=False) 
+    cess_rate               = Column(Float, nullable=False)  
+    effective_from_date     = Column(Date, nullable=False)
+    effective_to_date       = Column(Date, default=None)
+

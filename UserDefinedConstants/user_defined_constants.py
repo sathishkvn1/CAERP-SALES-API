@@ -33,7 +33,11 @@ class ActionType(str, Enum):
 #     SAVE = 'SAVE'  # New action for both insert and update
 
     
-
+class Operator(str,Enum):
+    EQUAL_TO    = 'EQUAL_TO'
+    # NOT_EQUAL_TO = 'NOT_EQUAL_TO'
+    GREATER_THAN = 'GREATER_THAN'
+    LESS_THAN  = 'LESS_THAN'
     
 class RecordActions(str,Enum):
     UPDATE_ONLY  = 'UPDATE_ONLY'
