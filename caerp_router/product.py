@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File,Query,Request
 from typing import List, Optional,Dict
-from UserDefinedConstants.user_defined_constants import BooleanFlag, DeletedStatus,Operator,ActiveStatus,ActionType,RecordActions
+from UserDefinedConstants.user_defined_constants import BooleanFlag, DeletedStatus,Operator,ActiveStatus,ActionType,ProductConstatnt,RecordActions
 from caerp_auth.authentication import authenticate_user
 from typing import Union
 
@@ -841,7 +841,8 @@ def get_price_list_master(
            raise HTTPException(status_code=404, detail="No price list found for the given criteria")
 
         # return price_list_results
-        products: Dict[int, Dict[str, any]] = {}
+        # products: Dict[int, Dict[str, any]] = {}
+        products: List[Dict[str, any]] = []
 
         for result in price_list_results:
             product_master_id  =  result.product_master_id
@@ -857,11 +858,13 @@ def get_price_list_master(
                 "effective_to_date": result.effective_to_date
                
             }]
-        return product_data
+            products.append(product_data)
+        return products
 
 @router.post('/set_new_price')
 def set_new_price(
     price_data: ProductMasterPriceSchema , 
+    record_actions  : RecordActions, 
     db: Session = Depends(get_db),
     token: str = Depends(oauth2.oauth2_scheme)
     ):
@@ -870,6 +873,6 @@ def set_new_price(
     
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
-    new_price = db_product.set_new_price(db,price_data,user_id)
+    new_price = db_product.set_new_price(db,price_data,record_actions,user_id)
 
     pass
