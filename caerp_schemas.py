@@ -1788,3 +1788,13 @@ class ProductMasterPriceSchema(BaseModel):
     cess_rate               : float  
     effective_from_date     : date
     effective_to_date       : Optional[date]= None
+    
+class ProductMasterPriceSchema(BaseModel):
+
+    # id                      : int
+    product_master_id       : int
+    price                   : float
+    gst_rate                : float 
+    cess_rate               : float  
+    effective_from_date     : date
+    effective_to_date       : Optional[str]= None

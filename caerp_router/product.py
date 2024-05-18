@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File,Query,Request
 from typing import List, Optional,Dict
-from UserDefinedConstants.user_defined_constants import BooleanFlag, DeletedStatus,Operator,ActiveStatus,ActionType,ProductConstatnt,RecordActions
+from UserDefinedConstants.user_defined_constants import BooleanFlag, DeletedStatus,Operator,ActiveStatus,ActionType,RecordActions
 from caerp_auth.authentication import authenticate_user
 from typing import Union
 
@@ -626,63 +626,6 @@ def get_all_installment_details_by_status(db: Session, deleted_status: DeletedSt
        
         raise ValueError("Invalid deleted_status")
 
-#---------------------------------------------------------------------------------------------------------------
-# @router.post("/save_installments/", response_model=None)
-# def create_installments(
-#     installment_data: InstallmentCreate=Depends(),
-#     db: Session = Depends(get_db),
-#     token: str = Depends(oauth2.oauth2_scheme)):
-    
-#     if not token:
-#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-#     auth_info = authenticate_user(token) 
-#     user_id = auth_info["user_id"]
-    
-#     print(f"User ID: {user_id}")
-#     print(f"Installment Data: {installment_data}")
-    
-    
-#     installment_master = db_product.create_installment_master(db, installment_data, user_id)
-    
-#     # Create the installment details records
-#     installment_details = []
-#     for _ in range(installment_data.number_of_installments):
-#         installment_details.append(db_product.create_installment_details(db, installment_master.id, installment_data, user_id))
-#     print(f"Created installment details: {installment_details}")    
-#     return installment_details
-
-#-----------------------------------------------------------
-
-
-
-# @router.post("/save_installments/", response_model=None)
-# def create_installments(
-#     installment_data: InstallmentCreate,
-#     db: Session = Depends(get_db),
-#     token: str = Depends(oauth2.oauth2_scheme)
-# ):
-#     if not token:
-#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-#     auth_info = authenticate_user(token) 
-#     user_id = auth_info["user_id"]
-    
-#     print(f"User ID: {user_id}")
-#     print(f"Installment Data: {installment_data}")
-    
-#     # Create the installment master record
-#     installment_master = db_product.create_installment_master(db, installment_data, user_id)
-    
-#     # Create the installment details records
-#     installment_details = []
-#     for detail in installment_data.installment_details:
-#         installment_detail = db_product.create_installment_details(db, installment_master.id, detail, user_id)
-#         installment_details.append(installment_detail)  # Append each installment detail once
-    
-#     print(f"Created installment details: {installment_details}")    
-#     return installment_details
-
 
 @router.post("/save_installments/", response_model=None)
 def create_installments(
@@ -848,6 +791,7 @@ def get_price_list_master(
             product_master_id  =  result.product_master_id
         # Create a dictionary to represent the product and its price list
             product_data = [{
+
                 "product_master_id": result.product_master_id,
                 "product_code": result.product_code,               
                 "product_name": result.product_name, 
@@ -855,7 +799,8 @@ def get_price_list_master(
                 "gst_rate": result.gst_rate,
                 "cess_rate": result.cess_rate,
                 "effective_from_date": result.effective_from_date,
-                "effective_to_date": result.effective_to_date
+                "effective_to_date": result.effective_to_date,
+                "has_module":result.has_module
                
             }]
             products.append(product_data)
@@ -863,8 +808,9 @@ def get_price_list_master(
 
 @router.post('/set_new_price')
 def set_new_price(
-    price_data: ProductMasterPriceSchema , 
+    price_data_list: List[ProductMasterPriceSchema] , 
     record_actions  : RecordActions, 
+    price_id    :   Optional[int]= None,
     db: Session = Depends(get_db),
     token: str = Depends(oauth2.oauth2_scheme)
     ):
@@ -873,6 +819,14 @@ def set_new_price(
     
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
-    new_price = db_product.set_new_price(db,price_data,record_actions,user_id)
+    if record_actions == RecordActions.UPDATE_ONLY:
+        success_message = "Rate  Edited Successfully"
+    if record_actions == RecordActions.UPDATE_AND_INSERT:
+        success_message = "New Rates Set Successfully"
+    for price_data in price_data_list:
+        new_price = db_product.set_new_price(db, price_data, user_id, record_actions,price_id)
+        if not new_price:
+            return {"success": False, "message": f"Error inserting price for product_master_id {price_data.product_master_id}"}
 
-    pass
+    return {"success": True, "message": "New Rates Set Successfully"} 
+    

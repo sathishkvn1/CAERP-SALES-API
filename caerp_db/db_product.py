@@ -1,10 +1,10 @@
 
 from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File
 from typing import List, Optional
-from UserDefinedConstants.user_defined_constants import DeletedStatus,Operator
+from UserDefinedConstants.user_defined_constants import DeletedStatus,Operator,RecordActions
 from caerp_auth.authentication import authenticate_user
-from caerp_db.models import  AdminUser, Designation,ProductRating,ViewProductMasterPrice,PriceListProductModuleView,PriceListProductModule,PriceListProductMasterView,PriceListProductMaster, InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
-from caerp_schemas import AdminUserBaseForDelete, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
+from caerp_db.models import  AdminUser,ProductMasterPrice, Designation,ProductRating,ViewProductMasterPrice,PriceListProductModuleView,PriceListProductModule,PriceListProductMasterView,PriceListProductMaster, InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
+from caerp_schemas import AdminUserBaseForDelete, ProductMasterPriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 from sqlalchemy import text
@@ -110,9 +110,27 @@ def save_product_master(db: Session,  request: ProductMasterSchema, user_id: int
         product_master_data_dict["created_on"] = datetime.utcnow()
         product_master_data_dict["created_by"] = user_id
         new_product_master = ProductMaster(**product_master_data_dict)
+
+
         db.add(new_product_master)
         db.commit()
         db.refresh(new_product_master)
+
+        new_product_master_price = ProductMasterPrice(
+        product_master_id=new_product_master.id,  # Use the ID of the newly inserted product
+        price=0.0,
+        gst_rate = 0.0,
+        cess_rate = 0.0,
+        created_on= datetime.utcnow(),
+        created_by = user_id,
+        effective_from_date= date.today(),
+        effective_to_date = None
+        )
+        db.add(new_product_master_price)
+        db.commit()
+        db.refresh(new_product_master_price)
+
+
         return new_product_master
     
 def update_product_master(db: Session,  request: ProductMasterSchema, product_master_id: int, user_id: int):    
@@ -534,13 +552,56 @@ def get_price_list_master(db:Session,product_id: Optional[int]=None, product_nam
     return price_list_results
    
 
-# def set_new_price(db:Session, price_data:ProductMasterPriceSchema,user_id: int):
-#         price_list_data_dict = price_data.dict()
-#         price_list_data_dict["created_on"] = datetime.utcnow()
-#         price_list_data_dict["created_by"] = user_id
-#         new_price_list = ProductMasterPriceSchema(**price_list_data_dict)
+def set_new_price(db:Session, price_data:ProductMasterPriceSchema,user_id: int,record_actions:RecordActions,price_id:Optional[int]):
+        
+       price_list_data_dict = price_data.dict(exclude_unset=True)# Ensure effective_to_date is properly handled
+       if 'effective_to_date' in price_list_data_dict:
+                if price_list_data_dict['effective_to_date'] == '':
+                    price_list_data_dict['effective_to_date'] = None
+       
+       if record_actions==RecordActions.UPDATE_ONLY:
+            price_list = db.query(ProductMasterPrice).filter(ProductMasterPrice .id == price_id).first()
+            if price_list is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price List not found")
+            # price_list_data_dict = price_data.dict(exclude_unset=True)# Ensure effective_to_date is properly handled
+            # if 'effective_to_date' in price_list_data_dict:
+            #     if price_list_data_dict['effective_to_date'] == '':
+            #         price_list_data_dict['effective_to_date'] = None
+
+            for key, value in price_list_data_dict.items():
+                setattr(price_list, key, value)
+            price_list.modified_by = user_id
+            price_list.modified_on = datetime.utcnow()
+            
+            db.commit()
+            db.refresh(price_list)
+            return price_list
+
+       else:
+       
+        # price_list_data_dict = price_data.dict()
+        product_master_id = price_list_data_dict.get("product_master_id")
+        existing_price_list = db.query(ProductMasterPrice).filter(
+                    ProductMasterPrice.product_master_id == product_master_id).order_by(
+                    ProductMasterPrice.effective_from_date.desc()).first()
+        # if not existing_price_list:
+        price_list_data_dict["created_on"] = datetime.utcnow()
+        price_list_data_dict["created_by"] = user_id
+        new_price_list = ProductMasterPrice(**price_list_data_dict)
+        if existing_price_list is not None:
+            existing_price_list.modified_on = datetime.utcnow()
+            existing_price_list.modified_by = user_id
+            existing_price_list.effective_to_date = new_price_list.effective_from_date
+        db.add(new_price_list)
+        db.commit()
+        db.refresh(new_price_list)
+        return new_price_list
+
+             
+     
+#         
+#         
     
-#         existing_price_list = db.query(ProductMasterPriceSchema).filter(ProductMasterPriceSchema.product_id == price_list_product_module_id).first()
 
    
    
