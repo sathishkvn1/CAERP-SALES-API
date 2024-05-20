@@ -770,41 +770,7 @@ def update_price_product_module(
     else:
         return {"success": False, "message": "Invalid action"} 
 
-@router.get('/get_price_list_master')
-def get_price_list_master(
-    product_id: Optional[int] = None,
-    product_name: Optional[str] = None,
-    requested_date: Optional[date] =None,
-    operator : Operator = Operator.EQUAL_TO, # date filter parameter, 
-    db: Session = Depends(get_db)
-):
-        price_list_results =db_product.get_price_list_master(db,product_id,product_name,requested_date,operator)
 
-        if not price_list_results:
-           raise HTTPException(status_code=404, detail="No price list found for the given criteria")
-
-        # return price_list_results
-        # products: Dict[int, Dict[str, any]] = {}
-        products: List[Dict[str, any]] = []
-
-        for result in price_list_results:
-            product_master_id  =  result.product_master_id
-        # Create a dictionary to represent the product and its price list
-            product_data = [{
-
-                "product_master_id": result.product_master_id,
-                "product_code": result.product_code,               
-                "product_name": result.product_name, 
-                "price": result.price,
-                "gst_rate": result.gst_rate,
-                "cess_rate": result.cess_rate,
-                "effective_from_date": result.effective_from_date,
-                "effective_to_date": result.effective_to_date,
-                "has_module":result.has_module
-               
-            }]
-            products.append(product_data)
-        return products
 
 @router.post('/set_new_price')
 def set_new_price(
@@ -830,3 +796,42 @@ def set_new_price(
 
     return {"success": True, "message": "New Rates Set Successfully"} 
     
+    
+    
+@router.get('/get_price_list_master')
+def get_price_list_master(
+    product_id: Optional[int] = None,
+    product_name: Optional[str] = None,
+    requested_date: Optional[date] =None,
+    operator : Operator = Operator.EQUAL_TO, # date filter parameter, 
+    db: Session = Depends(get_db)
+):
+        price_list_results =db_product.get_price_list_master(db,product_id,product_name,requested_date,operator)
+
+        if not price_list_results:
+           raise HTTPException(status_code=404, detail="No price list found for the given criteria")
+
+        # return price_list_results
+        # products: Dict[int, Dict[str, any]] = {}
+        products: List[Dict[str, any]] = []
+
+        for result in price_list_results:
+            product_master_id  =  result.product_master_id
+        # Create a dictionary to represent the product and its price list
+            product_data = [{
+
+                "product_master_id": result.product_master_id,
+                "product_code": result.product_code,               
+                "product_name": result.product_name, 
+                "product_master_price_id":result.product_master_price_id,
+                "price": result.price,
+                "gst_rate": result.gst_rate,
+                "cess_rate": result.cess_rate,
+                "effective_from_date": result.effective_from_date,
+                "effective_to_date": result.effective_to_date,
+                "has_module":result.has_module,
+                "is_deleted": result.is_deleted
+               
+            }]
+            products.append(product_data)
+        return products

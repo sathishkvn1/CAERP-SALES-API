@@ -516,9 +516,6 @@ def save_price_list_product_module(db: Session, request: PriceListProductModule,
         return price_list
     
 #================================================================================
-
-
-
 def get_price_list_master(db:Session,product_id: Optional[int]=None, product_name: Optional[str]= None,requested_date: Optional[date]=None, operator : Optional[Operator] = None):
     query = db.query(ViewProductMasterPrice)
     if requested_date is None : 
@@ -533,7 +530,10 @@ def get_price_list_master(db:Session,product_id: Optional[int]=None, product_nam
         if operator == Operator.EQUAL_TO:
             query = query.filter(
                 ViewProductMasterPrice.effective_from_date <= requested_date,
-                ViewProductMasterPrice.effective_to_date >= requested_date
+                 or_(
+                    ViewProductMasterPrice.effective_to_date >= requested_date,
+                    ViewProductMasterPrice.effective_to_date == None
+                )
             )
         elif operator == Operator.GREATER_THAN:
             query = query.filter(ViewProductMasterPrice.effective_from_date > requested_date)
@@ -545,12 +545,10 @@ def get_price_list_master(db:Session,product_id: Optional[int]=None, product_nam
         # query = query.filter(ViewProductMasterPrice.product_name == product_name)
     
     # Optional: Print the SQL query and its parameters for debugging
-    # print(str(query.statement))
-    # print("parameters : ",query.statement.compile(compile_kwargs={"literal_binds": True}))
-    
-    price_list_results = query.all()
-    return price_list_results
-   
+    # print
+
+
+
 
 def set_new_price(db:Session, price_data:ProductMasterPriceSchema,user_id: int,record_actions:RecordActions,price_id:Optional[int]):
         
