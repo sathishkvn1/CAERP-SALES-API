@@ -7,7 +7,7 @@ from caerp_auth.authentication import authenticate_user
 from typing import Union
 
 from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductRating,ProductMaster, ProductModule, UserRole
-from caerp_schemas import AdminUserBaseForDelete, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
+from caerp_schemas import AdminUserBaseForDelete,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
 from caerp_schemas import ProductMasterPriceSchema,PriceListProductMasterView,ProductRating,PriceListProductModuleResponse,PriceListProductModuleView,PriceListProductMasterResponse,PriceListProductModule,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse
 from sqlalchemy.orm import Session
 from starlette.requests import Request
@@ -770,43 +770,16 @@ def update_price_product_module(
     else:
         return {"success": False, "message": "Invalid action"} 
 
-
-
-@router.post('/set_new_price')
-def set_new_price(
-    price_data_list: List[ProductMasterPriceSchema] , 
-    record_actions  : RecordActions, 
-    price_id    :   Optional[int]= None,
-    db: Session = Depends(get_db),
-    token: str = Depends(oauth2.oauth2_scheme)
-    ):
-    if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-    auth_info = authenticate_user(token) 
-    user_id = auth_info["user_id"]
-    if record_actions == RecordActions.UPDATE_ONLY:
-        success_message = "Rate  Edited Successfully"
-    if record_actions == RecordActions.UPDATE_AND_INSERT:
-        success_message = "New Rates Set Successfully"
-    for price_data in price_data_list:
-        new_price = db_product.set_new_price(db, price_data, user_id, record_actions,price_id)
-        if not new_price:
-            return {"success": False, "message": f"Error inserting price for product_master_id {price_data.product_master_id}"}
-
-    return {"success": True, "message": "New Rates Set Successfully"} 
-    
-    
-    
 @router.get('/get_price_list_master')
 def get_price_list_master(
     product_id: Optional[int] = None,
+    product_price_id:Optional[int] = None,
     product_name: Optional[str] = None,
     requested_date: Optional[date] =None,
     operator : Operator = Operator.EQUAL_TO, # date filter parameter, 
     db: Session = Depends(get_db)
 ):
-        price_list_results =db_product.get_price_list_master(db,product_id,product_name,requested_date,operator)
+        price_list_results =db_product.get_price_list_master(db,product_id,product_price_id,product_name,requested_date,operator)
 
         if not price_list_results:
            raise HTTPException(status_code=404, detail="No price list found for the given criteria")
@@ -835,3 +808,114 @@ def get_price_list_master(
             }]
             products.append(product_data)
         return products
+
+@router.post('/set_new_price')
+def set_new_price(
+    price_data_list: List[ProductMasterPriceSchema] , 
+    record_actions  : RecordActions, 
+    price_id    :   Optional[int]= None,
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2.oauth2_scheme)
+    ):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+    auth_info = authenticate_user(token) 
+    user_id = auth_info["user_id"]
+    if record_actions == RecordActions.UPDATE_ONLY:
+        success_message = "Rate  Edited Successfully"
+    if record_actions == RecordActions.UPDATE_AND_INSERT:
+        success_message = "New Rates Set Successfully"
+    for price_data in price_data_list:
+        new_price = db_product.set_new_price(db, price_data, user_id, record_actions,price_id)
+        if not new_price:
+            return {"success": False, "message": f"Error inserting price for product_master_id {price_data.product_master_id}"}
+
+    return {"success": True, "message": "New Rates Set Successfully"} 
+    
+
+
+@router.get('/get_price_list_module')
+def get_price_list_module(
+    product_master_id: Optional[int] = None,
+    module_name: Optional[str]=None,
+    module_id: Optional[int] = None,
+    module_price_id:Optional[int] = None,
+    requested_date: Optional[date] =None,
+    operator : Operator = Operator.EQUAL_TO, # date filter parameter, 
+    db: Session = Depends(get_db)
+):
+        price_list_results =db_product.get_price_list_module(db,product_master_id,module_name,module_id,module_price_id,requested_date,operator)
+
+        if not price_list_results:
+           raise HTTPException(status_code=404, detail="No price list found for the given criteria")
+
+        # return price_list_results
+        # products: Dict[int, Dict[str, any]] = {}
+        products: List[Dict[str, any]] = []
+
+        for result in price_list_results:
+            product_master_id  =  result.product_master_id
+        # Create a dictionary to represent the product and its price list
+            product_data = [{
+
+                "product_master_id": result.product_master_id,
+                "product_module_id": result.product_module_id,
+                "product_module_price_id": result.product_module_price_id,               
+                "module_name": result.module_name, 
+                "module_price": result.module_price,
+                "gst_rate": result.gst_rate,
+                "cess_rate": result.cess_rate,
+                "effective_from_date": result.effective_from_date,
+                "effective_to_date": result.effective_to_date,
+                # "has_module":result.has_module
+               
+            }]
+            products.append(product_data)
+        return products
+
+
+
+@router.post('/set_new_module_price')
+def set_new_module_price(
+    price_data_list: List[ProductModulePriceSchema] , 
+    record_actions  : RecordActions, 
+    price_id    :   Optional[int]= None,
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2.oauth2_scheme)
+    ):
+    """
+    Endpoint to save or update module price information.
+
+    Parameters:
+    - price_data_list (List[ProductModulePriceSchema]): The list of module price data to save or update.
+    - record_actions (RecordActions): The action to perform. Use UPDATE_ONLY for edit purposes and 
+                                      UPDATE_AND_INSERT to add new rows if necessary.
+    - price_id (Optional[int]): The ID of the price list to update. Required for updating an existing price.
+    - db (Session): The database session dependency.
+    - token (str): The authorization token dependency.
+    ProductModulePriceSchema:
+    - effective_from_date (date): The start date from which the price is effective.
+    -effective_to_date (Optional[date]): The end date until which the price is effective. Can be `None` or an empty string (`""`).
+    Returns:
+    - JSON response with the status of the operation.
+    """
+
+
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+    auth_info = authenticate_user(token) 
+    user_id = auth_info["user_id"]
+    if record_actions == RecordActions.UPDATE_ONLY:
+        success_message = "Rate  Edited Successfully"
+    if record_actions == RecordActions.UPDATE_AND_INSERT:
+        success_message = "New Rates Set Successfully"
+    for price_data in price_data_list:
+        new_price = db_product.set_new_module_price(db, price_data, user_id, record_actions,price_id)
+        if not new_price:
+            return {"success": False, "message": f"Error inserting price for product_master_id {price_data.product_module_id}"}
+
+    return {"success": True, "message": "New Rates Set Successfully"} 
+    
+

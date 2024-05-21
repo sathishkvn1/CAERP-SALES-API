@@ -1781,19 +1781,22 @@ class ProductRating(BaseModel):
 
 
 class ProductMasterPriceSchema(BaseModel):
-    
+
+    # id                      : int
     product_master_id       : int
     price                   : float
     gst_rate                : float 
     cess_rate               : float  
     effective_from_date     : date
-    effective_to_date       : Optional[date]= None
+    effective_to_date       : Optional[str]= None
     
-class ProductMasterPriceSchema(BaseModel):
+    
+class ProductModulePriceSchema(BaseModel):
 
     # id                      : int
-    product_master_id       : int
-    price                   : float
+    product_master_price_id   : int
+    module_id                 :int
+    module_price            : float
     gst_rate                : float 
     cess_rate               : float  
     effective_from_date     : date

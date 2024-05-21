@@ -1217,6 +1217,7 @@ class ProductMasterPrice(caerp_base):
 
 
 
+
 class ViewProductMasterPrice(caerp_base):
     __tablename__ = 'view_product_master_price'
 
@@ -1236,6 +1237,51 @@ class ViewProductMasterPrice(caerp_base):
     deleted_by              = Column(Integer, default=None)
     deleted_on              = Column(DateTime, default=None)
     price                   = Column(Float, nullable=False) 
+    gst_rate                = Column(Float, nullable=False) 
+    cess_rate               = Column(Float, nullable=False)  
+    effective_from_date     = Column(Date, nullable=False)
+    effective_to_date       = Column(Date, default=None)
+
+class ProductModulePrice(caerp_base):
+    __tablename__ = 'product_module_price'
+
+    id                      = Column(Integer, primary_key=True, index=True)
+    product_master_price_id       = Column(Integer, nullable=False)
+    module_id       = Column(Integer, nullable=False)
+    module_price                   = Column(Float, nullable=False) 
+    gst_rate                = Column(Float, nullable=False) 
+    cess_rate               = Column(Float, nullable=False)  
+    effective_from_date     = Column(Date, nullable=False)
+    effective_to_date       = Column(Date, default=None)
+    created_by              = Column(Integer, nullable=False)
+    created_on              = Column(DateTime, nullable=False, default=func.now())
+    modified_by             = Column(Integer, default=None)
+    modified_on             = Column(DateTime, default=None)
+    is_deleted              = Column(Enum('yes', 'no'), nullable=False, default='no')
+    deleted_by              = Column(Integer, default=None)
+    deleted_on              = Column(DateTime, default=None)
+
+
+
+class ViewProductModulePrice(caerp_base):
+    __tablename__ = 'view_product_module_price'
+
+    product_module_id       = Column(Integer, nullable=False)
+    product_master_id       = Column(Integer, nullable=False)
+    product_master_price_id = Column(Integer, nullable=False)
+    product_module_price_id = Column(Integer, primary_key=True, index=True)
+    
+    module_name         = Column(String, nullable=False)
+    module_description  = Column(String, nullable=False)
+    display_order       = Column(Integer, nullable=False)
+    created_by       = Column(Integer, nullable=False)
+    created_on              = Column(DateTime, nullable=False, default=func.now())
+    modified_by             = Column(Integer, default=None)
+    modified_on             = Column(DateTime, default=None)
+    is_deleted              = Column(Enum('yes', 'no'), nullable=False, default='no')
+    deleted_by              = Column(Integer, default=None)
+    deleted_on              = Column(DateTime, default=None)
+    module_price                   = Column(Float, nullable=False) 
     gst_rate                = Column(Float, nullable=False) 
     cess_rate               = Column(Float, nullable=False)  
     effective_from_date     = Column(Date, nullable=False)
