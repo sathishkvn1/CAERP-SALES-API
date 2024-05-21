@@ -525,24 +525,28 @@ def get_price_list_master(db:Session,product_id: Optional[int]=None,product_pric
          requested_date = date.today() 
     if product_id:
         query = query.filter(ViewProductMasterPrice.product_master_id == product_id)
-    if product_price_id:
-        query = query.filter(ViewProductMasterPrice.product_master_price_id == product_price_id)
+    # if product_price_id:
+    #     query = query.filter(ViewProductMasterPrice.product_master_price_id == product_price_id)
     if product_name:
          query = query.filter(ViewProductMasterPrice.product_name.ilike(f"%{product_name}%"))
      
     if operator:
-        if operator == Operator.EQUAL_TO:
-            query = query.filter(
-                ViewProductMasterPrice.effective_from_date <= requested_date,
-                 or_(
-                    ViewProductMasterPrice.effective_to_date >= requested_date,
-                    ViewProductMasterPrice.effective_to_date == None
+        if product_price_id:
+            query = query.filter(ViewProductMasterPrice.product_master_price_id == product_price_id)
+        else:
+             
+            if operator == Operator.EQUAL_TO:
+                query = query.filter(
+                    ViewProductMasterPrice.effective_from_date <= requested_date,
+                    or_(
+                        ViewProductMasterPrice.effective_to_date >= requested_date,
+                        ViewProductMasterPrice.effective_to_date == None
+                    )
                 )
-            )
-        elif operator == Operator.GREATER_THAN:
-            query = query.filter(ViewProductMasterPrice.effective_from_date > requested_date)
-        elif operator == Operator.LESS_THAN :
-            query = query.filter(ViewProductMasterPrice.effective_to_date < requested_date)
+            elif operator == Operator.GREATER_THAN:
+                query = query.filter(ViewProductMasterPrice.effective_from_date > requested_date)
+            elif operator == Operator.LESS_THAN :
+                query = query.filter(ViewProductMasterPrice.effective_to_date < requested_date)
     
         
     
@@ -556,6 +560,7 @@ def get_price_list_master(db:Session,product_id: Optional[int]=None,product_pric
     return price_list_results
    
 
+#.....................................................................................
 def set_new_price(db:Session, price_data:ProductMasterPriceSchema,user_id: int,record_actions:RecordActions,price_id:Optional[int]):
         
        price_list_data_dict = price_data.dict(exclude_unset=True)# Ensure effective_to_date is properly handled
