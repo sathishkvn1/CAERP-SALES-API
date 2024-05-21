@@ -20,7 +20,7 @@ from caerp_auth import oauth2
 import os
 from jose import JWTError, jwt
 from sqlalchemy import and_,or_
-
+from sqlalchemy.exc import SQLAlchemyError
 
 
 def save_product_video(db: Session,  request: ProductVideoSchema, user_id: int):
@@ -66,20 +66,93 @@ def update_product_video(db: Session,  request: ProductVideoSchema, video_id: in
 #  PRODUCT MODULE SECTION 
 # ==========================================================================
 
-def save_product_module(db: Session, request: ProductModuleSchema,display_order:int, user_id: int ):
+# def save_product_module(db: Session, request: ProductModuleSchema,display_order:int, user_id: int ):
 
-    # if product_module_id == 0:
+#     # if product_module_id == 0:
+#         # Add operation
+#         product_module_data_dict = request.dict()
+#         product_module_data_dict["created_on"] = datetime.utcnow()
+#         product_module_data_dict["created_by"] = user_id
+#         product_module_data_dict["display_order"] = display_order
+#         new_product_module = ProductModule(**product_module_data_dict)
+#         db.add(new_product_module)
+#         db.commit()
+#         db.refresh(new_product_module)
+#         master_price_id =db.query(ProductMasterPrice.id).filter(ProductMasterPrice.product_master_id == new_product_module.product_master_id).first()
+#         # master_price_id = new_product_module.product_master_id
+#         print("price id",master_price_id)
+#         new_product_module_price = ProductModulePrice(
+#         module_id=new_product_module.id,  
+#         product_master_price_id= master_price_id,
+#         module_price=0.0,
+#         gst_rate = 0.0,
+#         cess_rate = 0.0,
+#         created_on= datetime.utcnow(),
+#         created_by = user_id,
+#         effective_from_date= date.today(),
+#         effective_to_date = None
+#         )
+#         try:
+             
+#             db.add(new_product_module_price)
+#             db.commit()
+#             db.refresh(new_product_module_price)
+#         except Exception as e:
+#              print(f"An error occurred: {e}") 
+             
+#         return new_product_module
+    
+
+def save_product_module(db: Session, request: ProductModuleSchema, display_order: int, user_id: int):
+    
         # Add operation
         product_module_data_dict = request.dict()
         product_module_data_dict["created_on"] = datetime.utcnow()
         product_module_data_dict["created_by"] = user_id
         product_module_data_dict["display_order"] = display_order
         new_product_module = ProductModule(**product_module_data_dict)
+        
         db.add(new_product_module)
         db.commit()
         db.refresh(new_product_module)
+
+        # Query the master_price_id
+        result = db.query(ProductMasterPrice.id).filter(ProductMasterPrice.product_master_id == new_product_module.product_master_id).first()
+        
+        # Check if result is found and extract the master_price_id
+        if result:
+            master_price_id = result[0]
+        else:
+            raise ValueError("ProductMasterPrice not found for the given product_master_id")
+
+        new_product_module_price = ProductModulePrice(
+            module_id=new_product_module.id,  
+            product_master_price_id=master_price_id,
+            module_price=0.0,
+            gst_rate=0.0,
+            cess_rate=0.0,
+            created_on=datetime.utcnow(),
+            created_by=user_id,
+            effective_from_date=date.today(),
+            effective_to_date=None
+        )
+
+        db.add(new_product_module_price)
+        db.commit()
+        db.refresh(new_product_module_price)
+
         return new_product_module
-    
+    # except SQLAlchemyError as e:
+    #     db.rollback()
+    #     print(f"An error occurred: {e}")
+    #     raise
+    # except Exception as e:
+    #     db.rollback()
+    #     print(f"An unexpected error occurred: {e}")
+    #     raise
+    # finally:
+        # db.close()
+
 def update_product_module(db: Session,  request: ProductModuleSchema, module_id: int, user_id: int):
 
         # Update operation
@@ -525,8 +598,7 @@ def get_price_list_master(db:Session,product_id: Optional[int]=None,product_pric
          requested_date = date.today() 
     if product_id:
         query = query.filter(ViewProductMasterPrice.product_master_id == product_id)
-    # if product_price_id:
-    #     query = query.filter(ViewProductMasterPrice.product_master_price_id == product_price_id)
+    
     if product_name:
          query = query.filter(ViewProductMasterPrice.product_name.ilike(f"%{product_name}%"))
      
@@ -547,36 +619,28 @@ def get_price_list_master(db:Session,product_id: Optional[int]=None,product_pric
                 query = query.filter(ViewProductMasterPrice.effective_from_date > requested_date)
             elif operator == Operator.LESS_THAN :
                 query = query.filter(ViewProductMasterPrice.effective_to_date < requested_date)
-    
-        
-    
-        # query = query.filter(ViewProductMasterPrice.product_name == product_name)
-    
-    # Optional: Print the SQL query and its parameters for debugging
-    # print(str(query.statement))
-    # print("parameters : ",query.statement.compile(compile_kwargs={"literal_binds": True}))
+            
     
     price_list_results = query.all()
     return price_list_results
    
 
-#.....................................................................................
 def set_new_price(db:Session, price_data:ProductMasterPriceSchema,user_id: int,record_actions:RecordActions,price_id:Optional[int]):
         
        price_list_data_dict = price_data.dict(exclude_unset=True)# Ensure effective_to_date is properly handled
        if 'effective_to_date' in price_list_data_dict:
                 if price_list_data_dict['effective_to_date'] == '':
                     price_list_data_dict['effective_to_date'] = None
-       
+       product_master_id = price_list_data_dict.get("product_master_id")
+       price_list = db.query(ProductMasterPrice).filter(ProductMasterPrice .product_master_id == product_master_id).first()
+       if price_list and price_list.price == 0:
+            price_id= price_list.id
+            record_actions = RecordActions.UPDATE_ONLY
        if record_actions==RecordActions.UPDATE_ONLY:
             price_list = db.query(ProductMasterPrice).filter(ProductMasterPrice .id == price_id).first()
             if price_list is None:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price List not found")
-            # price_list_data_dict = price_data.dict(exclude_unset=True)# Ensure effective_to_date is properly handled
-            # if 'effective_to_date' in price_list_data_dict:
-            #     if price_list_data_dict['effective_to_date'] == '':
-            #         price_list_data_dict['effective_to_date'] = None
-
+           
             for key, value in price_list_data_dict.items():
                 setattr(price_list, key, value)
             price_list.modified_by = user_id
@@ -624,36 +688,124 @@ def get_price_list_module(db:Session,product_id: Optional[int]=None,
     
     if module_id:
          query = query.filter(ViewProductModulePrice.product_module_id == module_id)
-    if module_price_id:
-         query = query.filter(ViewProductModulePrice.product_module_price_id == module_price_id)
+    # if module_price_id:
+    #      query = query.filter(ViewProductModulePrice.product_module_price_id == module_price_id)
      
     if module_name:
          query = query.filter(ViewProductModulePrice.module_name.ilike(f"%{module_name}%"))
      
     if operator:
-        if operator == Operator.EQUAL_TO:
-            query = query.filter(
-                ViewProductModulePrice.effective_from_date <= requested_date,
-                or_(
-                    ViewProductModulePrice.effective_to_date >= requested_date,
-                    ViewProductModulePrice.effective_to_date == None
+        if module_price_id:
+         query = query.filter(ViewProductModulePrice.product_module_price_id == module_price_id)
+        else:
+             
+            if operator == Operator.EQUAL_TO:
+                query = query.filter(
+                    ViewProductModulePrice.effective_from_date <= requested_date,
+                    or_(
+                        ViewProductModulePrice.effective_to_date >= requested_date,
+                        ViewProductModulePrice.effective_to_date == None
+                    )
                 )
-            )
-        elif operator == Operator.GREATER_THAN:
-            query = query.filter(ViewProductModulePrice.effective_from_date > requested_date)
-        elif operator == Operator.LESS_THAN :
-            query = query.filter(ViewProductModulePrice.effective_to_date < requested_date )
-    
+            elif operator == Operator.GREATER_THAN:
+                query = query.filter(ViewProductModulePrice.effective_from_date > requested_date)
+            elif operator == Operator.LESS_THAN :
+                query = query.filter(ViewProductModulePrice.effective_to_date < requested_date )
+        
         # Optional: Print the SQL query and its parameters for debugging
     # print(str(query.statement))
-    print("parameters : ",query.statement.compile(compile_kwargs={"literal_binds": True}))
     
     
     price_list_results = query.all()
     return price_list_results
    
 
+  
+def set_new_module_price(db:Session, price_data:ProductModulePriceSchema,user_id: int,record_actions:RecordActions,price_id:Optional[int]):
+        
+    
+       price_list_data_dict = price_data.dict(exclude_unset=True)# Ensure effective_to_date is properly handled
+       if 'effective_to_date' in price_list_data_dict:
+                if price_list_data_dict['effective_to_date'] == '':
+                    price_list_data_dict['effective_to_date'] = None
+       module_id = price_list_data_dict.get("module_id")
+       existing_price_list = db.query(ProductModulePrice).filter(
+                    ProductModulePrice.module_id == module_id).order_by(
+                    ProductModulePrice.effective_from_date.desc()).first()
+       if existing_price_list.module_price == 0:
+            price_id = existing_price_list.id
+            record_actions= RecordActions.UPDATE_ONLY
+       print("existing_price_list :", existing_price_list.module_price)
+       if record_actions==RecordActions.UPDATE_ONLY:
+            price_list = db.query(ProductModulePrice).filter(ProductModulePrice .id == price_id).first()
+            if price_list is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price List not found")
+            # price_list_data_dict = price_data.dict(exclude_unset=True)# Ensure effective_to_date is properly handled
+            # if 'effective_to_date' in price_list_data_dict:
+            #     if price_list_data_dict['effective_to_date'] == '':
+            #         price_list_data_dict['effective_to_date'] = None
 
+            for key, value in price_list_data_dict.items():
+                setattr(price_list, key, value)
+            price_list.modified_by = user_id
+            price_list.modified_on = datetime.utcnow()
+            
+            db.commit()
+            db.refresh(price_list)
+            return price_list
+
+       else:
+       
+        # price_list_data_dict = price_data.dict()
+        product_master_price_id = price_list_data_dict.get("product_master_price_id")
+        existing_price_list = db.query(ProductModulePrice).filter(
+                    ProductModulePrice.product_master_price_id == product_master_price_id).order_by(
+                    ProductModulePrice.effective_from_date.desc()).first()
+        # if not existing_price_list:
+        price_list_data_dict["created_on"] = datetime.utcnow()
+        price_list_data_dict["created_by"] = user_id
+        new_price_list = ProductModulePrice(**price_list_data_dict)
+        if existing_price_list is not None:
+            existing_price_list.modified_on = datetime.utcnow()
+            existing_price_list.modified_by = user_id
+            existing_price_list.effective_to_date = new_price_list.effective_from_date
+        db.add(new_price_list)
+        db.commit()
+        db.refresh(new_price_list)
+        return new_price_list
+
+
+
+
+
+def save_product_rating(db: Session, request: ProductRating, id: int,user_id: int):
+     
+    if id == 0:
+        # Add operation
+        product_rating_data_dict = request.dict()
+        product_rating_data_dict["created_on"] = datetime.utcnow()
+        product_rating_data_dict["user_id"] = user_id
+        # price_list_data_dict["effective_from_date"] = datetime.utcnow()
+        new_product_rating = ProductRating(**product_rating_data_dict)
+        db.add(new_product_rating)
+        db.commit()
+        db.refresh(new_product_rating)
+        return new_product_rating
+    
+    else:
+        # Update operation
+        product_rating = db.query(ProductRating).filter(ProductRating .id == id).first()
+        if product_rating is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price List not found")
+        product_rating_data_dict = request.dict(exclude_unset=True)
+        for key, value in product_rating_data_dict.items():
+            setattr(product_rating, key, value)
+        product_rating.modified_by = user_id
+        product_rating.modified_on = datetime.utcnow()
+        
+        db.commit()
+        db.refresh(product_rating)
+        return product_rating
    
    
    
@@ -696,49 +848,4 @@ def get_price_list_module(db:Session,product_id: Optional[int]=None,
     #  price_list_results = db.query(ViewProductMasterPrice).all()
     #  return price_list_results
      
-     
-def set_new_module_price(db:Session, price_data:ProductModulePriceSchema,user_id: int,record_actions:RecordActions,price_id:Optional[int]):
-        
-    
-       price_list_data_dict = price_data.dict(exclude_unset=True)# Ensure effective_to_date is properly handled
-       if 'effective_to_date' in price_list_data_dict:
-                if price_list_data_dict['effective_to_date'] == '':
-                    price_list_data_dict['effective_to_date'] = None
-       
-       if record_actions==RecordActions.UPDATE_ONLY:
-            price_list = db.query(ProductModulePrice).filter(ProductModulePrice .id == price_id).first()
-            if price_list is None:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price List not found")
-            # price_list_data_dict = price_data.dict(exclude_unset=True)# Ensure effective_to_date is properly handled
-            # if 'effective_to_date' in price_list_data_dict:
-            #     if price_list_data_dict['effective_to_date'] == '':
-            #         price_list_data_dict['effective_to_date'] = None
-
-            for key, value in price_list_data_dict.items():
-                setattr(price_list, key, value)
-            price_list.modified_by = user_id
-            price_list.modified_on = datetime.utcnow()
-            
-            db.commit()
-            db.refresh(price_list)
-            return price_list
-
-       else:
-       
-        # price_list_data_dict = price_data.dict()
-        product_master_price_id = price_list_data_dict.get("product_master_price_id")
-        existing_price_list = db.query(ProductModulePrice).filter(
-                    ProductModulePrice.product_master_price_id == product_master_price_id).order_by(
-                    ProductModulePrice.effective_from_date.desc()).first()
-        # if not existing_price_list:
-        price_list_data_dict["created_on"] = datetime.utcnow()
-        price_list_data_dict["created_by"] = user_id
-        new_price_list = ProductModulePrice(**price_list_data_dict)
-        if existing_price_list is not None:
-            existing_price_list.modified_on = datetime.utcnow()
-            existing_price_list.modified_by = user_id
-            existing_price_list.effective_to_date = new_price_list.effective_from_date
-        db.add(new_price_list)
-        db.commit()
-        db.refresh(new_price_list)
-        return new_price_list
+   

@@ -919,3 +919,25 @@ def set_new_module_price(
     return {"success": True, "message": "New Rates Set Successfully"} 
     
 
+
+@router.post('/save_product_rating',response_model=None)
+def save_product_rating(
+        product_data: ProductRating ,
+        id: int =0,  # Default to 0 for add operation
+        db: Session = Depends(get_db),
+        token: str = Depends(oauth2.oauth2_scheme)):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+    
+    auth_info = authenticate_user(token) 
+    user_id = auth_info["user_id"]
+    # try:
+    new_product_rating = db_product.save_product_rating(db,product_data,id,user_id)
+    product_rating_id = new_product_rating.id
+    # return product_rating_id
+    return {
+        "success" : True,
+        "message": "Product rating saved successfully",
+        "product_rating_id": product_rating_id}
+
