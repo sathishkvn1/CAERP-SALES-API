@@ -938,6 +938,51 @@ def save_product_rating(
     # return product_rating_id
     return {
         "success" : True,
-        "message": "Product rating saved successfully",
-        "product_rating_id": product_rating_id}
+        "message": "Review submitted successfully"
+        # "product_rating_id": product_rating_id
+        }
+
+
+@router.get("/get_product_rating")
+def get_product_rating(
+    product_id: Optional[int] =None,
+    db: Session = Depends(get_db)):
+    product_rating_details = db_product.get_product_ratings(product_id,db)
+    return product_rating_details
+    
+
+@router.get("/get_product_rating_comments")
+def get_product_rating_comments_by_product_id(
+      product_id : Optional[int]= None,
+    db: Session = Depends(get_db)):
+    product_rating_comments = db_product.get_product_rating_comments(db,product_id)
+    # product_rating_comments =[
+    #     {
+    #         "product_master_id": 1,
+    #         "product_code": "ABC123",
+    #         "product_name": "Product 1", 
+    #         "Comments":[{
+    #             "user_name": "user1",
+    #             "comment" : "comment 1",
+    #             "date_of_comment":"2024-04-20"
+                
+    #         },
+    #         {
+    #             "user_name": "user2",
+    #             "comment" : "comment 2",
+    #             "date_of_comment":"2024-04-20"
+                
+    #         },
+    #         {
+    #             "user_name": "user3",
+    #             "comment" : "comment 3",
+    #             "date_of_comment":"2024-05-20"
+                
+    #         },
+    #         ]
+
+    # }
+    # ]
+    return product_rating_comments
+
 

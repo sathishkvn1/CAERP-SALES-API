@@ -1763,21 +1763,10 @@ class PriceListProductModuleView(BaseModel):
 
 
 class ProductRating(BaseModel):    
-
-    id              : int
-    product_master_id : int
-    user_id           : int
-    rating            : float
-    comment           : str
-    created_on        : datetime
-
-
-
-class ProductRating(BaseModel):    
     
     product_master_id : int  
     rating            : float
-    comment           : str
+    comment           : Optional[str]=None
 
 
 class ProductMasterPriceSchema(BaseModel):

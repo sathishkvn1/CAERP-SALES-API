@@ -1,9 +1,9 @@
 
 from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File
-from typing import List, Optional
+from typing import List, Optional,Dict,Any
 from UserDefinedConstants.user_defined_constants import DeletedStatus,Operator,RecordActions
 from caerp_auth.authentication import authenticate_user
-from caerp_db.models import  AdminUser,ProductMasterPrice,ProductModulePrice, Designation,ProductRating,ViewProductModulePrice,ViewProductMasterPrice,PriceListProductModuleView,PriceListProductModule,PriceListProductMasterView,PriceListProductMaster, InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
+from caerp_db.models import  AdminUser,ProductMasterPrice,ProductModulePrice, Designation,ProductRating,ViewProductModulePrice,CustomerRegister,ViewProductMasterPrice,PriceListProductModuleView,PriceListProductModule,PriceListProductMasterView,PriceListProductMaster, InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
 from caerp_schemas import AdminUserBaseForDelete, ProductMasterPriceSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
 from sqlalchemy.orm import Session
 from starlette.requests import Request
@@ -21,6 +21,8 @@ import os
 from jose import JWTError, jwt
 from sqlalchemy import and_,or_
 from sqlalchemy.exc import SQLAlchemyError
+from fastapi.responses import FileResponse
+
 
 
 def save_product_video(db: Session,  request: ProductVideoSchema, user_id: int):
@@ -117,7 +119,10 @@ def save_product_module(db: Session, request: ProductModuleSchema, display_order
         db.refresh(new_product_module)
 
         # Query the master_price_id
-        result = db.query(ProductMasterPrice.id).filter(ProductMasterPrice.product_master_id == new_product_module.product_master_id).first()
+        result = db.query(ProductMasterPrice.id).filter(
+             ProductMasterPrice.product_master_id == new_product_module.product_master_id
+             
+             ).order_by(ProductMasterPrice.effective_from_date.desc()).first()
         
         # Check if result is found and extract the master_price_id
         if result:
@@ -622,6 +627,7 @@ def get_price_list_master(db:Session,product_id: Optional[int]=None,product_pric
             
     
     price_list_results = query.all()
+    print(query.statement.compile(compile_kwargs={"literal_binds": True}))
     return price_list_results
    
 
@@ -636,6 +642,9 @@ def set_new_price(db:Session, price_data:ProductMasterPriceSchema,user_id: int,r
        if price_list and price_list.price == 0:
             price_id= price_list.id
             record_actions = RecordActions.UPDATE_ONLY
+    #    if price_list.effective_to_date >= price_list_data_dict['effective_from_date']:
+    #          print("effective_to_date", price_list.effective_to_date)
+    #          price_list_data_dict['effective_from_date']= price_list.effective_to_date+1
        if record_actions==RecordActions.UPDATE_ONLY:
             price_list = db.query(ProductMasterPrice).filter(ProductMasterPrice .id == price_id).first()
             if price_list is None:
@@ -808,44 +817,226 @@ def save_product_rating(db: Session, request: ProductRating, id: int,user_id: in
         return product_rating
    
    
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   #     if product_id is not None:
-    #          if product_name is not None:
-    #              query = db.query(ViewProductMasterPrice).filter(ViewProductMasterPrice.product_name== product_name,
-    #                                                         ViewProductMasterPrice.effective_from_date <= requested_date,
-    #                                                                    ViewProductMasterPrice.effective_to_date >=requested_date)
      
-    #          else :
-    #             query = db.query(ViewProductMasterPrice).filter(ViewProductMasterPrice.product_master_id== product_id,
-    #                                                         ViewProductMasterPrice.effective_from_date <= requested_date,
-    #                                                                    ViewProductMasterPrice.effective_to_date >=requested_date)
+def get_product_ratings(product_id : Optional[int]=None,db: Session = Depends(get_db)):
+    requested_date = datetime.today()
+    product_ratings = {
+            "1 star": 0,
+            "2 stars": 0,
+            "3 stars": 0,
+            "4 stars": 0,
+            "5 stars": 0
+        }
+    # Fetch product master data
+    product_master_query = db.query(ViewProductMasterPrice).filter(
+        ViewProductMasterPrice.effective_from_date <= requested_date,       
+            ViewProductMasterPrice.effective_to_date >= requested_date
+         
+    )
+
+    if product_id:
+        product_master_query = product_master_query.filter(
+            ViewProductMasterPrice.product_master_id == product_id,
+            
+        )
+
+    product_master_data = product_master_query.all()
+    if not product_master_data:
+        return [{"error": "Product not found"}]
+    
+    
+    # Query for total rating count and average rating
+    if product_id:
+        total_query = text(
+            "SELECT product_master_id, COUNT(product_master_id) AS total_rating_count, AVG(rating) AS average_rating ,COUNT(comment) AS total_review_count "
+            "FROM product_rating "
+            "WHERE product_master_id = :product_id "
+            "GROUP BY product_master_id"
+        )
+        total_results = db.execute(total_query, {'product_id': product_id}).fetchall()
+    else:
+        total_query = text(
+           
+            "SELECT product_master_id, COUNT(product_master_id) AS total_rating_count, AVG(rating) AS average_rating ,COUNT(comment) AS total_review_count "
+            "FROM product_rating "
+            "GROUP BY product_master_id"
+        )
+        total_results = db.execute(total_query).fetchall()
+    
+    total_ratings_map = {}
+    for row in total_results:
+        total_ratings_map[row[0]] = {
+            "total_rating_count" : row[1],
+            "average_rating"     : row[2],
+            "total_review_count" : row[3]
+        }
+
+    # Query for individual ratings
+    if product_id:
+        individual_query = text(
+            "SELECT product_master_id, rating, COUNT(rating) AS rating_count "
+            "FROM product_rating "
+            "WHERE product_master_id = :product_id "
+            "GROUP BY product_master_id, rating"
+        )
+        individual_results = db.execute(individual_query, {'product_id': product_id}).fetchall()
+    
+    else:
+        individual_query = text(
+            "SELECT product_master_id, rating, COUNT(rating) AS rating_count "
+            "FROM product_rating "
+            "GROUP BY product_master_id, rating"
+        )
+        individual_results = db.execute(individual_query).fetchall()
+    for row in individual_results:
+            rating = row[1]
+            count = row[2]
+            if rating == 1:
+                product_ratings["1 star"] = count
+            elif rating == 2:
+                product_ratings["2 stars"] = count
+            elif rating == 3:
+                product_ratings["3 stars"] = count
+            elif rating == 4:
+                product_ratings["4 stars"] = count
+            elif rating == 5:
+                product_ratings["5 stars"] = count
+
+       # print(product_master_query.statement.compile(compile_kwargs={"literal_binds": True}))
+
+    
+    if product_id:
+        product_master_image_filename= f"{product_id}.jpg"
+        # image_path = os.path.join(UPLOAD_DIR_MASTER_IMAGE_VIDEO, product_master_image_filename)
+        image_path = f"{BASE_URL}/uploads/product_master_image_videos/{product_master_image_filename}"
+        if os.path.exists(image_path):
+            image_path =  f"{BASE_URL}/uploads/product_master_image_videos/{product_master_image_filename}"
+            # return FileResponse(image_path)
+        else:
+            image_path = ""
+        response = []
+        for product_data in product_master_data:
+            product_id = product_data.product_master_id
+            product_master_image_filename= f"{product_id}.jpg"
+            response.append({
+                "product_master_id" : product_data.product_master_id,
+                "product_name"      : product_data.product_name,
+                "product_code"      : product_data.product_code,
+                "image_url"         : image_path,
+                # "image_url":  f"{BASE_URL}/product/save_product_master/{product_master_image_filename}",
+                "offer_price"       : product_data.price,
+                "original_price"    : product_data.price,
+                "discount"          : "20% off",
+                "discount_name"     :"special offer",
+                "inclusive_of_taxes": True,
+                "emi_details"       : "EMI starts at ₹3,456. No Cost EMI available",
+                "emi_options_url"   : "https://example.com/emi-options",
+                "description"       : {
+                            "main": product_data.product_description_main,
+                            "sub": product_data.product_description_sub
+                    },
+                # "main_description": product_data.product_description_main,
+                # "ratings": product_ratings_map.get(product_id, []),
+                
+                "total_rating_count": [total_ratings_map.get(product_id, [])],
+                "ratings"           :  product_ratings
+            })
+
+        return response
+    else:
+          response = []
+    for product_data in product_master_data:
+        product_id = product_data.product_master_id
+        product_master_image_filename= f"{product_id}.jpg"
+        # image_path = os.path.join(UPLOAD_DIR_MASTER_IMAGE_VIDEO, product_master_image_filename)
+        image_path = f"{BASE_URL}/uploads/product_master_image_videos/{product_master_image_filename}"
+        if os.path.exists(image_path):
+             image_path =  f"{BASE_URL}/uploads/product_master_image_videos/{product_master_image_filename}"
+            # return FileResponse(image_path)
+        else:
+            image_path = ""
+        response.append({
+            "product_master_id": product_data.product_master_id,
+            "product_name"  : product_data.product_name,
+            "product_code"  : product_data.product_code,
+            "image_url"     : image_path,
+            # "image_url":  f"{BASE_URL}/product/save_product_master/{product_master_image_filename}",
+            "offer_price"   : product_data.price,
+            "original_price": product_data.price,
+            "discount"      : "20% off",
+	        "discount_name" :"special offer",
+            "description"   :product_data.product_description_main, 
+            "total_rating_count": [total_ratings_map.get(product_id, [])],
+            
+        })
+
+    return response
+    
+
+def get_product_rating_comments(db: Session , product_id: Optional[int]=None)-> List[Dict[str, Any]]:
+    requested_date = datetime.today()
+    
+    # Query for product details
+    if product_id:
+        product_master_data = db.query(ViewProductMasterPrice).filter(
+            ViewProductMasterPrice.product_master_id == product_id,
+            ViewProductMasterPrice.effective_from_date <= requested_date,
+            or_(
+                ViewProductMasterPrice.effective_to_date >= requested_date,
+                ViewProductMasterPrice.effective_to_date == None
+            )
+        )
+    else:
+        product_master_data = db.query(ViewProductMasterPrice).filter(
+            ViewProductMasterPrice.effective_from_date <= requested_date,
+            or_(
+                ViewProductMasterPrice.effective_to_date >= requested_date,
+                ViewProductMasterPrice.effective_to_date == None
+            )
+        )
+    print(product_master_data.statement.compile(compile_kwargs={"literal_binds": True}))
+    product_master_data= product_master_data.all()
+
+    # Initialize response list
+    response = []
+
+    # Iterate over product data
+    for product in product_master_data:
+        product_id = product.product_master_id
+
+        print("product_id  :  ", product_id)
+        # # Query for comments
+        comments_query = text(
+            "SELECT pr.user_id, cr.first_name as user_name, pr.rating,pr.comment, pr.created_on as date_of_comment "
+            "FROM product_rating pr "
+            "JOIN customer_register cr ON pr.user_id = cr.id "
+            "WHERE pr.product_master_id = :product_id"
+        )
+        comments_results = db.execute(comments_query, {'product_id': product_id}).fetchall()
+       
+ 
+        comments = [
+            {
+                "reviewer"  : row.user_name,
+                "rating"    : row.rating,
+                "review_text"   : row.comment,
+                "date_of_comment": row.date_of_comment.strftime("%Y-%m-%d"),
+                "reviewer_image": f"{BASE_URL}/uploads/customer_profile_photo/{row.user_id}.jpg" 
+            }                         # if row.user_id else f"{BASE_URL}/uploads/customer_profile_photo/default.jpg"            }
+            for row in comments_results
+        ]
+
+        # Append product details to response
+        response.append({
+            "product_master_id": product.product_master_id,
+            "product_name": product.product_name,
+            "product_code": product.product_code,
+            "price": product.price,
+            "main_description": product.product_description_main,
+            # "ratings": product_ratings,
+            # "total_rating_count": total_product_ratings,
+            "Comments": comments
+        })
+
+    return response
      
-    #     # query = db.query(ViewProductMasterPrice).filter(ViewProductMasterPrice.effective_from_date <= requested_date,
-    #                                                                 #    ViewProductMasterPrice.effective_to_date >=requested_date)
-     
-     
-    # #  print(str(query.statement))
-    # #  print(query.statement.compile(compile_kwargs={"literal_binds": True}))
-    #  price_list_results =query.all()
-    #  price_list_results = db.query(ViewProductMasterPrice).all()
-    #  return price_list_results
-     
-   
