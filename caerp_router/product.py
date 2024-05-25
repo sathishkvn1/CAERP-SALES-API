@@ -943,19 +943,20 @@ def save_product_rating(
         }
 
 
-@router.get("/get_product_rating")
-def get_product_rating(
+@router.get("/get_product_complete_details")
+def get_product_complete_details(
     product_id: Optional[int] =None,
     db: Session = Depends(get_db)):
-    product_rating_details = db_product.get_product_ratings(product_id,db)
+    product_rating_details = db_product.get_product_complete_details(product_id,db)
     return product_rating_details
     
 
 @router.get("/get_product_rating_comments")
-def get_product_rating_comments_by_product_id(
-      product_id : Optional[int]= None,
+def get_product_rating_comments(
+    product_id : int,
+    limit   :   Optional[int]= None,
     db: Session = Depends(get_db)):
-    product_rating_comments = db_product.get_product_rating_comments(db,product_id)
+    product_rating_comments = db_product.get_product_rating_comments(db,product_id,limit)
     # product_rating_comments =[
     #     {
     #         "product_master_id": 1,

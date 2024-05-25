@@ -818,7 +818,7 @@ def save_product_rating(db: Session, request: ProductRating, id: int,user_id: in
    
    
      
-def get_product_ratings(product_id : Optional[int]=None,db: Session = Depends(get_db)):
+def get_product_complete_details(product_id : Optional[int]=None,db: Session = Depends(get_db)):
     requested_date = datetime.today()
     product_ratings = {
             "1 star": 0,
@@ -829,6 +829,7 @@ def get_product_ratings(product_id : Optional[int]=None,db: Session = Depends(ge
         }
     # Fetch product master data
     product_master_query = db.query(ViewProductMasterPrice).filter(
+         ViewProductMasterPrice.is_deleted =='no',
         ViewProductMasterPrice.effective_from_date <= requested_date,       
             ViewProductMasterPrice.effective_to_date >= requested_date
          
@@ -920,6 +921,7 @@ def get_product_ratings(product_id : Optional[int]=None,db: Session = Depends(ge
             product_master_image_filename= f"{product_id}.jpg"
             response.append({
                 "product_master_id" : product_data.product_master_id,
+                "product_master_price_id": product_data.product_master_price_id,
                 "product_name"      : product_data.product_name,
                 "product_code"      : product_data.product_code,
                 "image_url"         : image_path,
@@ -957,6 +959,7 @@ def get_product_ratings(product_id : Optional[int]=None,db: Session = Depends(ge
             image_path = ""
         response.append({
             "product_master_id": product_data.product_master_id,
+            "product_master_price_id": product_data.product_master_price_id,
             "product_name"  : product_data.product_name,
             "product_code"  : product_data.product_code,
             "image_url"     : image_path,
@@ -973,12 +976,14 @@ def get_product_ratings(product_id : Optional[int]=None,db: Session = Depends(ge
     return response
     
 
-def get_product_rating_comments(db: Session , product_id: Optional[int]=None)-> List[Dict[str, Any]]:
+# def get_product_rating_comments(db: Session , product_id: Optional[int]=None)-> List[Dict[str, Any]]:
+def get_product_rating_comments(db: Session, product_id: int, limit: Optional[int] = None) -> List[Dict[str, Any]]:
     requested_date = datetime.today()
     
     # Query for product details
     if product_id:
         product_master_data = db.query(ViewProductMasterPrice).filter(
+            ViewProductMasterPrice.is_deleted =='no',
             ViewProductMasterPrice.product_master_id == product_id,
             ViewProductMasterPrice.effective_from_date <= requested_date,
             or_(
@@ -1010,9 +1015,19 @@ def get_product_rating_comments(db: Session , product_id: Optional[int]=None)-> 
             "SELECT pr.user_id, cr.first_name as user_name, pr.rating,pr.comment, pr.created_on as date_of_comment "
             "FROM product_rating pr "
             "JOIN customer_register cr ON pr.user_id = cr.id "
-            "WHERE pr.product_master_id = :product_id"
+            "WHERE pr.product_master_id = :product_id "
+            "ORDER BY pr.created_on DESC "
+            + ("LIMIT :limit" if limit is not None else "")
         )
-        comments_results = db.execute(comments_query, {'product_id': product_id}).fetchall()
+        
+        # Execute the query with parameters
+        params = {'product_id': product_id}
+        if limit is not None:
+            params['limit'] = limit
+        
+        comments_results = db.execute(comments_query, params).fetchall()
+        # )
+        # comments_results = db.execute(comments_query, {'product_id': product_id}).fetchall()
        
  
         comments = [
