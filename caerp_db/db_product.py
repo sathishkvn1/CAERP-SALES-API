@@ -901,9 +901,9 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
         total_ratings_map[row[0]] = {
               "total_rating_count" : row[1],
             "average_rating"     : row[2],
-            "total_review_count" : row[3]
-            
+            "total_review_count" : row[3]            
         }
+
     discount_data ={}
     for row in discount_details:
         discount_data[row[0]] = {
@@ -964,8 +964,7 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
             discount_amount = 0
             discount_percentage = 0
             discount_name = ""
-            print("product_id ---------",product_id)
-            print("discount...............",discount)
+            
             if discount: 
                 if discount['offer_amount']:
                         discount_percentage = (discount['offer_amount']/product_data.price)*100
@@ -976,37 +975,42 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
                         discount_amount = product_data.price*(discount['offer_percentage']/100)
                         discount_percentage =discount['offer_percentage']
                         discount_name       = discount['offer_name']
-                discount_data = {
+                discount_info = {
                         "discount_percentage" : discount_percentage,
                         "discount_amount"      : discount_amount,
                         "discounted_price"     : product_data.price - discount_amount,
                         "discount_name"        : discount_name
                     }
-                
+            total_rating_details = total_ratings_map.get(product_id,'')
             product_master_image_filename= f"{product_id}.jpg"
-            response.append({
+            response_item={
                 "product_master_id" : product_data.product_master_id,
                 "product_master_price_id": product_data.product_master_price_id,
                 "product_name"      : product_data.product_name,
                 "product_code"      : product_data.product_code,
-                "image_url"         : image_path,
-                # "image_url":  f"{BASE_URL}/product/save_product_master/{product_master_image_filename}",
-                # "offer_price"       : product_data.price,
-                "price"    : product_data.price,
-                "discount"          : discount_data if discount_data else None,
+                "image_url"         : image_path,                
+                "price"             : product_data.price,
                 # "inclusive_of_taxes": True,
                 # "emi_details"       : "EMI starts at ₹3,456. No Cost EMI available",
                 # "emi_options_url"   : "https://example.com/emi-options",
                 "description"       : {
                             "main": product_data.product_description_main,
                             "sub": product_data.product_description_sub
-                    },
+                    },                
                 
-                
-                "total_rating_count": total_ratings_map.get(product_id, []),
-                "ratings"           :  product_ratings
-            })
+                # "total_rating": total_ratings_map.get(product_id,''),
+                # "ratings"           :  product_ratings
+            }
+        if total_rating_details:
+              response_item["total_rating"] = total_rating_details
+        # if product_ratings:
+              response_item["ratings"] = product_ratings
 
+        if discount:
+                    response_item["discount"] = discount_info
+
+        # Append the response item to the response list
+        response.append(response_item)
         return response
     else:
           response = []
@@ -1057,8 +1061,10 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
                         "discounted_price"     : product_data.price - discount_amount,
                         "discount_name"        : discount['offer_name']
                     }
-                
-        response.append({
+        total_rating_details = total_ratings_map.get(product_id,'')  
+
+        # response.append({
+        response_item={
             "product_master_id": product_data.product_master_id,
             "product_master_price_id": product_data.product_master_price_id,
             "product_name"  : product_data.product_name,
@@ -1067,11 +1073,18 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
             # "image_url":  f"{BASE_URL}/product/save_product_master/{product_master_image_filename}",
             # "offer_price"   : product_data.price,
             "price": product_data.price,
-            "discount"      : discount_info  if discount_info else None,
+            # "discount"      : discount_info  if discount_info else None,
             "description"   :product_data.product_description_main, 
-            "total_rating_count": total_ratings_map.get(product_id, []),
+            # "total_rating": total_ratings_map.get(product_id,''),
             
-        })
+        }
+        if total_rating_details:
+             response_item["total_rating"]= total_rating_details
+        if discount_info:
+            response_item["discount"] = discount_info
+        
+# Append the response item to the response list
+        response.append(response_item)
 
     return response
 
