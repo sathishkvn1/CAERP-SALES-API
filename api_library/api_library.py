@@ -18,8 +18,12 @@ class DynamicAPI:
             print("Columns:", columns)  # Print the constructed columns
             # Use the constructed columns in the query
             # records = db.query(*columns).all()
-            records = db.query(*columns).filter(self.table_model.is_deleted == 'no').all()
-            print("Records:", records)  # Print the retrieved records
+            # records = db.query(*columns).filter(self.table_model.is_deleted == 'no').all()
+            if hasattr(self.table_model, 'is_deleted'):
+                records = db.query(*columns).filter(self.table_model.is_deleted == 'no').all()
+            else:
+                records = db.query(*columns).all() 
+                 
             # Convert query results to dictionaries
             return [dict(zip(fields, record)) for record in records]
         except Exception as e:

@@ -1,10 +1,10 @@
 
 from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File
 from typing import List, Optional,Dict,Any
-from UserDefinedConstants.user_defined_constants import DeletedStatus,Operator,RecordActions
+from UserDefinedConstants.user_defined_constants import DeletedStatus,Operator,Status,RecordActionType,ApplyTo
 from caerp_auth.authentication import authenticate_user
 from caerp_db.models import  AdminUser,ProductMasterPrice,OfferDetails,OfferMaster,OfferCategory,ProductModulePrice, Designation,ProductRating,ViewProductModulePrice,CustomerRegister,ViewProductMasterPrice,PriceListProductModuleView,PriceListProductModule,PriceListProductMasterView,PriceListProductMaster, InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
-from caerp_schemas import AdminUserBaseForDelete,OfferDetailsSchema, ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
+from caerp_schemas import AdminUserBaseForDelete,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 from sqlalchemy import text
@@ -20,10 +20,12 @@ from caerp_auth import oauth2
 import os
 from jose import JWTError, jwt
 from sqlalchemy import and_,or_
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError,IntegrityError,OperationalError
+import logging
 from fastapi.responses import FileResponse
 
-
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def save_product_video(db: Session,  request: ProductVideoSchema, user_id: int):
 
@@ -631,7 +633,7 @@ def get_price_list_master(db:Session,product_id: Optional[int]=None,product_pric
     return price_list_results
    
 
-def set_new_price(db:Session, price_data:ProductMasterPriceSchema,user_id: int,record_actions:RecordActions,price_id:Optional[int]):
+def set_new_price(db:Session, price_data:ProductMasterPriceSchema,user_id: int,record_actions:RecordActionType,price_id:Optional[int]):
         
        price_list_data_dict = price_data.dict(exclude_unset=True)# Ensure effective_to_date is properly handled
        if 'effective_to_date' in price_list_data_dict:
@@ -641,11 +643,11 @@ def set_new_price(db:Session, price_data:ProductMasterPriceSchema,user_id: int,r
        price_list = db.query(ProductMasterPrice).filter(ProductMasterPrice .product_master_id == product_master_id).first()
        if price_list and price_list.price == 0:
             price_id= price_list.id
-            record_actions = RecordActions.UPDATE_ONLY
+            record_actions = RecordActionType.UPDATE_ONLY
     #    if price_list.effective_to_date >= price_list_data_dict['effective_from_date']:
     #          print("effective_to_date", price_list.effective_to_date)
     #          price_list_data_dict['effective_from_date']= price_list.effective_to_date+1
-       if record_actions==RecordActions.UPDATE_ONLY:
+       if record_actions==RecordActionType.UPDATE_ONLY:
             price_list = db.query(ProductMasterPrice).filter(ProductMasterPrice .id == price_id).first()
             if price_list is None:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price List not found")
@@ -730,7 +732,7 @@ def get_price_list_module(db:Session,product_id: Optional[int]=None,
    
 
   
-def set_new_module_price(db:Session, price_data:ProductModulePriceSchema,user_id: int,record_actions:RecordActions,price_id:Optional[int]):
+def set_new_module_price(db:Session, price_data:ProductModulePriceSchema,user_id: int,record_actions:RecordActionType,price_id:Optional[int]):
         
     
        price_list_data_dict = price_data.dict(exclude_unset=True)# Ensure effective_to_date is properly handled
@@ -743,9 +745,9 @@ def set_new_module_price(db:Session, price_data:ProductModulePriceSchema,user_id
                     ProductModulePrice.effective_from_date.desc()).first()
        if existing_price_list.module_price == 0:
             price_id = existing_price_list.id
-            record_actions= RecordActions.UPDATE_ONLY
+            record_actions= RecordActionType.UPDATE_ONLY
        print("existing_price_list :", existing_price_list.module_price)
-       if record_actions==RecordActions.UPDATE_ONLY:
+       if record_actions==RecordActionType.UPDATE_ONLY:
             price_list = db.query(ProductModulePrice).filter(ProductModulePrice .id == price_id).first()
             if price_list is None:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price List not found")
@@ -1088,163 +1090,6 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
 
     return response
 
-# def get_product_complete_details(product_id: Optional[int] = None, db: Session = Depends(get_db)):
-#     requested_date = datetime.today()
-#     product_ratings = {
-#         "1 star": 0,
-#         "2 stars": 0,
-#         "3 stars": 0,
-#         "4 stars": 0,
-#         "5 stars": 0
-#     }
-
-#     # Fetch product master data
-#     product_master_query = db.query(ViewProductMasterPrice).filter(
-#         ViewProductMasterPrice.is_deleted == 'no',
-#         ViewProductMasterPrice.effective_from_date <= requested_date,
-#         ViewProductMasterPrice.effective_to_date >= requested_date
-#     )
-
-#     if product_id:
-#         product_master_query = product_master_query.filter(
-#             ViewProductMasterPrice.product_master_id == product_id
-#         )
-
-#     product_master_data = product_master_query.all()
-#     if not product_master_data:
-#         return [{"error": "Product not found"}]
-
-#     # Query for total rating count and average rating
-#     total_results = []
-#     if product_id:
-#         discount_query = text(
-#             "SELECT product_master_id, offer_details_id, offer_name, offer_percentage, offer_amount, "
-#             "effective_from_date, effective_to_date "
-#             "FROM off_view_offer_details "
-#             "WHERE product_master_id = :product_id AND effective_from_date <= :requested_date AND effective_to_date >= :requested_date"
-#         )
-#         discount_details = db.execute(discount_query, {'product_id': product_id, 'requested_date': requested_date}).fetchall()
-
-#         total_query = text(
-#             "SELECT product_master_id, COUNT(product_master_id) AS total_rating_count, "
-#             "AVG(rating) AS average_rating, "
-#             "SUM(CASE WHEN comment != '' THEN 1 ELSE 0 END) AS total_review_count "
-#             "FROM product_rating "
-#             "WHERE product_master_id = :product_id "
-#             "GROUP BY product_master_id"
-#         )
-#         total_results = db.execute(total_query, {'product_id': product_id}).fetchall()
-#     else:
-#         discount_query = text(
-#             "SELECT product_master_id, offer_details_id, offer_name, offer_percentage, offer_amount, "
-#             "effective_from_date, effective_to_date "
-#             "FROM off_view_offer_details "
-#             "WHERE effective_from_date <= :requested_date AND effective_to_date >= :requested_date"
-#         )
-#         discount_details = db.execute(discount_query, {'requested_date': requested_date}).fetchall()
-
-#         total_query = text(
-#             "SELECT product_master_id, COUNT(product_master_id) AS total_rating_count, "
-#             "AVG(rating) AS average_rating, "
-#             "SUM(CASE WHEN comment != '' THEN 1 ELSE 0 END) AS total_review_count "
-#             "FROM product_rating "
-#             "GROUP BY product_master_id"
-#         )
-#         total_results = db.execute(total_query).fetchall()
-
-#     discount_data = {row.product_master_id: row for row in discount_details}
-
-#     total_ratings_map = {}
-#     for row in total_results:
-#         total_ratings_map[row[0]] = {
-#             "total_rating_count": row[1],
-#             "average_rating": row[2],
-#             "total_review_count": row[3]
-#         }
-
-#     # Query for individual ratings
-#     individual_results = []
-#     if product_id:
-#         individual_query = text(
-#             "SELECT product_master_id, rating, COUNT(rating) AS rating_count "
-#             "FROM product_rating "
-#             "WHERE product_master_id = :product_id "
-#             "GROUP BY product_master_id, rating"
-#         )
-#         individual_results = db.execute(individual_query, {'product_id': product_id}).fetchall()
-#     else:
-#         individual_query = text(
-#             "SELECT product_master_id, rating, COUNT(rating) AS rating_count "
-#             "FROM product_rating "
-#             "GROUP BY product_master_id, rating"
-#         )
-#         individual_results = db.execute(individual_query).fetchall()
-
-#     for row in individual_results:
-#         rating = row[1]
-#         count = row[2]
-#         if rating == 1:
-#             product_ratings["1 star"] = count
-#         elif rating == 2:
-#             product_ratings["2 stars"] = count
-#         elif rating == 3:
-#             product_ratings["3 stars"] = count
-#         elif rating == 4:
-#             product_ratings["4 stars"] = count
-#         elif rating == 5:
-#             product_ratings["5 stars"] = count
-
-#     response = []
-#     for product_data in product_master_data:
-#         product_id = product_data.product_master_id
-#         product_master_image_filename = f"{product_id}.jpg"
-#         image_path = f"{BASE_URL}/uploads/product_master_image_videos/{product_master_image_filename}"
-#         if not os.path.exists(image_path):
-#             image_path = ""
-
-#         discount = discount_data.get(product_id)
-#         discount_percentage = None
-#         discount_name = None
-#         discount_amount = None
-#         if discount:
-#             if discount.offer_amount:
-#                 # discount_percentage = discount.offer_percentage
-#               discount_percentage = (discount.offer_amount/product_data.price)*100
-#               discount_amount     = discount.offer_amount
-#             if discount.offer_percentage:
-#                      discount_amount = product_data.price*(discount.offer_percentage/100)
-#                      discount_percentage =discount.offer_percentage
-#             # discounted_price     = product_data.price - discount_amount,
-#             discount_name = discount.offer_name
-#             discount_amount = discount.offer_amount
-
-#         response.append({
-#             "product_master_id": product_data.product_master_id,
-#             "product_master_price_id": product_data.product_master_price_id,
-#             "product_name": product_data.product_name,
-#             "product_code": product_data.product_code,
-#             "image_url": image_path,
-#             "price": product_data.price,
-#             "discount": {
-#                  "discount_percentage":discount_percentage,
-#                  "discount_amount": discount_amount,
-#                  "discounted_price": product_data.price - discount_amount,
-
-#                 "discount_name": discount_name,
-#             } if discount else None,
-#             # f"{discount_percentage}% off" if discount_percentage else None,
-            
-#             "description": {
-#                 "main": product_data.product_description_main,
-#                 "sub": product_data.product_description_sub
-#             },
-#             "total_rating_count": total_ratings_map.get(product_id, {}).get("total_rating_count", 0),
-#             "average_rating": total_ratings_map.get(product_id, {}).get("average_rating", 0),
-#             "total_review_count": total_ratings_map.get(product_id, {}).get("total_review_count", 0),
-#             "ratings": product_ratings
-#         })
-
-#     return response
     
 
 # def get_product_rating_comments(db: Session , product_id: Optional[int]=None)-> List[Dict[str, Any]]:
@@ -1325,19 +1170,13 @@ def get_product_rating_comments(db: Session, product_id: int, limit: Optional[in
 
     return response
      
-# def get_offer_category(db: Session, category_id : Optional[int] = None):
-#     if category_id:
-#         offer_category_list = db.query(OfferCategory).filter(OfferCategory.id ==category_id).all()
-#     else:        
-#         offer_category_list = db.query(OfferCategory).all()
-#     return offer_category_list
 
 
 def get_all_offer_list(
                         db : Session,
                         category_id : Optional[int]=None,
                         offer_master_id : Optional[int]=None ,
-                        operator : Optional[Operator] = None 
+                        operator : Optional[Status] = None 
                         
                         ):
     try:
@@ -1351,88 +1190,175 @@ def get_all_offer_list(
             query = query.filter(OfferMaster.id == offer_master_id)
         
         if operator:
-            if operator == Operator.EQUAL_TO:
+            if operator == Status.CURRENT:
                 query = query.filter(
                     OfferMaster.effective_from_date <= current_date,
                     OfferMaster.effective_to_date >= current_date
                 )
-            elif operator == Operator.GREATER_THAN:
+            elif operator == Status.UPCOMMING:
                 query = query.filter(OfferMaster.effective_from_date > current_date)
-            elif operator == Operator.LESS_THAN:
+            elif operator == Status.EXPIRED:
                 query = query.filter(OfferMaster.effective_to_date < current_date)
         
         offer_master_data = query.all()
+        print(query.statement.compile(compile_kwargs={"literal_binds": True}))
         return offer_master_data
     except Exception as e:
         print("Error:", e)  # Print the exception message for debugging
         raise HTTPException(status_code=500, detail=str(e))
           
-def save_new_offer(db:Session,  offer_data: OfferMasterSchema, user_id,record_actions: RecordActions,offer_id: Optional[int]= None ):
-    offer_data_dict = offer_data.dict(exclude_unset=True)# Ensure effective_to_date is properly handled
-    #  if 'effective_to_date' in offer_data_dict:
-    #             if offer_data_dict['effective_to_date'] == '':
-    #                 offer_data_dict['effective_to_date'] = None
-     
-    if record_actions==RecordActions.UPDATE_ONLY:
-            existing_offer_data = db.query(OfferMaster).filter(OfferMaster.id == offer_id).first()
-            if existing_offer_data is None:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Offer not found")
-           
-            for key, value in offer_data_dict.items():
-                setattr(existing_offer_data, key, value)
-            existing_offer_data.modified_by = user_id
-            existing_offer_data.modified_on = datetime.utcnow()
-            
-            db.commit()
-            db.refresh(existing_offer_data)
-            return existing_offer_data
-    else:
-          
-        offer_data_dict["created_on"] = datetime.utcnow()
-        offer_data_dict["created_by"] = user_id
-        new_offer = OfferMaster(**offer_data_dict)
-        db.add(new_offer)
+
+
+def save_offer_details(
+    db: Session,
+    id: int,
+    data: SaveOfferDetailsRequest,
+    user_id: int,
+    action_type: RecordActionType,
+    apply_to: ApplyTo
+):
+    if action_type == RecordActionType.INSERT_ONLY and id != 0:
+        raise HTTPException(status_code=400, detail="Invalid action: For INSERT_ONLY, id should be 0")
+    elif action_type == RecordActionType.UPDATE_ONLY and id <= 0:
+        raise HTTPException(status_code=400, detail="Invalid action: For UPDATE_ONLY, id should be greater than 0")
+
+    try:
+        if action_type == RecordActionType.INSERT_ONLY:
+            for master_data in data.master:
+                new_master_data = master_data.dict()
+                new_master_data.update({
+                    "created_by": user_id,
+                    "created_on": datetime.utcnow()
+                })
+                new_master = OfferMaster(**new_master_data)
+                db.add(new_master)
+                db.flush()  # Ensure new_master.id is available for details
+
+            if apply_to == ApplyTo.SELECTED :    
+                for detail_data in data.details:
+                    new_detail_data = detail_data.dict()
+                    new_detail_data.update({
+                        "offer_master_id": new_master.id,
+                        "created_by": user_id,
+                        "created_on": datetime.utcnow()
+                    })
+                    new_detail = OfferDetails(**new_detail_data)
+                    db.add(new_detail)
+            else:
+                 details = db.query(ProductMaster.id).filter(ProductMaster.is_deleted == 'no').all()
+                 for detail_data in details:
+                     new_detail_data = {
+                        "offer_master_id": new_master.id,
+                        "product_master_id": detail_data[0],
+                        "created_by": user_id,
+                        "created_on": datetime.utcnow()
+                    }
+                     new_detail = OfferDetails(**new_detail_data)
+                     db.add(new_detail)
+
+        elif action_type == RecordActionType.UPDATE_ONLY:
+            existing_master = db.query(OfferMaster).filter(OfferMaster.id == id).first()
+            if not existing_master:
+                raise HTTPException(status_code=404, detail="Master record not found")
+
+            # Use the first item from data.master for update
+            master_update_data = data.master[0].dict()
+            for key, value in master_update_data.items():
+                setattr(existing_master, key, value)
+            existing_master.modified_by = user_id
+            existing_master.modified_on = datetime.utcnow()
+
         db.commit()
-        db.refresh(new_offer)
-        return new_offer
-    #  pass  
-
-
-       
-def set_offer_details(db:Session,offer_master_id:int,product_master_id : List[int], user_id,record_actions: RecordActions,offer_id: Optional[int]= None ):
-    
-        
-        if record_actions==RecordActions.UPDATE_ONLY:
-            # Update existing records
-            
-            # Update each existing record with new values
-            existing_offer_data = db.query(OfferDetails).filter(OfferDetails.id == offer_id).first()
-            if existing_offer_data is None:
-                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Offer not found")
-            for product_id in product_master_id:
-                existing_offer_data.offer_master_id = offer_master_id
-                existing_offer_data.product_master_id = product_id
-                existing_offer_data.modified_by = user_id
-                existing_offer_data.modified_on = datetime.utcnow()
-                
-                db.commit()
-                db.refresh(existing_offer_data)
-        
-            
-            db.commit()
-            db.refresh(existing_offer_data)
-            return existing_offer_data
+    except IntegrityError as e:
+        db.rollback()
+        logger.error("IntegrityError: %s", str(e))
+        if 'Duplicate entry' in str(e):
+            raise HTTPException(status_code=400, detail="Duplicate entry detected.")
         else:
+            raise e
+    except OperationalError as e:
+        db.rollback()
+        logger.error("OperationalError: %s", str(e))
+        raise HTTPException(status_code=500, detail="Database connection error.")
+    except Exception as e:
+        db.rollback()
+        logger.error("Exception: %s", str(e))
+        raise e
 
-            for product_id in product_master_id:
-                new_offer = OfferDetails(
-                    offer_master_id=offer_master_id,
-                    product_master_id=product_id,
-                    created_on=datetime.utcnow(),
-                    created_by = user_id                
-                )
-                db.add(new_offer)
+
+def delete_offer_master(db, offer_master_id,action_type,deleted_by):
+    existing_offer = db.query(OfferMaster).filter(OfferMaster.id == offer_master_id).first()
+
+    if existing_offer is None:
+        raise HTTPException(status_code=404, detail="Offer  not found")
+    if(action_type== 'DELETE'):
+
+            existing_offer.is_deleted = 'yes'
+            existing_offer.deleted_by = deleted_by
+            existing_offer.deleted_on = datetime.utcnow()
             
-        db.commit()
-        return new_offer
-    #  pass  
+            
+            db.query(OfferDetails).filter(OfferDetails.offer_master_id == offer_master_id).update({
+                OfferDetails.is_deleted: 'yes',                
+                OfferDetails.deleted_by: deleted_by,
+                OfferDetails.deleted_on: datetime.utcnow()
+            }, synchronize_session=False)
+        
+            db.commit()
+
+            return {
+                "message": "Offer marked as deleted successfully",
+
+            }
+    if(action_type == 'UNDELETE'):
+            existing_offer.is_deleted = 'no'
+            existing_offer.deleted_by = None
+            existing_offer.deleted_on = None
+            db.commit()
+
+            return {
+                "message": "Offer marked as Undeleted successfully",
+
+            }
+
+
+
+# def delete_offer(db, offer_master_id,action_type,deleted_by,table):
+#     if table =='Master':
+#         existing_offer = db.query(OfferMaster).filter(OfferMaster.id == offer_master_id).first()
+#     else:
+#         existing_offer = db.query(OfferDetails).filter(OfferDetails.id == offer_master_id).first()
+ 
+#     if existing_offer is None:
+#         raise HTTPException(status_code=404, detail="Offer  not found")
+#     if(action_type== 'DELETE'):
+
+#             existing_offer.is_deleted = 'yes'
+#             existing_offer.deleted_by = deleted_by
+#             existing_offer.deleted_on = datetime.utcnow()
+            
+#             if table== 'Master':
+#                 db.query(OfferDetails).filter(OfferDetails.offer_master_id == offer_master_id).update({
+#                     OfferDetails.is_deleted: 'yes',                
+#                     OfferDetails.deleted_by: deleted_by,
+#                     OfferDetails.deleted_on: datetime.utcnow()
+#                 }, synchronize_session=False)
+        
+#             db.commit()
+
+#             return {
+#                 "message": "Offer marked as deleted successfully",
+
+#             }
+#     if(action_type == 'UNDELETE'):
+#             existing_offer.is_deleted = 'no'
+#             existing_offer.deleted_by = None
+#             existing_offer.deleted_on = None
+#             db.commit()
+
+#             return {
+#                 "message": "Product marked as Undeleted successfully",
+
+#             }
+
+

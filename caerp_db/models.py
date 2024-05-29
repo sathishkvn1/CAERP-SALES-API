@@ -1349,6 +1349,3 @@ class OfferDetailsView(caerp_base):
     offer_details_deleted_by                   = Column(Integer, default=None)
     offer_details_deleted_on                   = Column(DateTime, default=None)
 
-
-
-

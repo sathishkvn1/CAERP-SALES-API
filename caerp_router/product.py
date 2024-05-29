@@ -2,13 +2,13 @@
 
 from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File,Query,Request
 from typing import List, Optional,Dict
-from UserDefinedConstants.user_defined_constants import BooleanFlag, DeletedStatus,Operator,ActiveStatus,ActionType,RecordActions
+from UserDefinedConstants.user_defined_constants import  DeletedStatus,Operator,Status,ActiveStatus,ActionType,ApplyTo,RecordActionType
 from caerp_auth.authentication import authenticate_user
 from typing import Union
 
 from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductRating,ProductMaster, ProductModule, UserRole
 from caerp_schemas import AdminUserBaseForDelete,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
-from caerp_schemas import ProductMasterPriceSchema,PriceListProductMasterView,ProductRating,PriceListProductModuleResponse,PriceListProductModuleView,PriceListProductMasterResponse,PriceListProductModule,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse
+from caerp_schemas import ProductMasterPriceSchema,OfferDetailsSchema, SaveOfferDetailsRequest,OfferMasterSchema,PriceListProductMasterView,OfferCategoryResponse,ProductRating,PriceListProductModuleResponse,PriceListProductModuleView,PriceListProductMasterResponse,PriceListProductModule,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
@@ -756,16 +756,16 @@ def get_installment_masters(
 
 @router.post('/update_price_product_module')
 def update_price_product_module(
-        record_actions  : RecordActions,  
+        record_actions  : RecordActionType,  
         price_list_data: PriceListProductModule =Depends(),        
         price_list_product_module_id: int =0,  # Default to 0 for add operation
         db: Session = Depends(get_db),
         token: str = Depends(oauth2.oauth2_scheme)):
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    if record_actions == RecordActions.UPDATE_ONLY:
+    if record_actions == RecordActionType.UPDATE_ONLY:
         return {"success": True, "message": "Update price list successfully"}
-    elif record_actions == RecordActions.UPDATE_AND_INSERT:
+    elif record_actions == RecordActionType.UPDATE_AND_INSERT:
         return {"success": True, "message": "Add new price list successfully"}
     else:
         return {"success": False, "message": "Invalid action"} 
@@ -812,7 +812,7 @@ def get_price_list_master(
 @router.post('/set_new_price')
 def set_new_price(
     price_data_list: List[ProductMasterPriceSchema] , 
-    record_actions  : RecordActions, 
+    record_actions  : RecordActionType, 
     price_id    :   Optional[int]= None,
     db: Session = Depends(get_db),
     token: str = Depends(oauth2.oauth2_scheme)
@@ -822,9 +822,9 @@ def set_new_price(
     
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
-    if record_actions == RecordActions.UPDATE_ONLY:
+    if record_actions == RecordActionType.UPDATE_ONLY:
         success_message = "Rate  Edited Successfully"
-    if record_actions == RecordActions.UPDATE_AND_INSERT:
+    if record_actions == RecordActionType.UPDATE_AND_INSERT:
         success_message = "New Rates Set Successfully"
     for price_data in price_data_list:
         new_price = db_product.set_new_price(db, price_data, user_id, record_actions,price_id)
@@ -879,7 +879,7 @@ def get_price_list_module(
 @router.post('/set_new_module_price')
 def set_new_module_price(
     price_data_list: List[ProductModulePriceSchema] , 
-    record_actions  : RecordActions, 
+    record_actions  : RecordActionType, 
     price_id    :   Optional[int]= None,
     db: Session = Depends(get_db),
     token: str = Depends(oauth2.oauth2_scheme)
@@ -889,7 +889,7 @@ def set_new_module_price(
 
     Parameters:
     - price_data_list (List[ProductModulePriceSchema]): The list of module price data to save or update.
-    - record_actions (RecordActions): The action to perform. Use UPDATE_ONLY for edit purposes and 
+    - record_actions (RecordActionType): The action to perform. Use UPDATE_ONLY for edit purposes and 
                                       UPDATE_AND_INSERT to add new rows if necessary.
     - price_id (Optional[int]): The ID of the price list to update. Required for updating an existing price.
     - db (Session): The database session dependency.
@@ -907,9 +907,9 @@ def set_new_module_price(
     
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
-    if record_actions == RecordActions.UPDATE_ONLY:
+    if record_actions == RecordActionType.UPDATE_ONLY:
         success_message = "Rate  Edited Successfully"
-    if record_actions == RecordActions.UPDATE_AND_INSERT:
+    if record_actions == RecordActionType.UPDATE_AND_INSERT:
         success_message = "New Rates Set Successfully"
     for price_data in price_data_list:
         new_price = db_product.set_new_module_price(db, price_data, user_id, record_actions,price_id)
@@ -987,3 +987,78 @@ def get_product_rating_comments(
     return product_rating_comments
 
 
+
+
+@router.get("/get_all_offer_list", response_model=List[OfferMasterSchema])
+def get_all_offer_list(
+    category_id: Optional[int] = None,
+    offer_master_id: Optional[int]=None,
+    offers : Status = Status.CURRENT, # date filter parameter, 
+    db: Session = Depends(get_db)
+):
+    offer_list= db_product.get_all_offer_list(db,category_id,offer_master_id,offers)
+    return offer_list
+
+
+
+@router.post("/save_offer_details")
+def save_offer_details(
+    
+    data: List[SaveOfferDetailsRequest], 
+    action_type: RecordActionType,
+    apply_to : ApplyTo,
+    id: Optional[int] = 0 ,
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2.oauth2_scheme)
+    
+):
+    """
+    Endpoint to save or update offer details in the offer master table and offer details table.
+
+    Parameters:
+    - data (List[SaveOfferDetailsRequest]): The list of offer data to save or update. This data contains both master data and details.
+    - action_type (RecordActionType): The action to perform. Use INSERT_ONLY to add new rows or UPDATE_ONLY to update existing rows.
+    - apply_to (ApplyTo): Determines the scope of application. Use ALL to apply to all products, otherwise use SELECT for selected products.
+    - id (Optional[int]): The ID of the offer master to update. Required for updating an existing offer master data. Default value is 0.
+    - db (Session): The database session dependency.
+    - token (str): The authorization token dependency.
+
+    Returns:
+    - JSON response with the status of the operation.
+    """
+
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+    auth_info = authenticate_user(token)
+    user_id = auth_info.get("user_id")
+
+    try:
+        for offer_master in data:
+            db_product.save_offer_details(
+                db, id, offer_master, user_id, action_type, apply_to
+            )
+
+        return {"success": True, "message": "Saved successfully"}
+    
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.delete("/delete_offer_master")
+def delete_offer_master(
+     offer_master_id: int,
+     action_type: ActionType = ActionType.UNDELETE,
+     db: Session = Depends(get_db),
+     token: str = Depends(oauth2.oauth2_scheme)
+):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+
+    auth_info = authenticate_user(token)
+    user_id = auth_info["user_id"]
+    
+    
+    return db_product.delete_offer_master(db, offer_master_id,action_type,deleted_by=user_id)

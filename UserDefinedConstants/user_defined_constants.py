@@ -27,19 +27,31 @@ class ActionType(str, Enum):
     DELETE = 'DELETE'
     UNDELETE = 'UNDELETE'
     
-# class ActionType(str, Enum):
-#     DELETE = 'DELETE'
-#     UNDELETE = 'UNDELETE'
-#     SAVE = 'SAVE'  # New action for both insert and update
-
+class ProductConstatnt(str,Enum):
+    PRODUCTID       ='product_id'
+    PRODUCTCODE     = 'product_code'
     
+ 
+
+class RecordActionType(str,Enum):
+     UPDATE_ONLY        = 'UPDATE_ONLY'
+     INSERT_ONLY        = 'INSERT_ONLY'
+     UPDATE_AND_INSERT  = 'UPDATE_AND_INSERT'
+     DELETE             = 'DELETE'
+     UNDELETE           = 'UNDELETE'
+
 class Operator(str,Enum):
     EQUAL_TO    = 'EQUAL_TO'
     # NOT_EQUAL_TO = 'NOT_EQUAL_TO'
     GREATER_THAN = 'GREATER_THAN'
     LESS_THAN  = 'LESS_THAN'
-    
-class RecordActions(str,Enum):
-    UPDATE_ONLY  = 'UPDATE_ONLY'
-    UPDATE_AND_INSERT ='UPDATE_AND_INSERT'
 
+class ApplyTo(str,Enum):
+    ALL         =   'ALL'
+    SELECTED    =   'SELECTED'
+
+
+class Status(str,Enum):
+    CURRENT     = "CURRENT"
+    UPCOMMING   = "UPCOMMING"
+    EXPIRED     = "EXPIRED"

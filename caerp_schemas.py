@@ -1790,9 +1790,8 @@ class ProductModulePriceSchema(BaseModel):
     cess_rate               : float  
     effective_from_date     : date
     effective_to_date       : Optional[str]= None
-    
-    
-  
+
+
 class  OfferCategoryResponse(BaseModel):
 
     id              : int
@@ -1800,7 +1799,7 @@ class  OfferCategoryResponse(BaseModel):
 
 class OfferMasterSchema(BaseModel):
 
-    # id                 : Optional[int] = None
+    id                 : Optional[int] = None
     offer_category_id   : int
     offer_name          : str
     offer_percentage    : Optional[float]= None
@@ -1813,3 +1812,8 @@ class OfferDetailsSchema(BaseModel):
 
     offer_master_id     : int
     product_master_id   : int
+
+class SaveOfferDetailsRequest(BaseModel):
+
+    master: list[OfferMasterSchema]
+    details: Optional[list[OfferDetailsSchema]]=None 
