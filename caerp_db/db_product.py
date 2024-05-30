@@ -822,13 +822,13 @@ def save_product_rating(db: Session, request: ProductRating, id: int,user_id: in
      
 def get_product_complete_details(product_id : Optional[int]=None,db: Session = Depends(get_db)):
     requested_date = datetime.today()
-    product_ratings = {
-            "1 star": 0,
-            "2 stars": 0,
-            "3 stars": 0,
-            "4 stars": 0,
-            "5 stars": 0
-        }
+    product_ratings = [
+    {"star": '1', "count": 0},
+    {"star": '2', "count": 0},
+    {"star": '3', "count": 0},
+    {"star": '4', "count": 0},
+    {"star": '5', "count": 0}
+]
     # Fetch product master data
     product_master_query = db.query(ViewProductMasterPrice).filter(
          ViewProductMasterPrice.is_deleted =='no',
@@ -935,15 +935,15 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
             rating = row[1]
             count = row[2]
             if rating == 1:
-                product_ratings["1 star"] = count
+                product_ratings[0]["count"] = count
             elif rating == 2:
-                product_ratings["2 stars"] = count
+                product_ratings[1]["count"] = count
             elif rating == 3:
-                product_ratings["3 stars"] = count
+                product_ratings[2]["count"] = count
             elif rating == 4:
-                product_ratings["4 stars"] = count
+                product_ratings[3]["count"] = count
             elif rating == 5:
-                product_ratings["5 stars"] = count
+                product_ratings[4]["count"] = count
 
        # print(product_master_query.statement.compile(compile_kwargs={"literal_binds": True}))
 
@@ -951,12 +951,14 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
     if product_id:
         product_master_image_filename= f"{product_id}.jpg"
         # image_path = os.path.join(UPLOAD_DIR_MASTER_IMAGE_VIDEO, product_master_image_filename)
-        image_path = f"{BASE_URL}/uploads/product_master_image_videos/{product_master_image_filename}"
-        if os.path.exists(image_path):
-            image_path =  f"{BASE_URL}/uploads/product_master_image_videos/{product_master_image_filename}"
+        # image_path = f"{BASE_URL}/uploads/product_master_image_video/{product_master_image_filename}"
+        image_path = f"{BASE_URL}/product/save_product_master/{product_master_image_filename}"
+
+        # if os.path.exists(image_path):
+        #     image_path = f"{BASE_URL}/product/save_product_master/{product_master_image_filename}"
             # return FileResponse(image_path)
-        else:
-            image_path = ""
+        # else:
+        #     image_path = ""
         response = []
         for product_data in product_master_data:
             product_id = product_data.product_master_id
@@ -1020,31 +1022,14 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
         product_id = product_data.product_master_id
         product_master_image_filename= f"{product_id}.jpg"
         # image_path = os.path.join(UPLOAD_DIR_MASTER_IMAGE_VIDEO, product_master_image_filename)
-        image_path = f"{BASE_URL}/uploads/product_master_image_videos/{product_master_image_filename}"
-        if os.path.exists(image_path):
-             image_path =  f"{BASE_URL}/uploads/product_master_image_videos/{product_master_image_filename}"
-            # return FileResponse(image_path)
-        else:
-            image_path = ""
-        # discount_data= {}
-        # for discount in discount_details:
-        # discount = discount_data.get(product_id)
-        # discount_amount = None
-        # discount_percentage = None
-        # if discount: 
-        #     if discount.offer_amount:
-        #             discount_percentage = (discount.offer_amount/product_data.price)*100
-        #             discount_amount     = discount.offer_amount
-        #             print("discount amount", discount_percentage)
-        #     if discount.offer_percentage:
-        #              discount_amount = product_data.price*(discount.offer_percentage/100)
-        #              discount_percentage =discount.offer_percentage
-        #     discount_data = {
-                #      "discount_percentage" : discount_percentage,
-                #      "discount_amount"      : discount_amount,
-                #      "discounted_price"     : product_data.price - discount_amount,
-                #      "discount_name"        : discount.offer_name
-                # }
+        # image_path = f"{BASE_URL}/uploads/product_master_image_videos/{product_master_image_filename}"
+        image_path = f"{BASE_URL}/product/save_product_master/{product_master_image_filename}"
+
+        # if os.path.exists(image_path):
+        #      image_path =  f"{BASE_URL}/uploads/product_master_image_videos/{product_master_image_filename}"
+        # else:
+        #     image_path = ""
+       
         discount = discount_data.get(product_id,[])
         discount_amount = 0
         discount_percentage = 0
