@@ -1287,15 +1287,14 @@ class ViewProductModulePrice(caerp_base):
     effective_from_date     = Column(Date, nullable=False)
     effective_to_date       = Column(Date, default=None)
 
-
 class OfferCategory(caerp_base):
-    __tablename__ ='off_offer_category'
+    __tablename__ ='offer_category'
 
     id              = Column(Integer, primary_key=True, index=True)
     offer_category  = Column(String, nullable=False)
 
 class OfferMaster(caerp_base):
-    __tablename__ = "off_offer_master"
+    __tablename__ = "offer_master"
 
     id                  = Column(Integer, primary_key=True, index=True)
     offer_category_id   = Column(Integer, nullable=False)
@@ -1313,7 +1312,7 @@ class OfferMaster(caerp_base):
     deleted_on              = Column(DateTime, default=None)
 
 class OfferDetails(caerp_base):
-    __tablename__ = 'off_offer_details'
+    __tablename__ = 'offer_details'
 
     id                  = Column(Integer, primary_key=True, index=True)
     offer_master_id     = Column(Integer, nullable=False)
@@ -1327,12 +1326,12 @@ class OfferDetails(caerp_base):
     deleted_on              = Column(DateTime, default=None)
 
 class OfferDetailsView(caerp_base):
-    __tablename__ = 'off_view_offer_details'
+    __tablename__ = 'view_offer_details'
 
     offer_details_id             = Column(Integer, primary_key=True, index=True) 
     offer_master_id              = Column(Integer, nullable=False)
     offer_category_id            = Column(Integer, nullable=False)
-    offr_category                = Column(String, nullable=False)
+    offer_category                = Column(String, nullable=False)
     offer_name                   = Column(String, nullable=False)
     offer_percentage             = Column(Float, default=0.0)
     offer_amount                 = Column(Float, default=0.0)
@@ -1349,3 +1348,22 @@ class OfferDetailsView(caerp_base):
     offer_details_deleted_by                   = Column(Integer, default=None)
     offer_details_deleted_on                   = Column(DateTime, default=None)
 
+class CartDetails(caerp_base):
+    __tablename__ = 'cart_details'
+
+    id                  = Column(Integer, primary_key=True, index=True)
+    product_master_id   = Column(Integer, nullable=False)
+    customer_id         = Column(Integer, nullable=False)
+    saved_for_later     = Column(Enum('yes', 'no'), nullable=False, default='no') 
+    is_deleted          = Column(Enum('yes', 'no'), nullable=False, default='no')                     
+
+class CouponMaster(caerp_base):
+    __tablename__ = 'coupon_master'
+
+    id                  = Column(Integer, primary_key=True, index=True)
+    coupon_name         = Column(String(50), nullable=False)
+    coupon_code         = Column(String(50), nullable=False)
+    coupon_percentage   = Column(Float, default=0.0)
+    coupon_amount       = Column(Float, default=0.0)
+    effective_from_date = Column(Date, nullable=False)
+    effective_to_date   = Column(Date, default=None)

@@ -2,8 +2,10 @@
 from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File
 from typing import List, Optional,Dict,Any
 from UserDefinedConstants.user_defined_constants import DeletedStatus,Operator,Status,RecordActionType,ApplyTo
+from UserDefinedConstants.user_defined_constants import BooleanFlag
 from caerp_auth.authentication import authenticate_user
 from caerp_db.models import  AdminUser,ProductMasterPrice,OfferDetails,OfferMaster,OfferCategory,ProductModulePrice, Designation,ProductRating,ViewProductModulePrice,CustomerRegister,ViewProductMasterPrice,PriceListProductModuleView,PriceListProductModule,PriceListProductMasterView,PriceListProductMaster, InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
+from caerp_db.models import CartDetails
 from caerp_schemas import AdminUserBaseForDelete,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
 from sqlalchemy.orm import Session
 from starlette.requests import Request
@@ -862,7 +864,7 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
         discount_query = text(
             "SELECT product_master_id, offer_details_id, offer_name, offer_percentage, offer_amount, "
             "effective_from_date, effective_to_date "
-            "FROM off_view_offer_details "
+            "FROM view_offer_details "
             "WHERE product_master_id = :product_id AND effective_from_date <= :requested_date AND effective_to_date >= :requested_date"
         )
         discount_details = db.execute(discount_query, {'product_id': product_id, 'requested_date':requested_date}).fetchall()
@@ -881,7 +883,7 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
         discount_query = text(
             "SELECT product_master_id, offer_details_id, offer_name, offer_percentage, offer_amount, "
             "effective_from_date, effective_to_date "
-            "FROM off_view_offer_details "
+            "FROM view_offer_details "
             "WHERE effective_from_date <= :requested_date AND effective_to_date >= :requested_date"
         )
         discount_details = db.execute(discount_query, {'requested_date': requested_date}).fetchall()
@@ -1347,3 +1349,19 @@ def delete_offer_master(db, offer_master_id,action_type,deleted_by):
 #             }
 
 
+def get_cart_details(
+          db: Session,
+          customer_id: Optional[int] = None,
+          product_master_id: Optional[int] = None,
+        #   saved_for_later : BooleanFlag = BooleanFlag.YES
+        #   deleted_status : DeletedStatus = DeletedStatus.ALL
+
+):
+     if customer_id:
+          cart_details =  db.query(CartDetails).filter(CartDetails.customer_id==customer_id,
+                                        CartDetails.is_deleted== 'no')
+     if product_master_id:
+          cart_details = db.query(CartDetails).filter(CartDetails.product_master_id==product_master_id,
+                                                      CartDetails.is_deleted == 'no')
+      
+     pass
