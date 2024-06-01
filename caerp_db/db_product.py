@@ -2,11 +2,11 @@
 from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File
 from typing import List, Optional,Dict,Any
 from UserDefinedConstants.user_defined_constants import DeletedStatus,Operator,Status,RecordActionType,ApplyTo
-from UserDefinedConstants.user_defined_constants import BooleanFlag
+from UserDefinedConstants.user_defined_constants import ActiveStatus
 from caerp_auth.authentication import authenticate_user
 from caerp_db.models import  AdminUser,ProductMasterPrice,OfferDetails,OfferMaster,OfferCategory,ProductModulePrice, Designation,ProductRating,ViewProductModulePrice,CustomerRegister,ViewProductMasterPrice,PriceListProductModuleView,PriceListProductModule,PriceListProductMasterView,PriceListProductMaster, InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
-from caerp_db.models import CartDetails
-from caerp_schemas import AdminUserBaseForDelete,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
+from caerp_db.models import CartDetails,CouponMaster
+from caerp_schemas import AdminUserBaseForDelete,CartDetailsSchema,CouponSchema,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 from sqlalchemy import text
@@ -872,10 +872,10 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
 
         total_query = text(
             "SELECT product_master_id, COUNT(product_master_id) AS total_rating_count, "
-            "AVG(rating) AS average_rating ,"
-            "SUM(CASE WHEN comment != '' THEN 1 ELSE 0 END) AS total_review_count " 
+            "AVG(rating) AS average_rating, "
+            "SUM(CASE WHEN comment != '' THEN 1 ELSE 0 END) AS total_review_count "
             "FROM product_rating "
-            "WHERE product_master_id = :product_id "
+            "WHERE product_master_id = :product_id  "
             "GROUP BY product_master_id"
         )
         total_results = db.execute(total_query, {'product_id': product_id}).fetchall()
@@ -890,9 +890,10 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
         
         total_query = text(
            
-            "SELECT product_master_id, COUNT(product_master_id) AS total_rating_count, AVG(rating) AS average_rating ,COUNT(comment) AS total_review_count "
+            "SELECT product_master_id, COUNT(product_master_id) AS total_rating_count, AVG(rating) AS average_rating ,SUM(CASE WHEN comment != '' THEN 1 ELSE 0 END) AS total_review_count  "
             "FROM product_rating "
             "GROUP BY product_master_id"
+            
         )
         total_results = db.execute(total_query).fetchall()
     # discount_data = {}
@@ -1349,19 +1350,275 @@ def delete_offer_master(db, offer_master_id,action_type,deleted_by):
 #             }
 
 
-def get_cart_details(
-          db: Session,
-          customer_id: Optional[int] = None,
-          product_master_id: Optional[int] = None,
-        #   saved_for_later : BooleanFlag = BooleanFlag.YES
-        #   deleted_status : DeletedStatus = DeletedStatus.ALL
+# def get_cart_details(
+#           db: Session,
+#           customer_id: Optional[int] = None,
+#           product_master_id: Optional[int] = None,
+#           saved_for_later : ActiveStatus = ActiveStatus.ALL
+#         #   deleted_status : DeletedStatus = DeletedStatus.ALL
 
+# ):
+#     try:
+#         query = db.query(CartDetails).filter(CartDetails.is_deleted == 'no')
+        
+#         if customer_id is not None:
+#             query = query.filter(CartDetails.customer_id == customer_id)
+            
+#         if product_master_id is not None:
+#             query = query.filter(CartDetails.product_master_id == product_master_id)
+        
+#         if saved_for_later ==  ActiveStatus.YES:
+#             query = query.filter(CartDetails.saved_for_later== ActiveStatus.YES)
+#         if saved_for_later == ActiveStatus.NO:
+#             query = query.filter(CartDetails.saved_for_later == ActiveStatus.NO)
+
+#         cart_item =  query.all() 
+#         response = []
+#         for item in cart_item:
+#             print(item.product_master_id)
+
+#             product_details = get_product_complete_details(item.product_master_id,db)
+#             if product_details and isinstance(product_details, list) and 'error' not in product_details[0]:
+#                  # Remove ratings and total rating details
+#                 # print("product _details : ",product_details[0])
+#                 product_details_list = [product_details]
+
+#                 for product_details in product_details_list:
+#                     if 'ratings' in product_details:
+#                         print("Product Ratings: ", product_details['ratings'])
+#                         del product_details['ratings']
+#                     if 'total_rating' in product_details:
+#                         print("Total Rating: ", product_details['total_rating'])
+#                         del product_details['total_rating']
+#                 print("product_details :",product_details['ratings'] )
+#                 product_detail = product_details[0]  # Assuming only one product is returned
+#                 cart_item_response = {
+#                     "cart_id": item.id,
+#                     "customer_id": item.customer_id,
+#                     "saved_for_later": item.saved_for_later,
+#                     "product_details": product_detail
+#                 }
+#                 response.append(cart_item_response)
+
+#         return response
+#     except Exception as e:
+#         print("Error:", e)  # Print the exception message for debugging
+#         raise HTTPException(status_code=500, detail=str(e))
+    
+def save_cart_details(db: Session , cart_data : CartDetailsSchema, action_type: RecordActionType, id: int):
+    if action_type == RecordActionType.INSERT_ONLY and id != 0:
+        raise HTTPException(status_code=400, detail="Invalid action: For INSERT_ONLY, id should be 0")
+    elif action_type == RecordActionType.UPDATE_ONLY and id <= 0:
+        raise HTTPException(status_code=400, detail="Invalid action: For UPDATE_ONLY, id should be greater than 0")
+
+    try:
+        if action_type == RecordActionType.INSERT_ONLY:
+            for cart_details in cart_data:
+                new_cart_details = cart_details.dict()
+               
+                new_cart = CartDetails(**new_cart_details)
+                db.add(new_cart)
+                db.commit()
+                db.refresh(new_cart)
+                # db.flush()  
+                return new_cart
+            
+        elif action_type == RecordActionType.UPDATE_ONLY:
+            existing_cart = db.query(CartDetails).filter(CartDetails.id == id).first()
+            if not existing_cart:
+                raise HTTPException(status_code=404, detail=" record not found")
+
+            # Use the first item from data.master for update
+            update_data = cart_data[0].dict()
+            for key, value in update_data.items():
+                setattr(existing_cart, key, value)
+            
+        db.commit()
+        return update_data
+    except IntegrityError as e:
+        db.rollback()
+        logger.error("IntegrityError: %s", str(e))
+        if 'Duplicate entry' in str(e):
+            raise HTTPException(status_code=400, detail="Duplicate entry detected.")
+        else:
+            raise e
+    except OperationalError as e:
+        db.rollback()
+        logger.error("OperationalError: %s", str(e))
+        raise HTTPException(status_code=500, detail="Database connection error.")
+    except Exception as e:
+        db.rollback()
+        logger.error("Exception: %s", str(e))
+        raise e
+
+
+
+def get_cart_product_details_with_prices(
+    db: Session,
+    customer_id: Optional[int] = None,
+    product_master_id: Optional[int] = None,
+    saved_for_later: ActiveStatus = ActiveStatus.ALL
 ):
-     if customer_id:
-          cart_details =  db.query(CartDetails).filter(CartDetails.customer_id==customer_id,
-                                        CartDetails.is_deleted== 'no')
-     if product_master_id:
-          cart_details = db.query(CartDetails).filter(CartDetails.product_master_id==product_master_id,
-                                                      CartDetails.is_deleted == 'no')
-      
-     pass
+    try:
+        query = db.query(CartDetails).filter(CartDetails.is_deleted == 'no')
+
+        if customer_id is not None:
+            query = query.filter(CartDetails.customer_id == customer_id)
+            
+
+        if product_master_id is not None:
+            query = query.filter(CartDetails.product_master_id == product_master_id)
+
+        if saved_for_later == ActiveStatus.ACTIVE:
+            query = query.filter(CartDetails.saved_for_later == ActiveStatus.ACTIVE)
+        if saved_for_later == ActiveStatus.NOT_ACTIVE:
+            query = query.filter(CartDetails.saved_for_later == ActiveStatus.NOT_ACTIVE)
+
+        cart_items = query.all()
+
+        cart_item_responses = []
+        total_price = 0.0
+        total_discount_amount = 0.0
+
+        for cart_item in cart_items:
+            product_details_list = get_product_complete_details(product_id=cart_item.product_master_id, db=db)
+
+            # Ensure product_details_list is a list
+            if not isinstance(product_details_list, list):
+                product_details_list = [product_details_list]
+
+            for product_details in product_details_list:
+                # Ensure product_details is a dictionary
+                if isinstance(product_details, dict):
+                    if 'ratings' in product_details:
+                        del product_details['ratings']
+                    if 'total_rating' in product_details:
+                        del product_details['total_rating']
+                    if 'description' in product_details:
+                        del product_details['description']
+
+                    # Accumulate price and discount
+                    total_price += product_details.get('price', 0.0)
+                    discount = product_details.get('discount', {})
+                    total_discount_amount += discount.get('discount_amount', 0.0)
+
+                    cart_item_response = {
+                        "cart_id": cart_item.id,
+                        "customer_id": cart_item.customer_id,
+                        "saved_for_later": cart_item.saved_for_later,
+                        "product_details": product_details,
+                    }
+                    cart_item_responses.append(cart_item_response)
+        total_price_before_tax = total_price - total_discount_amount
+        tax_rate = 0.18  # 18% tax rate
+        tax_amount = total_price_before_tax * tax_rate
+        final_price = total_price_before_tax + tax_amount
+        price_item_response = {
+             
+                "total_price": total_price,
+                "total_discount_amount": total_discount_amount,
+                "tax_percentage" : "18 %",
+                "tax_amount": tax_amount,
+                "final_price": final_price
+            }
+        
+        if cart_item_responses:
+           
+            response = {
+            "cart_details": cart_item_responses,
+            "price_details": price_item_response
+        }
+        else:
+                response = {"message": "cart is empty"}
+
+        return response
+
+        # return response
+
+    except Exception as e:
+        print("Error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+def save_coupon(db: Session , coupon_data: CouponSchema, action_type: RecordActionType, id: int,user_id: int):
+     
+    if action_type == RecordActionType.INSERT_ONLY and id != 0:
+        raise HTTPException(status_code=400, detail="Invalid action: For INSERT_ONLY, id should be 0")
+    elif action_type == RecordActionType.UPDATE_ONLY and id <= 0:
+        raise HTTPException(status_code=400, detail="Invalid action: For UPDATE_ONLY, id should be greater than 0")
+
+    try:
+        if action_type == RecordActionType.INSERT_ONLY:
+            for coupon_details in coupon_data:
+                new_coupon_details = coupon_details.dict()
+                new_coupon_details["created_on"] = datetime.utcnow()
+                new_coupon_details["created_by"] = user_id
+                new_coupon = CouponMaster(**new_coupon_details)
+                db.add(new_coupon)
+                db.commit()
+                db.refresh(new_coupon)
+                return new_coupon
+                # db.flush()  
+            
+        elif action_type == RecordActionType.UPDATE_ONLY:
+            existing_cart = db.query(CouponMaster).filter(CouponMaster.id == id).first()
+            if not existing_cart:
+                raise HTTPException(status_code=404, detail=" record not found")
+
+            # Use the first item from data.master for update
+            update_data = coupon_data[0].dict()
+            for key, value in update_data.items():
+                setattr(existing_cart, key, value)
+            
+        db.commit()
+    except IntegrityError as e:
+        db.rollback()
+        logger.error("IntegrityError: %s", str(e))
+        if 'Duplicate entry' in str(e):
+            raise HTTPException(status_code=400, detail="Duplicate entry detected.")
+        else:
+            raise e
+    except OperationalError as e:
+        db.rollback()
+        logger.error("OperationalError: %s", str(e))
+        raise HTTPException(status_code=500, detail="Database connection error.")
+    except Exception as e:
+        db.rollback()
+        logger.error("Exception: %s", str(e))
+        raise e
+
+
+     
+def apply_coupon(db:Session , amount: float , coupon_code : str):
+     tax_rate =18.0
+     current_date = datetime.today()
+     coupon_details = db.query(CouponMaster).filter(CouponMaster.coupon_code== coupon_code,
+                                                    CouponMaster.effective_from_date <= current_date,
+                                                    CouponMaster.effective_to_date >= current_date).first()
+     if coupon_details:   
+        if coupon_details.coupon_percentage:
+            discount_amount = amount*(coupon_details.coupon_percentage/100)
+        
+        else:
+            discount_amount =  coupon_details.coupon_amount
+        net_price = amount-discount_amount
+        tax_amount = net_price * (tax_rate / 100)
+        final_price = net_price + tax_amount
+
+        response = {
+            "coupon_amount": discount_amount,
+            "net_price": net_price,
+            "tax_percentage" : "18 %",
+            "tax_amount": tax_amount,
+            "final_price": final_price
+        }
+     else:
+        response = {
+            "error": "Coupon not valid"
+        }
+    
+     return response    
+
+    
+                  

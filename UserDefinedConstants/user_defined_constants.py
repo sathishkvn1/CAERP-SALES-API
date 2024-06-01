@@ -10,7 +10,8 @@ class ActiveStatus(str,Enum):
     ALL         = 'all'
     ACTIVE      = 'yes'
     NOT_ACTIVE  ='no'
-
+    # YES         ='YES'
+    # NO          ='NO'
 class ParameterConstant(str,Enum):
     STATE       ='state_id'
     TALUK       ='taluk_id'

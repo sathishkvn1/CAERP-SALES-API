@@ -1792,6 +1792,10 @@ class ProductModulePriceSchema(BaseModel):
     effective_to_date       : Optional[str]= None
 
 
+
+
+
+  
 class  OfferCategoryResponse(BaseModel):
 
     id              : int
@@ -1817,3 +1821,19 @@ class SaveOfferDetailsRequest(BaseModel):
 
     master: list[OfferMasterSchema]
     details: Optional[list[OfferDetailsSchema]]=None 
+
+class CartDetailsSchema(BaseModel):
+
+    
+    product_master_id : int
+    customer_id       : int
+    saved_for_later   : Optional[BooleanFlag] ='no'
+
+class CouponSchema(BaseModel):
+
+    coupon_name : str
+    coupon_code : str
+    coupon_percentage: Optional[float]= None
+    coupon_amount : Optional[float]= None
+    effective_from_date : date
+    effective_to_date   : Optional[date]

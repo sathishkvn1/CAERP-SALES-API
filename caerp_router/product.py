@@ -3,12 +3,13 @@
 from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File,Query,Request
 from typing import List, Optional,Dict
 from UserDefinedConstants.user_defined_constants import  DeletedStatus,Operator,Status,ActiveStatus,ActionType,ApplyTo,RecordActionType
+from UserDefinedConstants.user_defined_constants import ActiveStatus
 from caerp_auth.authentication import authenticate_user
 from typing import Union
 
 from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductRating,ProductMaster, ProductModule, UserRole
 from caerp_schemas import AdminUserBaseForDelete,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
-from caerp_schemas import ProductMasterPriceSchema,OfferDetailsSchema, SaveOfferDetailsRequest,OfferMasterSchema,PriceListProductMasterView,OfferCategoryResponse,ProductRating,PriceListProductModuleResponse,PriceListProductModuleView,PriceListProductMasterResponse,PriceListProductModule,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse
+from caerp_schemas import ProductMasterPriceSchema,CartDetailsSchema,CouponSchema,OfferDetailsSchema, SaveOfferDetailsRequest,OfferMasterSchema,PriceListProductMasterView,OfferCategoryResponse,ProductRating,PriceListProductModuleResponse,PriceListProductModuleView,PriceListProductMasterResponse,PriceListProductModule,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
@@ -946,9 +947,30 @@ def save_product_rating(
 @router.get("/get_product_complete_details")
 def get_product_complete_details(
     product_id: Optional[int] =None,
-    db: Session = Depends(get_db)):
-    product_rating_details = db_product.get_product_complete_details(product_id,db)
-    return product_rating_details
+    db: Session = Depends(get_db),
+    cart: Optional[str]= None,
+    customer_id: Optional[int]= None,    
+    saved_for_later: ActiveStatus =None
+    ):
+    """
+        Endpoint to get all product details, including price and rating.
+
+        Parameters:
+        - product_id: (Optional) The ID of the product to be returned.
+        - cart: (Optional) If `cart = 'yes'`, this will return the product list within the cart.
+        - customer_id: (Optional) The ID of the customer for displaying cart details.
+        - saved_for_later: (Optional) Available values - 'YES' or 'NO'. If 'YES', the cart list saved for later will be returned.
+        - db (Session): The database session dependency.
+
+        Returns:
+        - JSON response with the status of the operation.
+    """
+    if cart == 'yes':
+            cart_details = db_product.get_cart_product_details_with_prices(db,customer_id,product_id,saved_for_later)
+            return cart_details
+    else:
+        product_rating_details = db_product.get_product_complete_details(product_id,db)
+        return product_rating_details
     
 
 @router.get("/get_product_rating_comments")
@@ -1062,3 +1084,63 @@ def delete_offer_master(
     
     
     return db_product.delete_offer_master(db, offer_master_id,action_type,deleted_by=user_id)
+
+
+
+@router.get("/get_cart_product_details_with_prices")
+def get_cart_product_details_with_prices(
+     
+          customer_id: Optional[int] = None,
+          product_master_id: Optional[int] = None,
+          saved_for_later : ActiveStatus = None,
+          db: Session = Depends(get_db)
+):
+    cart_details = db_product.get_cart_product_details_with_prices(db,customer_id,product_master_id,saved_for_later)
+   
+    return cart_details
+
+
+@router.post("/save_cart_details")
+def save_cart_details(
+    cart_data : List[CartDetailsSchema],
+    action_type: RecordActionType,
+    id: Optional[int]= 0,
+    db: Session =Depends(get_db),
+    token: str = Depends(oauth2.oauth2_scheme)
+):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+
+    result = db_product.save_cart_details(db,cart_data,action_type,id)
+    if result:
+        return{"success": True, "message": "Saved successfully"}
+    else :
+        {"success": False, "message": "Error"}
+
+
+
+@router.post("/save_coupon_details")
+def save_coupon_details(
+    coupon_data : List[CouponSchema],
+    action_type: RecordActionType,
+    id: Optional[int]= 0,
+    db: Session =Depends(get_db),
+    token: str = Depends(oauth2.oauth2_scheme)
+):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    auth_info = authenticate_user(token)
+    user_id = auth_info["user_id"]
+
+    result = db_product.save_coupon(db,coupon_data,action_type,id,user_id)
+    return result
+
+
+@router.get("/apply_coupon")
+def apply_coupon(
+    total_price : float,
+    coupon_code : str,
+    db:Session = Depends(get_db)
+):
+    result = db_product.apply_coupon(db, total_price,coupon_code)
+    return result

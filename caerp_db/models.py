@@ -1287,6 +1287,9 @@ class ViewProductModulePrice(caerp_base):
     effective_from_date     = Column(Date, nullable=False)
     effective_to_date       = Column(Date, default=None)
 
+
+
+
 class OfferCategory(caerp_base):
     __tablename__ ='offer_category'
 
@@ -1348,6 +1351,7 @@ class OfferDetailsView(caerp_base):
     offer_details_deleted_by                   = Column(Integer, default=None)
     offer_details_deleted_on                   = Column(DateTime, default=None)
 
+
 class CartDetails(caerp_base):
     __tablename__ = 'cart_details'
 
@@ -1367,3 +1371,11 @@ class CouponMaster(caerp_base):
     coupon_amount       = Column(Float, default=0.0)
     effective_from_date = Column(Date, nullable=False)
     effective_to_date   = Column(Date, default=None)
+    created_by          = Column(Integer, nullable=False)
+    created_on              = Column(DateTime, nullable=False, default=func.now())
+    modified_by             = Column(Integer, default=None)
+    modified_on             = Column(DateTime, default=None)
+    is_deleted              = Column(Enum('yes', 'no'), nullable=False, default='no')
+    deleted_by              = Column(Integer, default=None)
+    deleted_on              = Column(DateTime, default=None)
+
