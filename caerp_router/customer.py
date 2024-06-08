@@ -2,7 +2,7 @@ import os
 import random
 from fastapi import APIRouter ,Depends,Request,HTTPException,status,UploadFile,File,Response
 from caerp_db.models import CustomerCompanyProfile, CustomerLog, CustomerNews, CustomerRegister
-from caerp_schemas import ClientUserChangePasswordSchema, CompanyProfileSchemaForGet, CustomerCompanyProfileSchema, CustomerCompanyProfileSchemaResponse, CustomerInstallmentDetailsBase, CustomerInstallmentDetailsForGet, CustomerInstallmentMasterBase, CustomerLogSchema, CustomerLoginRequest, CustomerNewsBase, CustomerNewsBaseForGet, CustomerNewsResponse, CustomerRegisterBase, CustomerRegisterBaseForUpdate, CustomerRegisterListSchema, CustomerRegisterSchema, CustomerSalesQueryBase, CustomerSalesQueryForGet, Email, EmailVerificationStatus, MobileVerificationStatus
+from caerp_schemas import ClientUserChangePasswordSchema,CompleteCustomerQualificationSchema, CompanyProfileSchemaForGet, CustomerCompanyProfileSchema, CustomerCompanyProfileSchemaResponse, CustomerInstallmentDetailsBase, CustomerInstallmentDetailsForGet, CustomerInstallmentMasterBase, CustomerLogSchema, CustomerLoginRequest, CustomerNewsBase, CustomerNewsBaseForGet, CustomerNewsResponse, CustomerRegisterBase, CustomerRegisterBaseForUpdate, CustomerRegisterListSchema, CustomerRegisterSchema, CustomerSalesQueryBase, CustomerSalesQueryForGet, Email, EmailVerificationStatus, MobileVerificationStatus
 from caerp_db.database import get_db
 from caerp_db import db_customer
 from sqlalchemy.orm import Session
@@ -14,7 +14,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 from typing import List,Optional, Union,Dict
-from UserDefinedConstants.user_defined_constants import DeletedStatus,ActiveStatus,ParameterConstant
+from UserDefinedConstants.user_defined_constants import DeletedStatus,ActiveStatus,ParameterConstant,RecordActionType
 from datetime import date
 from caerp_auth.authentication import authenticate_user
 from sqlalchemy import func 
@@ -1135,6 +1135,25 @@ def customer_password_reset(
     return db_customer.customer_password_reset(db, customer_id, password, time_expire)
    
 
+@router.get("/get_customer_practicing_info")
+def get_customer_practicing_info(
+    customer_id: int,
+    customer_parameter: ParameterConstant = 'QUALIFICATION', 
+    db: Session = Depends(get_db)
+):
+    result = db_customer.get_customer_practicing_info(db,customer_id,customer_parameter)
+    return result
 
+
+@router.post("/save_customer_practicing_info")
+def save_customer_practicing_info(
+    qualification_data : CompleteCustomerQualificationSchema,    
+    # id : Optional[int]= None,
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2.oauth2_scheme)
+):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     
-    
+    result = db_customer.save_customer_practicing_info(db, qualification_data) 
+    return result

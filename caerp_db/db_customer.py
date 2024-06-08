@@ -1,14 +1,14 @@
 from fastapi import HTTPException,status
 from sqlalchemy.orm import Session
-from caerp_db.models import CustomerCompanyProfile, CustomerInstallmentDetails, CustomerInstallmentMaster, CustomerNews, CustomerPasswordReset, CustomerRegister, CustomerSalesQuery, OtpGeneration, SmsTemplates
-from caerp_schemas import CustomerCompanyProfileSchema, CustomerInstallmentDetailsBase, CustomerInstallmentMasterBase, CustomerNewsBase, CustomerRegisterBase, CustomerRegisterBaseForUpdate, CustomerSalesQueryBase
+from caerp_db.models import CustomerCompanyProfile, CustomerPracticingAs,CustomerAreaOfPracticing,CustomerProfessionalQualification, CustomerInstallmentDetails, CustomerInstallmentMaster, CustomerNews, CustomerPasswordReset, CustomerRegister, CustomerSalesQuery, OtpGeneration, SmsTemplates
+from caerp_schemas import CustomerCompanyProfileSchema,CompleteCustomerQualificationSchema, CustomerInstallmentDetailsBase, CustomerInstallmentMasterBase, CustomerNewsBase, CustomerRegisterBase, CustomerRegisterBaseForUpdate, CustomerSalesQueryBase
 from caerp_db.hash import Hash
 from caerp_db.database import get_db
 from typing import List,Optional, Union,Dict
-from UserDefinedConstants.user_defined_constants import DeletedStatus,ActiveStatus
+from UserDefinedConstants.user_defined_constants import DeletedStatus,ActiveStatus,ParameterConstant,RecordActionType
 # from caerp_schemas import 
 from datetime import date,datetime
-from sqlalchemy import func
+from sqlalchemy import func,text
 from sqlalchemy.exc import SQLAlchemyError
 import send_message,send_email
 import random
@@ -728,3 +728,170 @@ def get_customer_by_email(db: Session,email: str):
         
         return db.query(CustomerRegister).filter(CustomerRegister.email_id== email).first() 
 
+
+def get_customer_practicing_info(db: Session, customer_id: int,parameter = ParameterConstant):
+    if parameter == 'QUALIFICATION':
+        qualification_data = db.query(CustomerProfessionalQualification).filter(
+        CustomerProfessionalQualification.customer_id==customer_id,
+        CustomerProfessionalQualification.is_deleted=='no'
+        ).all()
+        # return qualification
+        result = {
+            "customer_id": customer_id,
+            "qualifications": [
+                {
+                    "id"     : qualification.id,
+                    "profession_type_id": qualification.profession_type_id,
+                    "membership_number" : qualification.membership_number,
+                    "enrollment_date"   : qualification.enrollment_date,
+                    "is_deleted"        : qualification.is_deleted
+                } for qualification in qualification_data
+            ]
+        }
+        return result
+    if parameter == 'PRACTICING_AS':
+        practicing_as = db.query(CustomerPracticingAs).filter(
+        CustomerPracticingAs.customer_id==customer_id,
+        CustomerPracticingAs.is_deleted=='no').all()
+        # return practicing_as
+        result = {
+            "customer_id": customer_id,
+            "practicing_as": [
+                {
+                    "id": practicing.id,
+                    "practicing_type_id": practicing.practicing_type_id,
+                    "other": practicing.other,
+                    "is_deleted": practicing.is_deleted
+                } for practicing in practicing_as
+            ]
+        }
+        return result
+    if parameter == 'AREA_OF_PRACTICING_AS':
+        area_of_practicing = db.query(CustomerAreaOfPracticing).filter(
+        CustomerAreaOfPracticing.customer_id==customer_id,
+        CustomerAreaOfPracticing.is_deleted=='no')
+
+        result = {
+            "customer_id": customer_id,
+            "areas_of_practicing": [
+                {
+                    "id": aop.id,
+                    "area_of_practicing_id": aop.area_of_practicing_id,
+                    "other": aop.other,
+                    "is_deleted": aop.is_deleted
+                } for aop in area_of_practicing
+            ]
+        }
+        return result
+
+
+
+
+def save_customer_practicing_info(
+    db: Session,
+    qualification_data: CompleteCustomerQualificationSchema,
+    # id: Optional[int] = None
+):
+    qualification_data_dict = qualification_data.dict(exclude_unset=True)
+    
+    # Remove nested fields from main data dictionary
+    customer_id = qualification_data_dict['customer_id']
+    qualifications  = qualification_data_dict.pop('qualifications',[])
+    practicing_as_data = qualification_data_dict.pop('practicing_as', [])
+    area_of_practicing_data = qualification_data_dict.pop('area_of_practicing', [])
+    # print("qualification data----", qualifications)
+    
+    # Insert main qualification data
+    if qualifications:
+        update_query = text(
+            "UPDATE customer_professional_qualification SET is_deleted='yes' "                        
+            "WHERE customer_id = :customer_id"
+        )
+        db.execute(update_query, {'customer_id': customer_id})
+        new_qualification = None
+        for qual_data in qualifications:
+            existing_data = db.query(CustomerProfessionalQualification).filter(
+                CustomerProfessionalQualification.customer_id == customer_id,
+                CustomerProfessionalQualification.profession_type_id == qual_data['profession_type_id']
+            ).first()
+            # print(existing_data.statement.compile(compile_kwargs={"literal_binds": True}))
+            print("existing data --------------------",existing_data)
+            if existing_data:
+                qualification_data_dict["modified_on"] = datetime.utcnow()
+                qualification_data_dict["is_deleted"] = 'no'
+                qualification_data_dict["customer_id"]= customer_id
+                print("DATA ------------------: ", qualification_data_dict["customer_id"])
+                for key, value in qualification_data_dict.items():
+                    setattr(existing_data, key, value)
+            else:
+                new_qualification = CustomerProfessionalQualification(
+                    customer_id=customer_id,
+                    **qual_data
+                )
+                new_qualification.created_on = datetime.utcnow()
+                db.add(new_qualification)
+        
+        db.commit()
+        if new_qualification:
+            db.refresh(new_qualification)
+            # return new_qualification
+        
+        # return {"message": "Success", "success": True}
+    
+    # Insert practicing_as data
+    if practicing_as_data:
+        update_query = text(
+            "UPDATE customer_practicing_as SET is_deleted='yes' "                        
+            "WHERE customer_id = :customer_id"
+        )
+        db.execute(update_query, {'customer_id': customer_id})
+        
+        for practicing_as in practicing_as_data:
+            existing_data = db.query(CustomerPracticingAs).filter(
+                CustomerPracticingAs.customer_id == customer_id,
+                CustomerPracticingAs.practicing_type_id == practicing_as['practicing_type_id']
+            ).first()
+            if existing_data:
+                practicing_as["modified_on"] = datetime.utcnow()
+                practicing_as["is_deleted"] = 'no'
+                for key, value in practicing_as.items():
+                    setattr(existing_data, key, value)
+            else:
+                practicing_as_record = CustomerPracticingAs(
+                    customer_id=customer_id,
+                    **practicing_as
+                )
+                practicing_as_record.created_on = datetime.utcnow()
+                db.add(practicing_as_record)
+        
+        db.commit()
+        # return {"message": "Success", "success": True}
+
+    # Insert area_of_practicing data
+    if area_of_practicing_data:
+        update_query = text(
+            "UPDATE customer_area_of_practicing SET is_deleted='yes' "                        
+            "WHERE customer_id = :customer_id"
+        )
+        db.execute(update_query, {'customer_id': customer_id})
+        
+        for area_of_practicing in area_of_practicing_data:
+            existing_data = db.query(CustomerAreaOfPracticing).filter(
+                CustomerAreaOfPracticing.customer_id == customer_id,
+                CustomerAreaOfPracticing.area_of_practicing_id == area_of_practicing['area_of_practicing_id']
+            ).first()
+            if existing_data:
+                area_of_practicing["modified_on"] = datetime.utcnow()
+                area_of_practicing["is_deleted"] = 'no'
+                for key, value in area_of_practicing.items():
+                    setattr(existing_data, key, value)
+            else:
+                area_of_practicing_record = CustomerAreaOfPracticing(
+                    customer_id=customer_id,
+                    **area_of_practicing
+                )
+                area_of_practicing_record.created_on = datetime.utcnow()
+                db.add(area_of_practicing_record)
+        
+        db.commit()
+    return {"message": "Success", "success": True}

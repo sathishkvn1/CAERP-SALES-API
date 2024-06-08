@@ -1061,9 +1061,9 @@ class PriceListProductMaster(caerp_base):
 
     id                      = Column(Integer, primary_key=True, index=True)
     product_master_id       = Column(Integer, nullable=False)
-    price                   = Column(Float, nullable=False)
-    gst_rate                = Column(Float, nullable=False)
-    cgst_rate               = Column(Float, nullable=False)
+    price                   = Column(Float, nullable=False, default=0)
+    igst_rate                = Column(Float, nullable=False,default=0.0)
+    cgst_rate               = Column(Float, nullable=False, default=0.0)
     sgst_rate               = Column(Float, nullable=False)
     cess_rate               = Column(Float, nullable=False)
     discount_percentage     = Column(Float, nullable=False)
@@ -1093,7 +1093,7 @@ class PriceListProductMasterView(caerp_base):
     product_description_sub = Column(String, nullable=False)
     has_module              = Column(Enum('yes', 'no'), nullable=False, default='no')
     price                   = Column(Float, nullable=False)
-    gst_rate                = Column(Float, nullable=False)
+    igst_rate                = Column(Float, nullable=False)
     cgst_rate               = Column(Float, nullable=False)
     sgst_rate               = Column(Float, nullable=False)
     cess_rate               = Column(Float, nullable=False)
@@ -1120,7 +1120,7 @@ class PriceListProductModule(caerp_base):
     price_list_product_master_id   = Column(Integer, nullable=False)
     module_id                      = Column(Integer, nullable=False)
     module_price                   = Column(Float, nullable=False)
-    gst_rate                = Column(Float, nullable=False)
+    igst_rate                = Column(Float, nullable=False)
     cgst_rate               = Column(Float, nullable=False)
     sgst_rate               = Column(Float, nullable=False)
     cess_rate               = Column(Float, nullable=False)
@@ -1148,9 +1148,10 @@ class PriceListProductModuleView(caerp_base):
     module_name                    = Column(String, nullable=False)
     module_id                      = Column(Integer, nullable=False)
     product_code                   = Column(String, nullable=False)
+    product_name                   = Column(String, nullable=False)
     module_description             = Column(String, nullable=False)
     module_price                   = Column(Float, nullable=False)
-    module_gst_rate                = Column(Float, nullable=False)
+    module_igst_rate                = Column(Float, nullable=False)
     module_cgst_rate               = Column(Float, nullable=False)
     module_sgst_rate               = Column(Float, nullable=False)
     module_cess_rate               = Column(Float, nullable=False)
@@ -1159,7 +1160,7 @@ class PriceListProductModuleView(caerp_base):
     module_effective_from_date     = Column(Date, nullable=False)
     module_effective_to_date       = Column(Date, default=None)
     master_price                   = Column(Float, nullable=False)
-    master_gst_rate                = Column(Float, nullable=False)
+    master_igst_rate                = Column(Float, nullable=False)
     master_cgst_rate               = Column(Float, nullable=False)
     master_sgst_rate               = Column(Float, nullable=False)
     master_cess_rate               = Column(Float, nullable=False)
@@ -1178,10 +1179,6 @@ class PriceListProductModuleView(caerp_base):
     deleted_on              = Column(DateTime, default=None)
 
 
-
-
-
-
 class ProductRating(caerp_base):
     __tablename__ = 'product_rating'
 
@@ -1191,11 +1188,6 @@ class ProductRating(caerp_base):
     rating            = Column(Float, nullable=False)
     comment           = Column(String, nullable=False)
     created_on        = Column(DateTime, nullable=False,default=func.now())
-
-
-
-
-
 
 class ProductMasterPrice(caerp_base):
     __tablename__ = 'product_master_price'
@@ -1214,7 +1206,6 @@ class ProductMasterPrice(caerp_base):
     is_deleted              = Column(Enum('yes', 'no'), nullable=False, default='no')
     deleted_by              = Column(Integer, default=None)
     deleted_on              = Column(DateTime, default=None)
-
 
 
 
@@ -1241,6 +1232,11 @@ class ViewProductMasterPrice(caerp_base):
     cess_rate               = Column(Float, nullable=False)  
     effective_from_date     = Column(Date, nullable=False)
     effective_to_date       = Column(Date, default=None)
+    price_is_deleted        = Column(Enum('yes', 'no'), nullable=False, default='no')
+
+
+
+
 
 class ProductModulePrice(caerp_base):
     __tablename__ = 'product_module_price'
@@ -1288,8 +1284,6 @@ class ViewProductModulePrice(caerp_base):
     effective_to_date       = Column(Date, default=None)
 
 
-
-
 class OfferCategory(caerp_base):
     __tablename__ ='offer_category'
 
@@ -1334,7 +1328,7 @@ class OfferDetailsView(caerp_base):
     offer_details_id             = Column(Integer, primary_key=True, index=True) 
     offer_master_id              = Column(Integer, nullable=False)
     offer_category_id            = Column(Integer, nullable=False)
-    offer_category                = Column(String, nullable=False)
+    offer_category               = Column(String, nullable=False)
     offer_name                   = Column(String, nullable=False)
     offer_percentage             = Column(Float, default=0.0)
     offer_amount                 = Column(Float, default=0.0)
@@ -1378,4 +1372,61 @@ class CouponMaster(caerp_base):
     is_deleted              = Column(Enum('yes', 'no'), nullable=False, default='no')
     deleted_by              = Column(Integer, default=None)
     deleted_on              = Column(DateTime, default=None)
+
+class PracticingAs(caerp_base):
+    __tablename__ = 'app_practicing_as'
+
+    id                  = Column(Integer, primary_key=True, index=True)
+    practicing_type         = Column(String(50), nullable=False)
+    display_number         = Column(Integer, nullable=False)
+
+class AreaOfPracticing(caerp_base):
+    __tablename__ = 'app_area_of_practicing'
+
+    id                  = Column(Integer, primary_key=True, index=True)
+    practicing_type     = Column(String(50), nullable=False)
+    display_number      = Column(Integer, nullable=False)
+
+class ProfessionalQualification(caerp_base):
+    __tablename__ ='app_professional_qualification'
+
+    id              = Column(Integer, primary_key=True, index=True)
+    Qualification   = Column(String(50), nullable=False)
+    display_number  = Column(Integer, nullable=False)
+
+
+class CustomerAreaOfPracticing(caerp_base):
+    __tablename__ = 'customer_area_of_practicing'
+
+    id              = Column(Integer, primary_key=True, index=True)
+    customer_id     = Column(Integer, nullable=False)
+    area_of_practicing_id = Column(Integer, nullable=False)
+    other           = Column(String, default=None)
+    created_on      = Column(DateTime, nullable=False)
+    modified_on     = Column(DateTime, default=None)
+    is_deleted      = Column(Enum('yes', 'no'), nullable=False, default='no')
+
+
+class CustomerPracticingAs(caerp_base):
+    __tablename__ = 'customer_practicing_as'
+
+    id              = Column(Integer, primary_key=True, index=True)
+    customer_id     = Column(Integer, nullable=False)
+    practicing_type_id = Column(Integer, nullable=False)
+    other           = Column(String, default=None)
+    created_on      = Column(DateTime, nullable=False)
+    modified_on     = Column(DateTime, default=None)
+    is_deleted      = Column(Enum('yes', 'no'), nullable=False, default='no')
+
+class CustomerProfessionalQualification(caerp_base):
+    __tablename__ = 'customer_professional_qualification'
+
+    id              = Column(Integer, primary_key=True, index=True)
+    customer_id     = Column(Integer, nullable=False)
+    profession_type_id = Column(Integer, nullable=False)
+    membership_number	= Column(Integer, nullable=False)
+    enrollment_date     = Column(Date, default=None)
+    created_on      = Column(DateTime, nullable=False)
+    modified_on     = Column(DateTime, default=None)
+    is_deleted      = Column(Enum('yes', 'no'), nullable=False, default='no')
 

@@ -19,6 +19,10 @@ class ParameterConstant(str,Enum):
     COUNTRY     = 'country_id'
     POST_OFFICE = 'post_office_id'
     TYPE        = 'customer_type_id' 
+    QUALIFICATION = 'QUALIFICATION'
+    PRACTICING_AS = 'PRACTICING_AS'
+    AREA_OF_PRACTICING = 'AREA_OF_PRACTICING_AS'
+    
     
 class BooleanFlag(str, Enum):
     yes = "yes"

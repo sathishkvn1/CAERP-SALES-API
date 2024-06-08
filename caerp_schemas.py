@@ -1,9 +1,12 @@
 
 from enum import Enum
-from pydantic import BaseModel
+from pydantic import BaseModel,Field
 from typing import List,Optional, Union,Dict
 from datetime import date, datetime
 from UserDefinedConstants.user_defined_constants import BooleanFlag
+
+
+
 
 class CountryCreate(BaseModel):
     id: int
@@ -1639,12 +1642,12 @@ class PriceListProductMaster(BaseModel):
     effective_from_date     : Optional[date] 
     effective_to_date       : Optional[date] = None
     
-
+    
 class PriceListProductMasterResponse(BaseModel):
     id                    :int
     product_master_id     : int
     price                 : float
-    gst_rate                : float
+    igst_rate                : float
     cgst_rate               : float
     sgst_rate               : float
     cess_rate               : float
@@ -1675,7 +1678,7 @@ class PriceListProductMasterView(BaseModel):
     product_description_sub  :  str
     has_module               :  str
     price                    :  float 
-    gst_rate                 :    float
+    igst_rate                 :    float
     cgst_rate                :    float
     sgst_rate                :    float
     cess_rate                :    float
@@ -1707,8 +1710,6 @@ class PriceListProductModule(BaseModel):
     discount_amount         : float=0
     effective_from_date     : Optional[date]
     effective_to_date       : Optional[date]
-
-
     
 
 class PriceListProductModuleResponse(PriceListProductModule):
@@ -1731,9 +1732,10 @@ class PriceListProductModuleView(BaseModel):
     module_name                    : str
     module_id                      : int
     product_code                   : str
+    product_name                   : str
     module_description             : str
     module_price                   : float
-    module_gst_rate                : float
+    module_igst_rate                : float
     module_cgst_rate               : float
     module_sgst_rate               : float
     module_cess_rate               : float
@@ -1742,7 +1744,7 @@ class PriceListProductModuleView(BaseModel):
     module_effective_from_date     : Optional[date]
     module_effective_to_date       : Optional[date]
     master_price                   : float
-    master_gst_rate                : float
+    master_igst_rate                : float
     master_cgst_rate               : float
     master_sgst_rate               : float
     master_cess_rate               : float
@@ -1778,8 +1780,8 @@ class ProductMasterPriceSchema(BaseModel):
     cess_rate               : float  
     effective_from_date     : date
     effective_to_date       : Optional[str]= None
-    
-    
+
+
 class ProductModulePriceSchema(BaseModel):
 
     # id                      : int
@@ -1791,11 +1793,7 @@ class ProductModulePriceSchema(BaseModel):
     effective_from_date     : date
     effective_to_date       : Optional[str]= None
 
-
-
-
-
-  
+   
 class  OfferCategoryResponse(BaseModel):
 
     id              : int
@@ -1837,3 +1835,29 @@ class CouponSchema(BaseModel):
     coupon_amount : Optional[float]= None
     effective_from_date : date
     effective_to_date   : Optional[date]
+
+
+
+class CustomerPracticingAsSchema(BaseModel):
+    # customer_id     : int
+    practicing_type_id : int
+    other               : Optional[str] = None      
+
+class CustomerAreaOfPracticingSchema(BaseModel):
+    # customer_id     : int
+    area_of_practicing_id : int
+    other               : Optional[str] = None
+
+class CustomerQualificationSchema(BaseModel):
+    # customer_id     :int   
+    profession_type_id : int
+    membership_number	: int
+    enrollment_date     :date
+    # practicing_as: Optional[List[CustomerPracticingAsSchema]]
+    # area_of_practicing :Optional[List[CustomerAreaOfPracticingSchema]] 
+
+class CompleteCustomerQualificationSchema(BaseModel):
+    customer_id     :int
+    qualifications: Optional[List[CustomerQualificationSchema]] =None
+    practicing_as: Optional[List[CustomerPracticingAsSchema]] =None
+    area_of_practicing:Optional[ List[CustomerAreaOfPracticingSchema]] = None
