@@ -1137,11 +1137,17 @@ def customer_password_reset(
 
 @router.get("/get_customer_practicing_info")
 def get_customer_practicing_info(
-    customer_id: int,
+    # customer_id: int,
     customer_parameter: ParameterConstant = 'QUALIFICATION', 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2.oauth2_scheme)
+
 ):
-    result = db_customer.get_customer_practicing_info(db,customer_id,customer_parameter)
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    auth_info = authenticate_user(token)
+    user_id = auth_info["user_id"]
+    result = db_customer.get_customer_practicing_info(db,user_id,customer_parameter)
     return result
 
 
@@ -1154,6 +1160,7 @@ def save_customer_practicing_info(
 ):
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-    result = db_customer.save_customer_practicing_info(db, qualification_data) 
+    auth_info = authenticate_user(token)
+    user_id = auth_info["user_id"]
+    result = db_customer.save_customer_practicing_info(db, qualification_data,user_id ) 
     return result

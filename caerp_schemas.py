@@ -1857,7 +1857,7 @@ class CustomerQualificationSchema(BaseModel):
     # area_of_practicing :Optional[List[CustomerAreaOfPracticingSchema]] 
 
 class CompleteCustomerQualificationSchema(BaseModel):
-    customer_id     :int
+    # customer_id     :int
     qualifications: Optional[List[CustomerQualificationSchema]] =None
     practicing_as: Optional[List[CustomerPracticingAsSchema]] =None
     area_of_practicing:Optional[ List[CustomerAreaOfPracticingSchema]] = None

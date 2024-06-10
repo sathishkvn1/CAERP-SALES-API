@@ -790,12 +790,13 @@ def get_customer_practicing_info(db: Session, customer_id: int,parameter = Param
 def save_customer_practicing_info(
     db: Session,
     qualification_data: CompleteCustomerQualificationSchema,
+    user_id: int
     # id: Optional[int] = None
 ):
     qualification_data_dict = qualification_data.dict(exclude_unset=True)
     
     # Remove nested fields from main data dictionary
-    customer_id = qualification_data_dict['customer_id']
+    customer_id = user_id
     qualifications  = qualification_data_dict.pop('qualifications',[])
     practicing_as_data = qualification_data_dict.pop('practicing_as', [])
     area_of_practicing_data = qualification_data_dict.pop('area_of_practicing', [])
