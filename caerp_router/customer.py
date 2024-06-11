@@ -1162,5 +1162,15 @@ def save_customer_practicing_info(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     auth_info = authenticate_user(token)
     user_id = auth_info["user_id"]
+     # Process and clean data to avoid repeated 'other' field issues
+    if qualification_data.practicing_as:
+        for practice in qualification_data.practicing_as:
+            if practice.practicing_type_id and not practice.other:
+                practice.other = None
+
+    if qualification_data.area_of_practicing:
+        for area in qualification_data.area_of_practicing:
+            if area.area_of_practicing_id and not area.other:
+                area.other = None
     result = db_customer.save_customer_practicing_info(db, qualification_data,user_id ) 
     return result

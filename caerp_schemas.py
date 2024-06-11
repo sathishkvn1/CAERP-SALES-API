@@ -1,6 +1,6 @@
 
 from enum import Enum
-from pydantic import BaseModel,Field
+from pydantic import BaseModel,Field,validator
 from typing import List,Optional, Union,Dict
 from datetime import date, datetime
 from UserDefinedConstants.user_defined_constants import BooleanFlag
@@ -1841,12 +1841,26 @@ class CouponSchema(BaseModel):
 class CustomerPracticingAsSchema(BaseModel):
     # customer_id     : int
     practicing_type_id : int
-    other               : Optional[str] = None      
+    other               : Optional[str] = None 
+
+    @validator('other', always=True)
+    def validate_other(cls, value, values):
+        if 'practicing_type_id' in values and values['practicing_type_id'] is None:
+            if not value:
+                raise ValueError('Other must be provided if practicing_type_id is not selected')
+        return value    
 
 class CustomerAreaOfPracticingSchema(BaseModel):
     # customer_id     : int
     area_of_practicing_id : int
     other               : Optional[str] = None
+
+    @validator('other', always=True)
+    def validate_other(cls, value, values):
+        if 'area_of_practicing_id' in values and values['area_of_practicing_id'] is None:
+            if not value:
+                raise ValueError('Other must be provided if area_of_practicing_id is not selected')
+        return value
 
 class CustomerQualificationSchema(BaseModel):
     # customer_id     :int   
