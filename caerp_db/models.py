@@ -1391,7 +1391,7 @@ class ProfessionalQualification(caerp_base):
     __tablename__ ='app_professional_qualification'
 
     id              = Column(Integer, primary_key=True, index=True)
-    Qualification   = Column(String(50), nullable=False)
+    qualification   = Column(String(50), nullable=False)
     display_number  = Column(Integer, nullable=False)
 
 
