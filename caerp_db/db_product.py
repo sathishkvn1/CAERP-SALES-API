@@ -19,6 +19,7 @@ import jwt
 from datetime import datetime, timedelta,date
 from caerp_auth.oauth2 import oauth2_scheme,SECRET_KEY, ALGORITHM
 from caerp_auth import oauth2
+from caerp_router.common_functions import get_info
 import os
 from jose import JWTError, jwt
 from sqlalchemy import and_,or_
@@ -634,6 +635,8 @@ def get_price_list_master(db:Session,product_id: Optional[int]=None,product_pric
     print(query.statement.compile(compile_kwargs={"literal_binds": True}))
     return price_list_results
    
+# def delete_price_list_master(db:Session,price_i).fid:int):
+#      existing_price= db.query(ProductMasterPricelter(ProductMasterPrice.id == price_id).first()
 
 def set_new_price(db:Session, price_data:ProductMasterPriceSchema,user_id: int,record_actions:RecordActionType,price_id:Optional[int]):
         
@@ -990,11 +993,30 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
                     }
             total_rating_details = total_ratings_map.get(product_id,'')
             product_master_image_filename= f"{product_id}.jpg"
+            category_id=product_data.category_id
+            category_query = text(
+            "SELECT category_name "
+            "FROM product_category "
+           
+            "WHERE id = :category_id "         
+            
+        )
+        
+        # Execute the query with parameters
+            params = {'category_id': category_id}
+        
+            category_name = db.execute(category_query, params).first()
+            print("category_name.............", category_name[0])
+            # field_name = 'category_name' 
+
+            # category_name = get_info(field_name,ProductCategory,product_data.category_id)
             response_item={
                 "product_master_id" : product_data.product_master_id,
                 "product_master_price_id": product_data.product_master_price_id,
                 "product_name"      : product_data.product_name,
                 "product_code"      : product_data.product_code,
+                "category_name"       : category_name[0],
+
                 "image_url"         : image_path,                
                 "price"             : product_data.price,
                 # "inclusive_of_taxes": True,
@@ -1051,7 +1073,24 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
                         "discounted_price"     : product_data.price - discount_amount,
                         "discount_name"        : discount['offer_name']
                     }
-        total_rating_details = total_ratings_map.get(product_id,'')  
+        total_rating_details = total_ratings_map.get(product_id,'') 
+        # field_name = 'category_name' 
+        # category_name = get_info(field_name,ProductCategory,product_data.category_id)
+        category_id=product_data.category_id
+        print("category_id -----------------", category_id)
+        category_query = text(
+            "SELECT category_name "
+            "FROM product_category "
+           
+            "WHERE id = :category_id "         
+            
+        )
+        
+        # Execute the query with parameters
+        params = {'category_id': category_id}
+        
+        category_name = db.execute(category_query, params).first()
+        print("category_name.............", category_name[0])
 
         # response.append({
         response_item={
@@ -1059,6 +1098,7 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
             "product_master_price_id": product_data.product_master_price_id,
             "product_name"  : product_data.product_name,
             "product_code"  : product_data.product_code,
+            "category_name"   : category_name[0],
             "image_url"     : image_path,
             # "image_url":  f"{BASE_URL}/product/save_product_master/{product_master_image_filename}",
             # "offer_price"   : product_data.price,
