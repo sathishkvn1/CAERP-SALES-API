@@ -1006,7 +1006,6 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
             params = {'category_id': category_id}
         
             category_name = db.execute(category_query, params).first()
-            print("category_name.............", category_name[0])
             # field_name = 'category_name' 
 
             # category_name = get_info(field_name,ProductCategory,product_data.category_id)
@@ -1077,7 +1076,6 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
         # field_name = 'category_name' 
         # category_name = get_info(field_name,ProductCategory,product_data.category_id)
         category_id=product_data.category_id
-        print("category_id -----------------", category_id)
         category_query = text(
             "SELECT category_name "
             "FROM product_category "
@@ -1090,7 +1088,6 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
         params = {'category_id': category_id}
         
         category_name = db.execute(category_query, params).first()
-        print("category_name.............", category_name[0])
 
         # response.append({
         response_item={
@@ -1179,7 +1176,7 @@ def get_product_rating_comments(db: Session, product_id: int, limit: Optional[in
                 "rating"    : row.rating,
                 "review_text"   : row.comment,
                 "date_of_comment": row.date_of_comment.strftime("%Y-%m-%d"),
-                "reviewer_image": f"{BASE_URL}/uploads/customer_profile_photo/{row.user_id}.jpg" 
+                "reviewer_image": f"{BASE_URL}/customer/image/add_customer_profile_image/{row.user_id}.jpg" 
             }                         # if row.user_id else f"{BASE_URL}/uploads/customer_profile_photo/default.jpg"            }
             for row in comments_results
         ]
