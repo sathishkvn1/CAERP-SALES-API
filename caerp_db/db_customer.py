@@ -1,6 +1,6 @@
 from fastapi import HTTPException,status
 from sqlalchemy.orm import Session
-from caerp_db.models import CustomerCompanyProfile, CustomerPracticingAs,CustomerAreaOfPracticing,CustomerProfessionalQualification, CustomerInstallmentDetails, CustomerInstallmentMaster, CustomerNews, CustomerPasswordReset, CustomerRegister, CustomerSalesQuery, OtpGeneration, SmsTemplates
+from caerp_db.models import CustomerCompanyProfile, ProfessionalQualification,PracticingAs,AreaOfPracticing,CustomerPracticingAs,CustomerAreaOfPracticing,CustomerProfessionalQualification, CustomerInstallmentDetails, CustomerInstallmentMaster, CustomerNews, CustomerPasswordReset, CustomerRegister, CustomerSalesQuery, OtpGeneration, SmsTemplates
 from caerp_schemas import CustomerCompanyProfileSchema,CompleteCustomerQualificationSchema, CustomerInstallmentDetailsBase, CustomerInstallmentMasterBase, CustomerNewsBase, CustomerRegisterBase, CustomerRegisterBaseForUpdate, CustomerSalesQueryBase
 from caerp_db.hash import Hash
 from caerp_db.database import get_db
@@ -17,6 +17,7 @@ from datetime import date,datetime,timedelta
 from caerp_auth import oauth2
 
 import  os
+from caerp_router.common_functions import get_info
 
 from settings import WEB_BASE_URL
 UPLOAD_DIR_COMPANYLOGO = "uploads/company_logo"
@@ -896,3 +897,93 @@ def save_customer_practicing_info(
         
         db.commit()
     return {"message": "Success", "success": True}
+
+async def get_customer_professional_details(db: Session, customer_id: int):
+    # customer_id= 232
+    qualification_data = db.query(CustomerProfessionalQualification, ProfessionalQualification).join(
+        ProfessionalQualification, CustomerProfessionalQualification.profession_type_id == ProfessionalQualification.id
+    ).filter(
+        CustomerProfessionalQualification.customer_id == customer_id,
+        CustomerProfessionalQualification.is_deleted == 'no'
+    ).all()
+
+    practicing_as_data = db.query(CustomerPracticingAs, PracticingAs).join(
+        PracticingAs, CustomerPracticingAs.practicing_type_id == PracticingAs.id
+    ).filter(
+        CustomerPracticingAs.customer_id == customer_id,
+        CustomerPracticingAs.is_deleted == 'no'
+    ).all()
+
+    area_of_practicing_data = db.query(CustomerAreaOfPracticing, AreaOfPracticing).join(
+        AreaOfPracticing,CustomerAreaOfPracticing.area_of_practicing_id == AreaOfPracticing.id
+    ).filter(
+        CustomerAreaOfPracticing.customer_id==customer_id,
+        CustomerAreaOfPracticing.is_deleted=='no')
+
+
+
+    qualifications_result = {
+        "qualifications": [
+            {
+                "id": qualification.id,
+                "profession_type_id": qualification.profession_type_id,
+                "qualification": profession_type.qualification,
+                "membership_number": qualification.membership_number,
+                "enrollment_date": qualification.enrollment_date,
+                "is_deleted": qualification.is_deleted
+            } for qualification, profession_type in qualification_data
+        ]
+    }
+
+    practicing_as_result = {
+        "practicing_as": [
+            {
+                "id": practicing.id,
+                "practicing_type_id": practicing.practicing_type_id,
+                "practicing_type": practicing_as.practicing_type,
+                "other": practicing.other,
+                "is_deleted": practicing.is_deleted
+            } for practicing, practicing_as in practicing_as_data
+        ]
+    }
+    area_of_practicing_result = {
+        "area_of_practicing": [
+            {
+                "id": area_of_practicing.id,
+                "area_of_practicing_id": area_of_practicing.area_of_practicing_id,
+                "practicing_type": practicing_area.practicing_type,
+                "other": area_of_practicing.other,
+                "is_deleted": area_of_practicing.is_deleted
+            } for area_of_practicing, practicing_area in area_of_practicing_data
+        ]
+    }
+    
+    return {
+        **qualifications_result,
+        **practicing_as_result,
+        **area_of_practicing_result
+    }
+
+    # result = {
+            
+    #         "qualifications": [
+    #             {
+    #                 "id"     : qualification.id,
+    #                 "profession_type_id": qualification.profession_type_id,
+    #                 "qualification"     : profession_type .qualification
+    #                 "membership_number" : qualification.membership_number,
+    #                 "enrollment_date"   : qualification.enrollment_date,
+    #                 "is_deleted"        : qualification.is_deleted
+    #             } for qualification,profession_type  in qualification_data
+    #         ]
+    #     }
+    # return result
+    # # try:
+
+    #     result = await get_info(fields="qualification", model_name="ProfessionalQualification", id=1)
+    #     return result
+    # except Exception as e:
+    #     db.rollback()  # Rollback changes if an error occurs
+    #     print("Failed to reset password:", str(e))
+
+    

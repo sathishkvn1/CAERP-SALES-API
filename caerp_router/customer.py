@@ -1174,3 +1174,22 @@ def save_customer_practicing_info(
                 area.other = None
     result = db_customer.save_customer_practicing_info(db, qualification_data,user_id ) 
     return result
+
+
+@router.get("/get_customer_professional_details")
+async def get_customer_professional_details(
+    customer_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2.oauth2_scheme)
+):
+    auth_info = authenticate_user(token)
+    user_id = auth_info["user_id"]
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+    if customer_id is None:
+        customer_id = user_id
+    result = await db_customer.get_customer_professional_details(db, customer_id)  # Await the asynchronous function
+    return result
+
+    
