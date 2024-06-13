@@ -959,7 +959,7 @@ def get_product_complete_details(
         - product_id: (Optional) The ID of the product to be returned.
         - cart: (Optional) If `cart = 'yes'`, this will return the product list within the cart.
         - customer_id: (Optional) The ID of the customer for displaying cart details.
-        - saved_for_later: (Optional) Available values - 'YES' or 'NO'. If 'YES', the cart list saved for later will be returned.
+        - saved_for_later: (Optional) Available values - 'yes' or 'no'. If 'yes', the cart list saved for later will be returned.
         - db (Session): The database session dependency.
 
         Returns:
@@ -1133,7 +1133,11 @@ def save_coupon_details(
     user_id = auth_info["user_id"]
 
     result = db_product.save_coupon(db,coupon_data,action_type,id,user_id)
-    return result
+    if result:
+        return {"success": True, "message": "Saved successfully"}
+    else :
+        return {"success": False, "message": "Error"}
+   
 
 
 @router.get("/apply_coupon")

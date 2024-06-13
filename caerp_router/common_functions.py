@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from caerp_db.database import get_db
 # from caerp_db.office import db_office_master
 from caerp_db.models import ProductMasterPrice,ProductModulePrice,OfferCategory,OfferDetails,AreaOfPracticing,PracticingAs
-from caerp_db.models import ProfessionalQualification,ProductCategory
+from caerp_db.models import ProfessionalQualification,ProductCategory,CouponMaster
 from caerp_auth import oauth2
 
 from typing import Optional
@@ -33,7 +33,9 @@ TABLE_MODEL_MAPPING = {
     "PracticingAs"       : PracticingAs,
     "AreaOfPracticing"   : AreaOfPracticing,
     "ProfessionalQualification" : ProfessionalQualification,
-    "ProductCategory" : ProductCategory
+    "ProductCategory" : ProductCategory,
+    "CouponMaster"     : CouponMaster
+    # coupon delete
 }
 
 # Define a function to get the model class based on the provided model name
