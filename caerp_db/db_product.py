@@ -118,23 +118,19 @@ def save_product_module(db: Session, request: ProductModuleSchema, display_order
         product_module_data_dict["created_by"] = user_id
         product_module_data_dict["display_order"] = display_order
         new_product_module = ProductModule(**product_module_data_dict)
-        
         db.add(new_product_module)
         db.commit()
         db.refresh(new_product_module)
-
         # Query the master_price_id
         result = db.query(ProductMasterPrice.id).filter(
              ProductMasterPrice.product_master_id == new_product_module.product_master_id
              
              ).order_by(ProductMasterPrice.effective_from_date.desc()).first()
-        
         # Check if result is found and extract the master_price_id
         if result:
             master_price_id = result[0]
         else:
             raise ValueError("ProductMasterPrice not found for the given product_master_id")
-
         new_product_module_price = ProductModulePrice(
             module_id=new_product_module.id,  
             product_master_price_id=master_price_id,
@@ -146,12 +142,12 @@ def save_product_module(db: Session, request: ProductModuleSchema, display_order
             effective_from_date=date.today(),
             effective_to_date=None
         )
-
         db.add(new_product_module_price)
         db.commit()
         db.refresh(new_product_module_price)
-
         return new_product_module
+    
+    
     # except SQLAlchemyError as e:
     #     db.rollback()
     #     print(f"An error occurred: {e}")
@@ -1197,6 +1193,7 @@ def get_product_rating_comments(db: Session, product_id: int, limit: Optional[in
      
 
 
+
 def get_all_offer_list(
                         db : Session,
                         category_id : Optional[int]=None,
@@ -1206,7 +1203,7 @@ def get_all_offer_list(
                         ):
     try:
         current_date = datetime.today()
-        query = db.query(OfferMaster)
+        query = db.query(OfferMaster).filter(OfferMaster.is_deleted == 'no')
         
         if category_id:
             query = query.filter(OfferMaster.offer_category_id == category_id)
@@ -1232,6 +1229,7 @@ def get_all_offer_list(
         print("Error:", e)  # Print the exception message for debugging
         raise HTTPException(status_code=500, detail=str(e))
           
+
 
 
 def save_offer_details(
