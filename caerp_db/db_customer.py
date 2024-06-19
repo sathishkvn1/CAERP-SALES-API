@@ -806,7 +806,8 @@ def save_customer_practicing_info(
     # Insert main qualification data
     if qualifications:
         update_query = text(
-            "UPDATE customer_professional_qualification SET is_deleted='yes' "                        
+            "UPDATE customer_professional_qualification SET is_deleted='yes' "
+            #   "WHERE customer_id = :customer_id "                      
             "WHERE customer_id = :customer_id"
         )
         db.execute(update_query, {'customer_id': customer_id})
@@ -819,12 +820,14 @@ def save_customer_practicing_info(
             # print(existing_data.statement.compile(compile_kwargs={"literal_binds": True}))
             print("existing data --------------------",existing_data)
             if existing_data:
-                qualification_data_dict["modified_on"] = datetime.utcnow()
-                qualification_data_dict["is_deleted"] = 'no'
-                qualification_data_dict["customer_id"]= customer_id
-                print("DATA ------------------: ", qualification_data_dict["customer_id"])
-                for key, value in qualification_data_dict.items():
+                qual_data["modified_on"] = datetime.utcnow()
+                qual_data["is_deleted"] = 'no'
+                qual_data["customer_id"]= customer_id
+                print("DATA ------------------: ", qual_data["profession_type_id"])
+                for key, value in qual_data.items():
                     setattr(existing_data, key, value)
+                db.commit()
+                db.refresh(existing_data)
             else:
                 new_qualification = CustomerProfessionalQualification(
                     customer_id=customer_id,
@@ -833,9 +836,9 @@ def save_customer_practicing_info(
                 new_qualification.created_on = datetime.utcnow()
                 db.add(new_qualification)
         
-        db.commit()
-        if new_qualification:
-            db.refresh(new_qualification)
+                db.commit()
+        # if new_qualification:
+                db.refresh(new_qualification)
             # return new_qualification
         
         # return {"message": "Success", "success": True}
