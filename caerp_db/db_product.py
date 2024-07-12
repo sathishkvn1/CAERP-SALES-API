@@ -5,8 +5,8 @@ from UserDefinedConstants.user_defined_constants import DeletedStatus,Operator,S
 from UserDefinedConstants.user_defined_constants import ActiveStatus
 from caerp_auth.authentication import authenticate_user
 from caerp_db.models import  AdminUser,ProductMasterPrice,OfferDetails,OfferMaster,OfferCategory,ProductModulePrice, Designation,ProductRating,ViewProductModulePrice,CustomerRegister,ViewProductMasterPrice,PriceListProductModuleView,PriceListProductModule,PriceListProductMaster, InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
-from caerp_db.models import CartDetails,CouponMaster,ProductFeatures
-from caerp_schemas import AdminUserBaseForDelete,CartDetailsSchema,CouponSchema,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema, ProductFeaturesSchema, ProductFeaturesSchemaResponse
+from caerp_db.models import CartDetails,CouponMaster,ProductFeatures, ProductGroup
+from caerp_schemas import AdminUserBaseForDelete,CartDetailsSchema,CouponSchema,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema, ProductFeaturesSchema, ProductFeaturesSchemaResponse, ProductMasterSchemaResponse
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 from sqlalchemy import text
@@ -197,7 +197,7 @@ def save_product_master(db: Session,  request: ProductMasterSchema, user_id: int
 
         new_product_master_price = ProductMasterPrice(
         product_master_id=new_product_master.id,  # Use the ID of the newly inserted product
-        price=0.0,
+        base_price=0.0,
         gst_rate = 0.0,
         cess_rate = 0.0,
         created_on= datetime.utcnow(),
@@ -254,6 +254,7 @@ def get_product_master_by_id(db: Session,id: int):
 def get_product_master_by_code(db: Session,code: str):
         
         return db.query(ProductMaster).filter(ProductMaster.product_code== code).all()
+
 
 
 
@@ -497,8 +498,8 @@ def save_product_features(db: Session,  request: ProductFeaturesSchema, product_
 
 
 
-def get_product_feature_by_id(db: Session,id: int):
-    return db.query(ProductFeatures).filter(ProductFeatures.id== id).first()        
+def get_product_feature_by_id(db: Session, product_id: int):
+    return db.query(ProductFeatures).filter(ProductFeatures.product_master_id == product_id).all()        
 
 
 

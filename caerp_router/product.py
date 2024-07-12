@@ -6,8 +6,8 @@ from UserDefinedConstants.user_defined_constants import  DeletedStatus,Operator,
 from UserDefinedConstants.user_defined_constants import ActiveStatus
 from caerp_auth.authentication import authenticate_user
 from typing import Union
-
-from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductRating,ProductMaster, ProductModule, UserRole
+from sqlalchemy import select
+from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductRating,ProductMaster, ProductModule, UserRole, ProductCategory, ProductGroup
 from caerp_schemas import AdminUserBaseForDelete,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
 from caerp_schemas import ProductMasterPriceSchema,CartDetailsSchema,CouponSchema,OfferDetailsSchema, SaveOfferDetailsRequest,OfferMasterSchema,OfferCategoryResponse,ProductRating,PriceListProductModuleResponse,PriceListProductModuleView,PriceListProductMasterResponse,PriceListProductModule,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse, ProductFeaturesSchema, ProductFeaturesSchemaResponse
 from sqlalchemy.orm import Session
@@ -221,7 +221,31 @@ def get_product_master_by_code(product_code: str, db: Session = Depends(get_db))
     return product_master_details
 
 
-
+@router.get("/get_productmaster_details/", response_model=List[ProductMasterSchemaResponse])
+def get_products(db: Session = Depends(get_db)):
+    stmt = (
+        select(
+            ProductMaster.id,
+            ProductMaster.category_id,
+            ProductCategory.category_name,
+            ProductMaster.group_id,
+            ProductGroup.group_name,
+            ProductMaster.product_code,
+            ProductMaster.product_name,
+            ProductMaster.product_description_main,
+            ProductMaster.product_description_sub,
+            ProductMaster.has_module,
+            ProductMaster.min_no_of_users,
+            ProductMaster.max_no_of_users,
+            ProductMaster.has_instalments
+        )
+        .join(ProductCategory, ProductMaster.category_id == ProductCategory.id)
+        .join(ProductGroup, ProductMaster.group_id == ProductGroup.id)
+    )
+    
+    results = db.execute(stmt).all()
+    products = [ProductMasterSchemaResponse(**row._asdict()) for row in results]
+    return products
 
 @router.delete("/delete/product_master/{product_id}")
 def delete_product_master(
@@ -597,12 +621,12 @@ def save_product_feature(
 
 
 
-@router.get("/get_product_feature_by_id/{feature_id}", response_model=ProductFeaturesSchemaResponse)
+@router.get("/get_product_feature_by_id/{product_id}", response_model=List[ProductFeaturesSchemaResponse])
 def get_product_feature_by_id(
-    feature_id: int,
+    product_id: int,
      db: Session = Depends(get_db)
      ):
-    product_feature_details = db_product.get_product_feature_by_id(db, feature_id)
+    product_feature_details = db_product.get_product_feature_by_id(db, product_id)
     if not product_feature_details:
         raise HTTPException(status_code=404, detail="No product feature found for this id")
     return product_feature_details
