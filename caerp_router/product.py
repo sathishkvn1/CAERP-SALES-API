@@ -42,14 +42,14 @@ router = APIRouter(
 
 #/////////////////////
 
-@router.get("/get_all_product_master/", response_model=List[ProductMasterSchemaResponse])
-async def get_all_products(deleted_status: DeletedStatus = DeletedStatus.NOT_DELETED,
-                              db: Session = Depends(get_db),
-                             ):
+# @router.get("/get_all_product_master/", response_model=List[ProductMasterSchemaResponse])
+# async def get_all_products(deleted_status: DeletedStatus = DeletedStatus.NOT_DELETED,
+#                               db: Session = Depends(get_db),
+#                              ):
 
-    product = db_product.get_all_product_master_by_deleted_status(db, deleted_status)
-    # return {"product master": product}
-    return product
+#     product = db_product.get_all_product_master_by_deleted_status(db, deleted_status)
+#     # return {"product master": product}
+#     return product
 
 
 
@@ -237,15 +237,20 @@ def get_products(db: Session = Depends(get_db)):
             ProductMaster.has_module,
             ProductMaster.min_no_of_users,
             ProductMaster.max_no_of_users,
-            ProductMaster.has_instalments
+            ProductMaster.has_instalments,
+            ProductMaster.is_deleted
         )
         .join(ProductCategory, ProductMaster.category_id == ProductCategory.id)
         .join(ProductGroup, ProductMaster.group_id == ProductGroup.id)
+        .where(ProductMaster.is_deleted == 'no')
+       
     )
     
     results = db.execute(stmt).all()
     products = [ProductMasterSchemaResponse(**row._asdict()) for row in results]
     return products
+
+
 
 @router.delete("/delete/product_master/{product_id}")
 def delete_product_master(
@@ -283,8 +288,6 @@ def delete_product_master(
 
 
 
-
-
 @router.get("/get_all_product_category/", response_model=List[ProductCategorySchemaResponse])
 async def get_all_product_category(deleted_status: DeletedStatus = DeletedStatus.NOT_DELETED,
                               db: Session = Depends(get_db),
@@ -292,6 +295,8 @@ async def get_all_product_category(deleted_status: DeletedStatus = DeletedStatus
 
     product = db_product.get_all_product_category_by_deleted_status(db, deleted_status)
     return product
+
+
 
 @router.post('/save_product_category/{category_id}', response_model=ProductCategorySchema)
 def save_product_category(

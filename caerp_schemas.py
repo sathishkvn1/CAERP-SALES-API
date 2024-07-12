@@ -1116,6 +1116,7 @@ class ProductMasterSchemaResponse(BaseModel):
     min_no_of_users: Optional[int]
     max_no_of_users: Optional[int]
     has_instalments: Optional[str]
+    is_deleted: str
   
      
 
