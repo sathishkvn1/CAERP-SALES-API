@@ -4,9 +4,9 @@ from typing import List, Optional,Dict,Any
 from UserDefinedConstants.user_defined_constants import DeletedStatus,Operator,Status,RecordActionType,ApplyTo
 from UserDefinedConstants.user_defined_constants import ActiveStatus
 from caerp_auth.authentication import authenticate_user
-from caerp_db.models import  AdminUser,ProductMasterPrice,OfferDetails,OfferMaster,OfferCategory,ProductModulePrice, Designation,ProductRating,ViewProductModulePrice,CustomerRegister,ViewProductMasterPrice,PriceListProductModuleView,PriceListProductModule,PriceListProductMasterView,PriceListProductMaster, InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
-from caerp_db.models import CartDetails,CouponMaster
-from caerp_schemas import AdminUserBaseForDelete,CartDetailsSchema,CouponSchema,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
+from caerp_db.models import  AdminUser,ProductMasterPrice,OfferDetails,OfferMaster,OfferCategory,ProductModulePrice, Designation,ProductRating,ViewProductModulePrice,CustomerRegister,ViewProductMasterPrice,PriceListProductModuleView,PriceListProductModule,PriceListProductMaster, InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
+from caerp_db.models import CartDetails,CouponMaster,ProductFeatures
+from caerp_schemas import AdminUserBaseForDelete,CartDetailsSchema,CouponSchema,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema, ProductFeaturesSchema, ProductFeaturesSchemaResponse
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 from sqlalchemy import text
@@ -465,21 +465,61 @@ def delete_product_video(db: Session, video_id: int,deleted_by: int):
 
 
 
+# =========================================================================
 
+#  PRODUCT FEATURES SECTION 
+# ==========================================================================
 
+def save_product_features(db: Session,  request: ProductFeaturesSchema, product_feature_id: int):
 
- 
+    if product_feature_id == 0:
+        # Add operation
+        product_feature_data_dict = request.dict()
+        new_product_feature = ProductFeatures(**product_feature_data_dict)
+        db.add(new_product_feature)
+        db.commit()
+        db.refresh(new_product_feature)
+        return new_product_feature
     
-   
+    else:
+        # Update operation
+        product_feature = db.query(ProductFeatures).filter(ProductFeatures.id == product_feature_id).first()
+        
+        if product_feature is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product Feature not found")
+        product_feature_data_dict = request.dict(exclude_unset=True)
+        for key, value in product_feature_data_dict.items():
+            setattr(product_feature, key, value)
+                
+        db.commit()
+        db.refresh(product_feature)
+        return product_feature
 
 
-    
+
+def get_product_feature_by_id(db: Session,id: int):
+    return db.query(ProductFeatures).filter(ProductFeatures.id== id).first()        
+
+
+
+def delete_product_feature(db: Session, feature_id: int):
+    existing_feature = db.query(ProductFeatures).filter(ProductFeatures.id == feature_id).first()
+
+    if existing_feature is None:
+        raise HTTPException(status_code=404, detail="Product feature not found")
+
+    existing_feature.is_deleted = 'yes'
+       
+    db.commit()
+
+    return {
+        "message": "Product Feature marked as deleted successfully",
+    }
+
+#################################################################################################################   
     
 def get_installment_details_by_id(db: Session, id: int):
     return db.query(InstallmentDetails).filter(InstallmentDetails.id == id).first()
-
-
-
 
 
 
@@ -684,9 +724,7 @@ def set_new_price(db:Session, price_data:ProductMasterPriceSchema,user_id: int,r
 
              
      
-
-         
-    
+ 
 
 def get_price_list_module(db:Session,product_id: Optional[int]=None,
                            module_name: Optional[str]=None,module_id: Optional[int]= None,

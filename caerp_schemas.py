@@ -1192,6 +1192,18 @@ class ProductVideoSchemaResponse(BaseModel):
 
 
 
+class ProductFeaturesSchema(BaseModel):
+    product_master_id : int
+    feature : str
+    
+class ProductFeaturesSchemaResponse(BaseModel):
+    id : int    
+    product_master_id : int
+    feature : str
+    is_deleted: str
+
+
+
 class InstallmentDetailsBase(BaseModel):
     installment_master_id: int
     installment_name: str
@@ -1773,13 +1785,16 @@ class ProductRating(BaseModel):
 
 class ProductMasterPriceSchema(BaseModel):
 
-    # id                      : int
-    product_master_id       : int
-    price                   : float
-    gst_rate                : float 
-    cess_rate               : float  
-    effective_from_date     : date
-    effective_to_date       : Optional[str]= None
+    # id                       : int
+    product_master_id : int
+    base_price : float
+    additional_price_per_user : float
+    gst_rate : float 
+    cess_rate : float  
+    minimum_user : int
+    maximum_user : int
+    effective_from_date : date
+    effective_to_date : Optional[str]= None
 
 
 class ProductModulePriceSchema(BaseModel):
@@ -1787,11 +1802,12 @@ class ProductModulePriceSchema(BaseModel):
     # id                      : int
     product_master_price_id   : int
     module_id                 :int
-    module_price            : float
-    gst_rate                : float 
-    cess_rate               : float  
-    effective_from_date     : date
-    effective_to_date       : Optional[str]= None
+    module_base_price         : float
+    additional_price_per_user : float
+    gst_rate                  : float 
+    cess_rate                 : float  
+    effective_from_date       : date
+    effective_to_date        : Optional[str]= None
 
    
 class  OfferCategoryResponse(BaseModel):

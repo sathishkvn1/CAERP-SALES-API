@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from caerp_db.database import get_db
 # from caerp_db.office import db_office_master
 from caerp_db.models import ProductMasterPrice,ProductModulePrice,OfferCategory,OfferDetails,AreaOfPracticing,PracticingAs
-from caerp_db.models import ProfessionalQualification,ProductCategory,CouponMaster
+from caerp_db.models import ProfessionalQualification,ProductCategory,CouponMaster,ProductGroup
 from caerp_auth import oauth2
 
 from typing import Optional
@@ -34,7 +34,8 @@ TABLE_MODEL_MAPPING = {
     "AreaOfPracticing"   : AreaOfPracticing,
     "ProfessionalQualification" : ProfessionalQualification,
     "ProductCategory" : ProductCategory,
-    "CouponMaster"     : CouponMaster
+    "CouponMaster"     : CouponMaster,
+    "ProductGroup"     : ProductGroup
     # coupon delete
 }
 

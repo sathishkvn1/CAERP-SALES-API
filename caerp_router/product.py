@@ -9,7 +9,7 @@ from typing import Union
 
 from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductRating,ProductMaster, ProductModule, UserRole
 from caerp_schemas import AdminUserBaseForDelete,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
-from caerp_schemas import ProductMasterPriceSchema,CartDetailsSchema,CouponSchema,OfferDetailsSchema, SaveOfferDetailsRequest,OfferMasterSchema,PriceListProductMasterView,OfferCategoryResponse,ProductRating,PriceListProductModuleResponse,PriceListProductModuleView,PriceListProductMasterResponse,PriceListProductModule,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse
+from caerp_schemas import ProductMasterPriceSchema,CartDetailsSchema,CouponSchema,OfferDetailsSchema, SaveOfferDetailsRequest,OfferMasterSchema,OfferCategoryResponse,ProductRating,PriceListProductModuleResponse,PriceListProductModuleView,PriceListProductMasterResponse,PriceListProductModule,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse, ProductFeaturesSchema, ProductFeaturesSchemaResponse
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
@@ -307,7 +307,6 @@ def get_product_category_by_id(
 
 
 
-
 @router.delete("/delete/product_category/{category_id}")
 def delete_product_category(
                      category_id: int,
@@ -320,7 +319,6 @@ def delete_product_category(
     user_id = auth_info["user_id"]
     
     return db_product.delete_product_category(db, category_id,deleted_by=user_id)
-
 
 
 
@@ -575,6 +573,55 @@ def delete_product_video(
     user_id = auth_info["user_id"]
     
     return db_product.delete_product_video(db, video_id,deleted_by=user_id)
+
+
+#######################  Product Features   ########################################################
+
+@router.post('/save_product_features/{feature_id}', response_model=ProductFeaturesSchema)
+def save_product_feature(
+        product_feature_data: ProductFeaturesSchema ,
+        feature_id: int =0,  # Default to 0 for add operation
+        db: Session = Depends(get_db),
+        token: str = Depends(oauth2.oauth2_scheme)):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+        
+    auth_info = authenticate_user(token) 
+    user_id = auth_info["user_id"]
+    try:
+        feature = db_product.save_product_features(db, product_feature_data,feature_id)
+    
+        return feature
+    except Exception as e:
+       raise HTTPException(status_code=500, detail=str(e)) 
+
+
+
+@router.get("/get_product_feature_by_id/{feature_id}", response_model=ProductFeaturesSchemaResponse)
+def get_product_feature_by_id(
+    feature_id: int,
+     db: Session = Depends(get_db)
+     ):
+    product_feature_details = db_product.get_product_feature_by_id(db, feature_id)
+    if not product_feature_details:
+        raise HTTPException(status_code=404, detail="No product feature found for this id")
+    return product_feature_details
+
+
+
+@router.delete("/delete/product_feature/{feature_id}")
+def delete_product_feature(
+                     feature_id: int,
+                     db: Session = Depends(get_db),
+                     token: str = Depends(oauth2.oauth2_scheme)
+                    ):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    auth_info = authenticate_user(token)
+    user_id = auth_info["user_id"]
+    
+    return db_product.delete_product_feature(db, feature_id)
+
 
 #////
 @router.get("/get_all_installment_master/",response_model=List[InstallmentMasterForGet])
