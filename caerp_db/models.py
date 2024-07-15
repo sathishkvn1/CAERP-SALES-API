@@ -757,7 +757,6 @@ class ProductMaster(caerp_base):
     max_no_of_users     = Column(Integer, nullable=False)
     has_instalments    = Column(Enum('yes', 'no'), nullable=False, default='no')
     created_by          = Column(Integer, default=None)
-    created_on          = Column(DateTime, nullable=False, default=func.now())
     modified_by         = Column(Integer, default=None)
     modified_on         = Column(DateTime, default=None)
     is_deleted          = Column(Enum('yes', 'no'), nullable=False, default='no')
@@ -1211,6 +1210,8 @@ class ProductRating(caerp_base):
     comment           = Column(String, nullable=False)
     created_on        = Column(DateTime, nullable=False,default=func.now())
 
+
+
 class ProductMasterPrice(caerp_base):
     __tablename__ = 'product_master_price'
 
@@ -1266,7 +1267,6 @@ class ViewProductMasterPrice(caerp_base):
     
 
 
-
 class ProductModulePrice(caerp_base):
     __tablename__ = 'product_module_price'
 
@@ -1290,10 +1290,10 @@ class ProductModulePrice(caerp_base):
 
 
 class ViewProductModulePrice(caerp_base):
-    __tablename__ = 'view_product_module_price'
-
+    __tablename__ = 'view_product_modules_price'
+    product_modules_price_id  = Column(Integer, primary_key=True, index=True)
     product_master_id       = Column(Integer, nullable=False)
-    product_master_price_id    = Column(Integer, primary_key=True, index=True)
+    product_master_price_id    = Column(Integer,nullable=False)
     module_id       = Column(Integer, nullable=False)
     module_name         = Column(String(50), nullable=False)
     module_description  = Column(String(100), nullable=False)

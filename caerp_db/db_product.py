@@ -647,7 +647,7 @@ def get_price_list_master(db:Session,product_id: Optional[int]=None,product_pric
         query = query.filter(ViewProductMasterPrice.product_master_id == product_id)
     
     if product_name:
-         query = query.filter(ViewProductMasterPrice.product_name.ilike(f"%{product_name}%"))
+         query = query.filter(ViewProductMasterPrice.product_master_product_name.ilike(f"%{product_name}%"))
      
     if operator:
         if product_price_id:
@@ -683,7 +683,7 @@ def set_new_price(db:Session, price_data:ProductMasterPriceSchema,user_id: int,r
                     price_list_data_dict['effective_to_date'] = None
        product_master_id = price_list_data_dict.get("product_master_id")
        price_list = db.query(ProductMasterPrice).filter(ProductMasterPrice .product_master_id == product_master_id).first()
-       if price_list and price_list.price == 0:
+       if price_list and price_list.base_price == 0:
             price_id= price_list.id
             record_actions = RecordActionType.UPDATE_ONLY
     #    if price_list.effective_to_date >= price_list_data_dict['effective_from_date']:
@@ -722,14 +722,13 @@ def set_new_price(db:Session, price_data:ProductMasterPriceSchema,user_id: int,r
         db.commit()
         db.refresh(new_price_list)
         return new_price_list
-
-             
+     
      
  
 
 def get_price_list_module(db:Session,product_id: Optional[int]=None,
-                           module_name: Optional[str]=None,module_id: Optional[int]= None,
-                           module_price_id: Optional[int]=None,requested_date: Optional[date]=None, 
+                           module_name: Optional[str]=None,module_id: Optional[int]= None,product_module_price_id:Optional[int]=None,
+                           product_master_price_id: Optional[int]=None,requested_date: Optional[date]=None, 
                            operator : Optional[Operator] = None):
     query = db.query(ViewProductModulePrice)
     if requested_date is None : 
@@ -738,7 +737,9 @@ def get_price_list_module(db:Session,product_id: Optional[int]=None,
         query = query.filter(ViewProductModulePrice.product_master_id == product_id)
     
     if module_id:
-         query = query.filter(ViewProductModulePrice.product_module_id == module_id)
+         query = query.filter(ViewProductModulePrice.module_id == module_id)
+    if product_master_price_id:
+         query = query.filter(ViewProductModulePrice.product_master_price_id == product_master_price_id)     
     # if module_price_id:
     #      query = query.filter(ViewProductModulePrice.product_module_price_id == module_price_id)
      
@@ -746,8 +747,8 @@ def get_price_list_module(db:Session,product_id: Optional[int]=None,
          query = query.filter(ViewProductModulePrice.module_name.ilike(f"%{module_name}%"))
      
     if operator:
-        if module_price_id:
-         query = query.filter(ViewProductModulePrice.product_module_price_id == module_price_id)
+        if product_module_price_id:
+         query = query.filter(ViewProductModulePrice.product_modules_price_id == product_module_price_id)
         else:
              
             if operator == Operator.EQUAL_TO:
@@ -765,7 +766,8 @@ def get_price_list_module(db:Session,product_id: Optional[int]=None,
         
         # Optional: Print the SQL query and its parameters for debugging
     # print(str(query.statement))
-    
+    print(str(query.statement))
+    print(query.params)
     
     price_list_results = query.all()
     return price_list_results
@@ -783,10 +785,10 @@ def set_new_module_price(db:Session, price_data:ProductModulePriceSchema,user_id
        existing_price_list = db.query(ProductModulePrice).filter(
                     ProductModulePrice.module_id == module_id).order_by(
                     ProductModulePrice.effective_from_date.desc()).first()
-       if existing_price_list.module_price == 0:
+       if existing_price_list.module_base_price == 0:
             price_id = existing_price_list.id
             record_actions= RecordActionType.UPDATE_ONLY
-       print("existing_price_list :", existing_price_list.module_price)
+       print("existing_price_list :", existing_price_list.module_base_price)
        if record_actions==RecordActionType.UPDATE_ONLY:
             price_list = db.query(ProductModulePrice).filter(ProductModulePrice .id == price_id).first()
             if price_list is None:

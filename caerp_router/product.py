@@ -221,7 +221,7 @@ def get_product_master_by_code(product_code: str, db: Session = Depends(get_db))
     return product_master_details
 
 
-@router.get("/get_productmaster_details/", response_model=List[ProductMasterSchemaResponse])
+@router.get("/get_all_productmaster/", response_model=List[ProductMasterSchemaResponse])
 def get_products(db: Session = Depends(get_db)):
     stmt = (
         select(
@@ -491,7 +491,6 @@ async def get_all_product_video(deleted_status: DeletedStatus = DeletedStatus.NO
 
     product = db_product.get_all_product_video_by_deleted_status(db, deleted_status)
     return product
-
 
 
 
@@ -871,15 +870,16 @@ def get_price_list_master(
             product_data = [{
 
                 "product_master_id": result.product_master_id,
-                "product_code": result.product_code,               
-                "product_name": result.product_name, 
+                "product_code": result.product_master_product_code,               
+                "product_name": result.product_master_product_name, 
                 "product_master_price_id":result.product_master_price_id,
-                "price": result.price,
-                "gst_rate": result.gst_rate,
-                "cess_rate": result.cess_rate,
+                "price": result.base_price,
+                "additional_price": result.additional_price_per_user,
+                "gst_rate": result.product_master_price_gst_rate,
+                "cess_rate": result.product_master_price_cess_rate,
                 "effective_from_date": result.effective_from_date,
                 "effective_to_date": result.effective_to_date,
-                "has_module":result.has_module,
+                "has_module":result.product_master_has_module,
                 "is_deleted": result.is_deleted
                
             }]
@@ -914,16 +914,17 @@ def set_new_price(
 
 @router.get('/get_price_list_module')
 def get_price_list_module(
+    product_module_price_id:Optional[int]=None,
     product_master_id: Optional[int] = None,
     module_name: Optional[str]=None,
     module_id: Optional[int] = None,
-    module_price_id:Optional[int] = None,
+    product_master_price_id:Optional[int] = None,
     requested_date: Optional[date] =None,
     operator : Operator = Operator.EQUAL_TO, # date filter parameter, 
     db: Session = Depends(get_db)
 ):
-        price_list_results =db_product.get_price_list_module(db,product_master_id,module_name,module_id,module_price_id,requested_date,operator)
-
+        price_list_results =db_product.get_price_list_module(db,product_master_id,module_name,module_id,product_module_price_id,product_master_price_id,requested_date,operator)
+        
         if not price_list_results:
            raise HTTPException(status_code=404, detail="No price list found for the given criteria")
 
@@ -935,12 +936,13 @@ def get_price_list_module(
             product_master_id  =  result.product_master_id
         # Create a dictionary to represent the product and its price list
             product_data = [{
-
+                "product_module_price_id": result.product_modules_price_id,
                 "product_master_id": result.product_master_id,
-                "product_module_id": result.product_module_id,
-                "product_module_price_id": result.product_module_price_id,               
+                "product_module_id": result.module_id,
+                "product_master_price_id": result.product_master_price_id,               
                 "module_name": result.module_name, 
-                "module_price": result.module_price,
+                "module_price": result.module_base_price,
+                "additional_price": result.additional_price_per_user,
                 "gst_rate": result.gst_rate,
                 "cess_rate": result.cess_rate,
                 "effective_from_date": result.effective_from_date,
@@ -991,7 +993,7 @@ def set_new_module_price(
     for price_data in price_data_list:
         new_price = db_product.set_new_module_price(db, price_data, user_id, record_actions,price_id)
         if not new_price:
-            return {"success": False, "message": f"Error inserting price for product_master_id {price_data.product_module_id}"}
+            return {"success": False, "message": f"Error inserting price for product_master_id {price_data.module_id}"}
 
     return {"success": True, "message": "New Rates Set Successfully"} 
     
