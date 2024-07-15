@@ -272,7 +272,6 @@ def delete_product_master(db: Session, product_id: int,action_type:str,deleted_b
             # Mark related installment details as deleted
             db.query(ProductModule).filter(ProductModule.product_master_id == product_id).update({
                 ProductModule.is_deleted: 'yes',
-                ProductModule.is_deleted_with_master: 'yes',
                 ProductModule.deleted_by: deleted_by,
                 ProductModule.deleted_on: datetime.utcnow()
             }, synchronize_session=False)
@@ -387,7 +386,6 @@ def delete_product_module(db: Session, module_id: int,action_type:str,deleted_by
     if(action_type== 'DELETE'):
 
         existing_product.is_deleted = 'yes'
-        existing_product.is_deleted_directly= 'yes'
         existing_product.deleted_by = deleted_by
         existing_product.deleted_on = datetime.utcnow()
     
@@ -401,9 +399,7 @@ def delete_product_module(db: Session, module_id: int,action_type:str,deleted_by
             existing_product.is_deleted = 'no'
             existing_product.deleted_by = None
             existing_product.deleted_on = None
-            existing_product.is_deleted_directly = 'no'
-            existing_product.is_deleted_with_master = 'no'
-
+            
             db.commit()
 
             return {

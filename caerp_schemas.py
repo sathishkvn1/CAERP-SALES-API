@@ -1165,8 +1165,8 @@ class ProductModuleSchemaResponse(BaseModel):
     modified_on         : Optional[datetime]
     created_by          : int
     is_deleted          : str
-    is_deleted_directly : str
-    is_deleted_with_master: str
+    # is_deleted_directly : str
+    # is_deleted_with_master: str
     created_on          : datetime
     deleted_by          : Optional[int]
     deleted_on          : Optional[datetime]

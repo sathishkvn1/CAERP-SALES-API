@@ -757,6 +757,7 @@ class ProductMaster(caerp_base):
     max_no_of_users     = Column(Integer, nullable=False)
     has_instalments    = Column(Enum('yes', 'no'), nullable=False, default='no')
     created_by          = Column(Integer, default=None)
+    created_on          = Column(DateTime, default=None)
     modified_by         = Column(Integer, default=None)
     modified_on         = Column(DateTime, default=None)
     is_deleted          = Column(Enum('yes', 'no'), nullable=False, default='no')
@@ -788,8 +789,8 @@ class ProductModule(caerp_base):
     modified_by         = Column(Integer, default=None)
     modified_on         = Column(DateTime, default=None)
     is_deleted          = Column(Enum('yes', 'no'), nullable=False, default='no')
-    is_deleted_directly = Column(Enum('yes', 'no'), nullable=False, default='no')
-    is_deleted_with_master = Column(Enum('yes', 'no'), nullable=False, default='no')
+    # is_deleted_directly = Column(Enum('yes', 'no'), nullable=False, default='no')
+    # is_deleted_with_master = Column(Enum('yes', 'no'), nullable=False, default='no')
     deleted_by          = Column(Integer, default=None)
     deleted_on          = Column(DateTime, default=None)
 
