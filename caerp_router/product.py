@@ -205,7 +205,7 @@ def get_product_master_image(id: int):
 
 
 
-@router.get("/get_product_master_by_id/{product_id}", response_model=List[ProductMasterSchemaResponse])
+@router.get("/get_product_master_by_id/{product_id}", response_model=ProductMasterSchemaResponse)
 def get_product_master_by_id(product_id: int, db: Session = Depends(get_db)):
     product_master_details = db_product.get_product_master_by_id(db, product_id)
     if not product_master_details:
@@ -874,7 +874,7 @@ def get_price_list_master(
                 "product_name": result.product_master_product_name, 
                 "product_master_price_id":result.product_master_price_id,
                 "base_price": result.base_price,
-                "additional_price": result.additional_price_per_user,
+                "additional_price_per_user": result.additional_price_per_user,
                 "gst_rate": result.product_master_price_gst_rate,
                 "cess_rate": result.product_master_price_cess_rate,
                 "minimum_user": result.product_master_price_minimum_user,
@@ -943,8 +943,8 @@ def get_price_list_module(
                 "product_module_id": result.module_id,
                 "product_master_price_id": result.product_master_price_id,               
                 "module_name": result.module_name, 
-                "module_price": result.module_base_price,
-                "additional_price": result.additional_price_per_user,
+                "module_base_price": result.module_base_price,
+                "additional_price_per_user": result.additional_price_per_user,
                 "gst_rate": result.gst_rate,
                 "cess_rate": result.cess_rate,
                 "effective_from_date": result.effective_from_date,

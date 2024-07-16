@@ -9,7 +9,7 @@ from caerp_db.models import CartDetails,CouponMaster,ProductFeatures, ProductGro
 from caerp_schemas import AdminUserBaseForDelete,CartDetailsSchema,CouponSchema,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema, ProductFeaturesSchema, ProductFeaturesSchemaResponse, ProductMasterSchemaResponse
 from sqlalchemy.orm import Session
 from starlette.requests import Request
-from sqlalchemy import text
+from sqlalchemy import text, select
 from settings import BASE_URL
 from typing import Union
 from caerp_db.database import get_db
@@ -246,9 +246,36 @@ def get_all_product_master_by_deleted_status(db: Session, deleted_status: Delete
 
 
 def get_product_master_by_id(db: Session,id: int):
-        
-        return db.query(ProductMaster).filter(ProductMaster.id== id).all()
+    # return db.query(ProductMaster).filter(ProductMaster.id== id).all()
+    stmt = (
+        select(
+            ProductMaster.id,
+            ProductMaster.category_id,
+            ProductCategory.category_name,
+            ProductMaster.group_id,
+            ProductGroup.group_name,
+            ProductMaster.product_code,
+            ProductMaster.product_name,
+            ProductMaster.product_description_main,
+            ProductMaster.product_description_sub,
+            ProductMaster.has_module,
+            ProductMaster.min_no_of_users,
+            ProductMaster.max_no_of_users,
+            ProductMaster.has_instalments,
+            ProductMaster.is_deleted
+        )
+        .join(ProductCategory, ProductMaster.category_id == ProductCategory.id)
+        .join(ProductGroup, ProductMaster.group_id == ProductGroup.id)
+        .where(ProductMaster.id == id)
+        .where(ProductMaster.is_deleted == 'no')
+    )
     
+    result = db.execute(stmt).first()
+    if result:
+       product = ProductMasterSchemaResponse(**result._asdict())
+       return product
+    else:
+       raise HTTPException(status_code=404, detail="Product not found")
 
 
 def get_product_master_by_code(db: Session,code: str):
