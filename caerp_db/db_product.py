@@ -5,8 +5,8 @@ from UserDefinedConstants.user_defined_constants import DeletedStatus,Operator,S
 from UserDefinedConstants.user_defined_constants import ActiveStatus
 from caerp_auth.authentication import authenticate_user
 from caerp_db.models import  AdminUser,ProductMasterPrice,OfferDetails,OfferMaster,OfferCategory,ProductModulePrice, Designation,ProductRating,ViewProductModulePrice,CustomerRegister,ViewProductMasterPrice,PriceListProductModuleView,PriceListProductModule,PriceListProductMaster, InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
-from caerp_db.models import CartDetails,CouponMaster,ProductFeatures, ProductGroup
-from caerp_schemas import AdminUserBaseForDelete,CartDetailsSchema,CouponSchema,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema, ProductFeaturesSchema, ProductFeaturesSchemaResponse, ProductMasterSchemaResponse
+from caerp_db.models import CartDetails,CouponMaster,ProductFeatures, ProductGroup, CouponDetails
+from caerp_schemas import AdminUserBaseForDelete,CartDetailsSchema,CouponMasterSchema,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema, ProductFeaturesSchema, ProductFeaturesSchemaResponse, ProductMasterSchemaResponse, SaveCouponDetails
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 from sqlalchemy import text, select
@@ -134,7 +134,8 @@ def save_product_module(db: Session, request: ProductModuleSchema, display_order
         new_product_module_price = ProductModulePrice(
             module_id=new_product_module.id,  
             product_master_price_id=master_price_id,
-            module_price=0.0,
+            module_base_price=0.0,
+            additional_price_per_user=0.0,
             gst_rate=0.0,
             cess_rate=0.0,
             created_on=datetime.utcnow(),
@@ -198,6 +199,7 @@ def save_product_master(db: Session,  request: ProductMasterSchema, user_id: int
         new_product_master_price = ProductMasterPrice(
         product_master_id=new_product_master.id,  # Use the ID of the newly inserted product
         base_price=0.0,
+        additional_price_per_user=0.0,
         gst_rate = 0.0,
         cess_rate = 0.0,
         created_on= datetime.utcnow(),
@@ -663,7 +665,9 @@ def save_price_list_product_module(db: Session, request: PriceListProductModule,
 
 
 def get_price_list_master(db:Session,product_id: Optional[int]=None,product_price_id: Optional[int]=None, product_name: Optional[str]= None,requested_date: Optional[date]=None, operator : Optional[Operator] = None):
-    query = db.query(ViewProductMasterPrice)
+    # query = db.query(ViewProductMasterPrice)
+    query = db.query(ViewProductMasterPrice).filter(ViewProductMasterPrice.is_deleted == 'no')
+
     if requested_date is None : 
          requested_date = date.today() 
     if product_id:
@@ -746,14 +750,15 @@ def set_new_price(db:Session, price_data:ProductMasterPriceSchema,user_id: int,r
         db.refresh(new_price_list)
         return new_price_list
      
-     
- 
+
+
 
 def get_price_list_module(db:Session,product_id: Optional[int]=None,
                            module_name: Optional[str]=None,module_id: Optional[int]= None,product_module_price_id:Optional[int]=None,
                            product_master_price_id: Optional[int]=None,requested_date: Optional[date]=None, 
                            operator : Optional[Operator] = None):
-    query = db.query(ViewProductModulePrice)
+    # query = db.query(ViewProductModulePrice)
+    query = db.query(ViewProductModulePrice).filter(ViewProductModulePrice.is_deleted == 'no')
     if requested_date is None : 
          requested_date = date.today() 
     if product_id:
@@ -1640,7 +1645,7 @@ def get_cart_product_details_with_prices(
 
 
 
-def save_coupon(db: Session , coupon_data: CouponSchema, action_type: RecordActionType, id: int,user_id: int):
+def save_coupon(db: Session , action_type: RecordActionType, id: int, coupon_data: SaveCouponDetails, user_id: int, apply_to: ApplyTo):
      
     if action_type == RecordActionType.INSERT_ONLY and id != 0:
         raise HTTPException(status_code=400, detail="Invalid action: For INSERT_ONLY, id should be 0")
@@ -1649,26 +1654,47 @@ def save_coupon(db: Session , coupon_data: CouponSchema, action_type: RecordActi
 
     try:
         if action_type == RecordActionType.INSERT_ONLY:
-            for coupon_details in coupon_data:
+            for coupon_details in coupon_data.master:
                 new_coupon_details = coupon_details.dict()
                 new_coupon_details["created_on"] = datetime.utcnow()
                 new_coupon_details["created_by"] = user_id
                 new_coupon = CouponMaster(**new_coupon_details)
                 db.add(new_coupon)
-                db.commit()
-                db.refresh(new_coupon)
-                return new_coupon
-                # db.flush()  
-            
+                # db.commit()
+                # db.refresh(new_coupon)
+                # return new_coupon
+                db.flush()  
+            if apply_to == ApplyTo.SELECTED :    
+                for detail_data in coupon_data.details:
+                    new_detail_data = detail_data.dict()
+                    new_detail_data.update({
+                        "coupon_master_id": new_coupon.id,
+                        "created_by": user_id,
+                        "created_on": datetime.utcnow()
+                    })
+                    new_detail = CouponDetails(**new_detail_data)
+                    db.add(new_detail)
+            else:
+                 details = db.query(ProductMaster.id).filter(ProductMaster.is_deleted == 'no').all()
+                 for detail_data in details:
+                     new_detail_data = {
+                        "coupon_master_id": new_coupon.id,
+                        "product_master_id": detail_data[0],
+                        "created_by": user_id,
+                        "created_on": datetime.utcnow()
+                    }
+                     new_detail = CouponDetails(**new_detail_data)
+                     db.add(new_detail)
+               
         elif action_type == RecordActionType.UPDATE_ONLY:
-            existing_cart = db.query(CouponMaster).filter(CouponMaster.id == id).first()
-            if not existing_cart:
+            existing_coupon = db.query(CouponMaster).filter(CouponMaster.id == id).first()
+            if not existing_coupon:
                 raise HTTPException(status_code=404, detail=" record not found")
 
-            # Use the first item from data.master for update
-            update_data = coupon_data[0].dict()
+            # Use the first item from coupon_data.master for update
+            update_data = coupon_data.master[0].dict()
             for key, value in update_data.items():
-                setattr(existing_cart, key, value)
+                setattr(existing_coupon, key, value)
             
         db.commit()
     except IntegrityError as e:
@@ -1719,5 +1745,38 @@ def apply_coupon(db:Session , amount: float , coupon_code : str):
     
      return response    
 
+
+
+def get_all_coupon_list(
+                        db : Session,
+                        coupon_master_id : Optional[int]=None ,
+                        operator : Optional[Status] = None 
+                       ):
+    try:
+        current_date = datetime.today()
+        query = db.query(CouponMaster).filter(CouponMaster.is_deleted == 'no')
+        
+        if coupon_master_id:
+            query = query.filter(CouponMaster.id == coupon_master_id)
+        
+        if operator:
+            if operator == Status.CURRENT:
+                query = query.filter(
+                    CouponMaster.effective_from_date <= current_date,
+                    CouponMaster.effective_to_date >= current_date
+                )
+            elif operator == Status.UPCOMMING:
+                query = query.filter(CouponMaster.effective_from_date > current_date)
+            elif operator == Status.EXPIRED:
+                query = query.filter(CouponMaster.effective_to_date < current_date)
+        
+        coupon_master_data = query.all()
+        if coupon_master_data:
+          return coupon_master_data
+        else:
+          raise HTTPException(status_code=404, detail="coupon not found")  
+    except Exception as e:
+        print("Error:", e)  # Print the exception message for debugging
+        raise HTTPException(status_code=500, detail=str(e))
     
                   

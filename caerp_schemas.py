@@ -1847,14 +1847,33 @@ class CartDetailsSchema(BaseModel):
     customer_id       : int
     saved_for_later   : Optional[BooleanFlag] ='no'
 
-class CouponSchema(BaseModel):
-
+class CouponMasterSchema(BaseModel):
     coupon_name : str
     coupon_code : str
     coupon_percentage: Optional[float]= None
-    coupon_amount : Optional[float]= None
+    # coupon_amount : Optional[float]= None
     effective_from_date : date
     effective_to_date   : Optional[date]
+
+class CouponMasterSchemaResponse(BaseModel):
+    id : int
+    coupon_name : str
+    coupon_code : str
+    coupon_percentage: Optional[float]= None
+    # coupon_amount : Optional[float]= None
+    effective_from_date : date
+    effective_to_date   : Optional[date]
+    is_deleted: str
+
+class CouponDetailsSchema(BaseModel):
+
+    coupon_master_id     : int
+    product_master_id   : int
+
+class SaveCouponDetails(BaseModel):
+
+    master: list[CouponMasterSchema]
+    details: Optional[list[CouponDetailsSchema]]=None     
 
 
 

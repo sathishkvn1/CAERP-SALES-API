@@ -3,13 +3,13 @@
 from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File,Query,Request
 from typing import List, Optional,Dict
 from UserDefinedConstants.user_defined_constants import  DeletedStatus,Operator,Status,ActiveStatus,ActionType,ApplyTo,RecordActionType
-from UserDefinedConstants.user_defined_constants import ActiveStatus
+from UserDefinedConstants.user_defined_constants import ActiveStatus, ApplyTo
 from caerp_auth.authentication import authenticate_user
 from typing import Union
 from sqlalchemy import select
 from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductRating,ProductMaster, ProductModule, UserRole, ProductCategory, ProductGroup
 from caerp_schemas import AdminUserBaseForDelete,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
-from caerp_schemas import ProductMasterPriceSchema,CartDetailsSchema,CouponSchema,OfferDetailsSchema, SaveOfferDetailsRequest,OfferMasterSchema,OfferCategoryResponse,ProductRating,PriceListProductModuleResponse,PriceListProductModuleView,PriceListProductMasterResponse,PriceListProductModule,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse, ProductFeaturesSchema, ProductFeaturesSchemaResponse
+from caerp_schemas import ProductMasterPriceSchema,CartDetailsSchema,CouponMasterSchema,OfferDetailsSchema, SaveOfferDetailsRequest,OfferMasterSchema,OfferCategoryResponse,ProductRating,PriceListProductModuleResponse,PriceListProductModuleView,PriceListProductMasterResponse,PriceListProductModule,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse, ProductFeaturesSchema, ProductFeaturesSchemaResponse, SaveCouponDetails, CouponMasterSchemaResponse
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
@@ -163,12 +163,15 @@ def upload_product_main_video(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to upload video")
    
 #...........................................................
+
 @router.get("/video/get_product_master_video/{id}", response_model=dict)
 def get_product_master_video(id: int):
     
     product_master_video_filename = f"{id}.mp4"  
     # BASE_URL="http://127.0.0.1:8010/"
     return {"photo_url": f"{BASE_URL}/product/save_product_master/{product_master_video_filename}"}
+
+
 
 @router.post('/update_product_master_image/{id}', response_model=ProductMasterSchema)
 def update_admin_user_image(
@@ -940,7 +943,7 @@ def get_price_list_module(
             product_data = [{
                 "product_module_price_id": result.product_modules_price_id,
                 "product_master_id": result.product_master_id,
-                "product_module_id": result.module_id,
+                "module_id": result.module_id,
                 "product_master_price_id": result.product_master_price_id,               
                 "module_name": result.module_name, 
                 "module_base_price": result.module_base_price,
@@ -949,6 +952,7 @@ def get_price_list_module(
                 "cess_rate": result.cess_rate,
                 "effective_from_date": result.effective_from_date,
                 "effective_to_date": result.effective_to_date,
+                "is_deleted": result.is_deleted
                 # "has_module":result.has_module
                
             }]
@@ -1201,8 +1205,9 @@ def save_cart_details(
 
 @router.post("/save_coupon_details")
 def save_coupon_details(
-    coupon_data : List[CouponSchema],
+    coupon_data : List[SaveCouponDetails],
     action_type: RecordActionType,
+    apply_to: ApplyTo,
     id: Optional[int]= 0,
     db: Session =Depends(get_db),
     token: str = Depends(oauth2.oauth2_scheme)
@@ -1211,13 +1216,17 @@ def save_coupon_details(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     auth_info = authenticate_user(token)
     user_id = auth_info["user_id"]
-
-    result = db_product.save_coupon(db,coupon_data,action_type,id,user_id)
-    if result:
+    
+    try:
+        for coupon in coupon_data:
+           db_product.save_coupon(db,action_type,id,coupon,user_id,apply_to)
+        
         return {"success": True, "message": "Saved successfully"}
-    else :
-        return {"success": False, "message": "Error"}
-   
+        
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 @router.get("/apply_coupon")
@@ -1228,3 +1237,13 @@ def apply_coupon(
 ):
     result = db_product.apply_coupon(db, total_price,coupon_code)
     return result
+
+
+@router.get("/get_coupon_list", response_model=List[CouponMasterSchemaResponse])
+def get_all_coupon_list(
+    coupon_master_id: Optional[int]=None,
+    coupons : Status = Status.CURRENT, # date filter parameter, 
+    db: Session = Depends(get_db)
+):
+    coupon_list= db_product.get_all_coupon_list(db,coupon_master_id,coupons)
+    return coupon_list

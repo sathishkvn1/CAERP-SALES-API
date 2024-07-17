@@ -1392,7 +1392,7 @@ class CouponMaster(caerp_base):
     coupon_name         = Column(String(50), nullable=False)
     coupon_code         = Column(String(50), nullable=False)
     coupon_percentage   = Column(Float, default=0.0)
-    coupon_amount       = Column(Float, default=0.0)
+    # coupon_amount       = Column(Float, default=0.0)
     effective_from_date = Column(Date, nullable=False)
     effective_to_date   = Column(Date, default=None)
     created_by          = Column(Integer, nullable=False)
@@ -1402,6 +1402,20 @@ class CouponMaster(caerp_base):
     is_deleted              = Column(Enum('yes', 'no'), nullable=False, default='no')
     deleted_by              = Column(Integer, default=None)
     deleted_on              = Column(DateTime, default=None)
+
+class CouponDetails(caerp_base):
+    __tablename__ = 'coupon_details'
+
+    id                  = Column(Integer, primary_key=True, index=True)
+    coupon_master_id     = Column(Integer, nullable=False)
+    product_master_id   = Column(Integer, nullable=False)
+    created_by          = Column(Integer, nullable=False)
+    created_on              = Column(DateTime, nullable=False, default=func.now())
+    modified_by             = Column(Integer, default=None)
+    modified_on             = Column(DateTime, default=None)
+    is_deleted              = Column(Enum('yes', 'no'), nullable=False, default='no')
+    deleted_by              = Column(Integer, default=None)
+    deleted_on              = Column(DateTime, default=None)    
 
 class PracticingAs(caerp_base):
     __tablename__ = 'app_practicing_as'
