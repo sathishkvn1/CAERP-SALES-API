@@ -9,7 +9,7 @@ from typing import Union
 from sqlalchemy import select
 from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductRating,ProductMaster, ProductModule, UserRole, ProductCategory, ProductGroup
 from caerp_schemas import AdminUserBaseForDelete,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
-from caerp_schemas import ProductMasterPriceSchema,CartDetailsSchema,CouponMasterSchema,OfferDetailsSchema, SaveOfferDetailsRequest,OfferMasterSchema,OfferCategoryResponse,ProductRating,PriceListProductModuleResponse,PriceListProductModuleView,PriceListProductMasterResponse,PriceListProductModule,PriceListProductMaster,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse, ProductFeaturesSchema, ProductFeaturesSchemaResponse, SaveCouponDetails, CouponMasterSchemaResponse
+from caerp_schemas import ProductMasterPriceSchema,CartDetailsSchema,CouponMasterSchema,OfferDetailsSchema, SaveOfferDetailsRequest,OfferMasterSchema,OfferCategoryResponse,ProductRating,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse, ProductFeaturesSchema, ProductFeaturesSchemaResponse, SaveCouponDetails, CouponMasterSchemaResponse
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
@@ -731,8 +731,6 @@ def create_installments(
 
 
 
-
-
 @router.post("/edit_installments/{installment_id}", response_model=None)
 def edit_installments(
     installment_id: int,
@@ -833,21 +831,21 @@ def get_installment_masters(
 
 #====================================================================================================
 
-@router.post('/update_price_product_module')
-def update_price_product_module(
-        record_actions  : RecordActionType,  
-        price_list_data: PriceListProductModule =Depends(),        
-        price_list_product_module_id: int =0,  # Default to 0 for add operation
-        db: Session = Depends(get_db),
-        token: str = Depends(oauth2.oauth2_scheme)):
-    if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    if record_actions == RecordActionType.UPDATE_ONLY:
-        return {"success": True, "message": "Update price list successfully"}
-    elif record_actions == RecordActionType.UPDATE_AND_INSERT:
-        return {"success": True, "message": "Add new price list successfully"}
-    else:
-        return {"success": False, "message": "Invalid action"} 
+# @router.post('/update_price_product_module')
+# def update_price_product_module(
+#         record_actions  : RecordActionType,  
+#         price_list_data: PriceListProductModule =Depends(),        
+#         price_list_product_module_id: int =0,  # Default to 0 for add operation
+#         db: Session = Depends(get_db),
+#         token: str = Depends(oauth2.oauth2_scheme)):
+#     if not token:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+#     if record_actions == RecordActionType.UPDATE_ONLY:
+#         return {"success": True, "message": "Update price list successfully"}
+#     elif record_actions == RecordActionType.UPDATE_AND_INSERT:
+#         return {"success": True, "message": "Add new price list successfully"}
+#     else:
+#         return {"success": False, "message": "Invalid action"} 
 
 @router.get('/get_price_list_master')
 def get_price_list_master(
@@ -873,8 +871,14 @@ def get_price_list_master(
             product_data = [{
 
                 "product_master_id": result.product_master_id,
+                "category_id": result.product_category_category_id,
+                "category_name": result.product_category_category_name,
+                "group_id": result.product_group_id,
+                "group_name": result.product_group_name,
                 "product_code": result.product_master_product_code,               
-                "product_name": result.product_master_product_name, 
+                "product_name": result.product_master_product_name,
+                "product_description_main": result.product_description_main,
+                "product_description_sub": result.product_description_sub, 
                 "product_master_price_id":result.product_master_price_id,
                 "base_price": result.base_price,
                 "additional_price_per_user": result.additional_price_per_user,
@@ -944,8 +948,15 @@ def get_price_list_module(
                 "product_module_price_id": result.product_modules_price_id,
                 "product_master_id": result.product_master_id,
                 "module_id": result.module_id,
-                "product_master_price_id": result.product_master_price_id,               
-                "module_name": result.module_name, 
+                "module_name": result.module_name,
+                "module_description": result.module_description,
+                "display_order": result.display_order,
+                "product_master_price_id": result.product_master_price_id,  
+                "product_master_price_base_price": result.product_master_price_base_price,
+                "product_master_price_gst_rate": result.product_master_price_gst_rate,
+                "product_master_price_cess_rate": result.product_master_price_cess_rate,
+                "product_master_price_minimum_user": result.product_master_price_minimum_user,
+                "product_master_price_maximum_user": result.product_master_price_maximum_user,             
                 "module_base_price": result.module_base_price,
                 "additional_price_per_user": result.additional_price_per_user,
                 "gst_rate": result.gst_rate,

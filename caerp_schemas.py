@@ -1645,138 +1645,138 @@ class GetCustomerPasswordResetSchema(BaseModel):
 class CustomerPasswordResetSchema(BaseModel):
     email_id : str
 
-class PriceListProductMaster(BaseModel):
+# class PriceListProductMaster(BaseModel):
     
-    product_master_id     : Optional[int]
-    price                 : float=0
-    igst_rate                : float=0.0
-    cgst_rate               : Optional[float] = 0.0
-    sgst_rate               : Optional[float] = 0.0
-    cess_rate               : Optional[float] = 0.0
-    discount_percentage     : Optional[float] = 0.0
-    discount_amount         : Optional[float] =0.0
-    effective_from_date     : Optional[date] 
-    effective_to_date       : Optional[date] = None
+#     product_master_id     : Optional[int]
+#     price                 : float=0
+#     igst_rate                : float=0.0
+#     cgst_rate               : Optional[float] = 0.0
+#     sgst_rate               : Optional[float] = 0.0
+#     cess_rate               : Optional[float] = 0.0
+#     discount_percentage     : Optional[float] = 0.0
+#     discount_amount         : Optional[float] =0.0
+#     effective_from_date     : Optional[date] 
+#     effective_to_date       : Optional[date] = None
     
     
-class PriceListProductMasterResponse(BaseModel):
-    id                    :int
-    product_master_id     : int
-    price                 : float
-    igst_rate                : float
-    cgst_rate               : float
-    sgst_rate               : float
-    cess_rate               : float
-    discount_percentage     : float
-    discount_amount         : float
-    effective_from_date     : Optional[date]
-    effective_to_date       : Optional[date]
-    created_by              : Optional[int]
-    created_on              : Optional[datetime]
-    modified_by             : Optional[int]
-    modified_on             : Optional[datetime]
-    is_deleted              : str
-    is_deleted_directly     : str
-    is_deleted_with_master  : str
-    deleted_by              : Optional[int]
-    deleted_on              : Optional[datetime]
+# class PriceListProductMasterResponse(BaseModel):
+#     id                    :int
+#     product_master_id     : int
+#     price                 : float
+#     igst_rate                : float
+#     cgst_rate               : float
+#     sgst_rate               : float
+#     cess_rate               : float
+#     discount_percentage     : float
+#     discount_amount         : float
+#     effective_from_date     : Optional[date]
+#     effective_to_date       : Optional[date]
+#     created_by              : Optional[int]
+#     created_on              : Optional[datetime]
+#     modified_by             : Optional[int]
+#     modified_on             : Optional[datetime]
+#     is_deleted              : str
+#     is_deleted_directly     : str
+#     is_deleted_with_master  : str
+#     deleted_by              : Optional[int]
+#     deleted_on              : Optional[datetime]
 
 
-class PriceListProductMasterView(BaseModel):
+# class PriceListProductMasterView(BaseModel):
    
-    product_master_id        :  int
-    price_list_product_master_id   : int   
-    product_code             :  str
-    category_id              :  int
-    category_name            :  str
-    product_name             :  str
-    product_description_main :  str
-    product_description_sub  :  str
-    has_module               :  str
-    price                    :  float 
-    igst_rate                 :    float
-    cgst_rate                :    float
-    sgst_rate                :    float
-    cess_rate                :    float
-    discount_percentage      :    float
-    discount_amount          :    float
-    effective_from_date      :  Optional[date] 
-    effective_to_date        :  Optional[date]
-    created_by               :  Optional[int]
-    created_on               :  Optional[datetime]
-    modified_by              :  Optional[int]
-    modified_on              :  Optional[datetime]
-    is_deleted               :  str
-    is_deleted_directly      :   str
-    is_deleted_with_master   :   str
-    deleted_by               : Optional[int]
-    deleted_on               : Optional[datetime]
+#     product_master_id        :  int
+#     price_list_product_master_id   : int   
+#     product_code             :  str
+#     category_id              :  int
+#     category_name            :  str
+#     product_name             :  str
+#     product_description_main :  str
+#     product_description_sub  :  str
+#     has_module               :  str
+#     price                    :  float 
+#     igst_rate                 :    float
+#     cgst_rate                :    float
+#     sgst_rate                :    float
+#     cess_rate                :    float
+#     discount_percentage      :    float
+#     discount_amount          :    float
+#     effective_from_date      :  Optional[date] 
+#     effective_to_date        :  Optional[date]
+#     created_by               :  Optional[int]
+#     created_on               :  Optional[datetime]
+#     modified_by              :  Optional[int]
+#     modified_on              :  Optional[datetime]
+#     is_deleted               :  str
+#     is_deleted_directly      :   str
+#     is_deleted_with_master   :   str
+#     deleted_by               : Optional[int]
+#     deleted_on               : Optional[datetime]
 
 
-class PriceListProductModule(BaseModel):
+# class PriceListProductModule(BaseModel):
     
-    price_list_product_master_id   :int
-    module_id                      : int
-    module_price                   : float=0
-    igst_rate                : float=0
-    cgst_rate               : float=0
-    sgst_rate               : float=0
-    cess_rate               : float=0
-    discount_percentage     : float=0
-    discount_amount         : float=0
-    effective_from_date     : Optional[date]
-    effective_to_date       : Optional[date]
+#     price_list_product_master_id   :int
+#     module_id                      : int
+#     module_price                   : float=0
+#     igst_rate                : float=0
+#     cgst_rate               : float=0
+#     sgst_rate               : float=0
+#     cess_rate               : float=0
+#     discount_percentage     : float=0
+#     discount_amount         : float=0
+#     effective_from_date     : Optional[date]
+#     effective_to_date       : Optional[date]
     
 
-class PriceListProductModuleResponse(PriceListProductModule):
-    created_by              : int
-    created_on              : datetime
-    modified_by             : Optional[int]
-    modified_on             : Optional[datetime]
-    is_deleted              : str
-    is_deleted_directly     : str
-    is_deleted_with_master  : str
-    deleted_by              : Optional[int]
-    deleted_on              : Optional[datetime]
+# class PriceListProductModuleResponse(PriceListProductModule):
+#     created_by              : int
+#     created_on              : datetime
+#     modified_by             : Optional[int]
+#     modified_on             : Optional[datetime]
+#     is_deleted              : str
+#     is_deleted_directly     : str
+#     is_deleted_with_master  : str
+#     deleted_by              : Optional[int]
+#     deleted_on              : Optional[datetime]
 
 
 
-class PriceListProductModuleView(BaseModel):
-    price_list_product_module_id   : int
-    price_list_product_master_id   : int
-    product_master_id              : int
-    module_name                    : str
-    module_id                      : int
-    product_code                   : str
-    product_name                   : str
-    module_description             : str
-    module_price                   : float
-    module_igst_rate                : float
-    module_cgst_rate               : float
-    module_sgst_rate               : float
-    module_cess_rate               : float
-    module_discount_percentage     : float
-    module_discount_amount         : float
-    module_effective_from_date     : Optional[date]
-    module_effective_to_date       : Optional[date]
-    master_price                   : float
-    master_igst_rate                : float
-    master_cgst_rate               : float
-    master_sgst_rate               : float
-    master_cess_rate               : float
-    master_discount_percentage     : float
-    master_discount_amount         : float
-    master_effective_from_date     : Optional[date]
-    master_effective_to_date       :  Optional[date]
-    created_by              : int
-    created_on              : Optional[datetime]
-    modified_by             : Optional[int]
-    modified_on             : Optional[datetime]
-    is_deleted              : str
-    is_deleted_directly     : str
-    is_deleted_with_master  : str
-    deleted_by              : Optional[int]
-    deleted_on              : Optional[datetime]
+# class PriceListProductModuleView(BaseModel):
+#     price_list_product_module_id   : int
+#     price_list_product_master_id   : int
+#     product_master_id              : int
+#     module_name                    : str
+#     module_id                      : int
+#     product_code                   : str
+#     product_name                   : str
+#     module_description             : str
+#     module_price                   : float
+#     module_igst_rate                : float
+#     module_cgst_rate               : float
+#     module_sgst_rate               : float
+#     module_cess_rate               : float
+#     module_discount_percentage     : float
+#     module_discount_amount         : float
+#     module_effective_from_date     : Optional[date]
+#     module_effective_to_date       : Optional[date]
+#     master_price                   : float
+#     master_igst_rate                : float
+#     master_cgst_rate               : float
+#     master_sgst_rate               : float
+#     master_cess_rate               : float
+#     master_discount_percentage     : float
+#     master_discount_amount         : float
+#     master_effective_from_date     : Optional[date]
+#     master_effective_to_date       :  Optional[date]
+#     created_by              : int
+#     created_on              : Optional[datetime]
+#     modified_by             : Optional[int]
+#     modified_on             : Optional[datetime]
+#     is_deleted              : str
+#     is_deleted_directly     : str
+#     is_deleted_with_master  : str
+#     deleted_by              : Optional[int]
+#     deleted_on              : Optional[datetime]
 
 
 
