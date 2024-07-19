@@ -1752,6 +1752,14 @@ def save_coupon(db: Session , action_type: RecordActionType, id: int, coupon_dat
             if apply_to == ApplyTo.SELECTED :    
                 for detail_data in coupon_data.details:
                     new_detail_data = detail_data.dict()
+
+                    product_master_id = new_detail_data.get("product_master_id")
+
+                    # Check if the product is deleted
+                    product = db.query(ProductMaster).filter(ProductMaster.id == product_master_id).first()
+                    if product and product.is_deleted == 'yes':
+                      raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot give coupon for a deleted product")
+
                     new_detail_data.update({
                         "coupon_master_id": new_coupon.id,
                         "created_by": user_id,
@@ -1791,6 +1799,14 @@ def save_coupon(db: Session , action_type: RecordActionType, id: int, coupon_dat
             if apply_to == ApplyTo.SELECTED :    
                 for detail_data in coupon_data.details:
                     new_detail_data = detail_data.dict()
+
+                    product_master_id = new_detail_data.get("product_master_id")
+
+                    # Check if the product is deleted
+                    product = db.query(ProductMaster).filter(ProductMaster.id == product_master_id).first()
+                    if product and product.is_deleted == 'yes':
+                      raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot give coupon for a deleted product")
+
                     new_detail_data.update({
                         "coupon_master_id": id,
                         "created_by": user_id,
