@@ -847,6 +847,8 @@ def get_installment_masters(
 #     else:
 #         return {"success": False, "message": "Invalid action"} 
 
+
+
 @router.get('/get_price_list_master')
 def get_price_list_master(
     product_id: Optional[int] = None,
@@ -894,6 +896,9 @@ def get_price_list_master(
             }]
             products.append(product_data)
         return products
+
+
+
 
 @router.post('/set_new_price')
 def set_new_price(
@@ -1176,8 +1181,7 @@ def delete_offer_master(
 
     auth_info = authenticate_user(token)
     user_id = auth_info["user_id"]
-    
-    
+        
     return db_product.delete_offer_master(db, offer_master_id,action_type,deleted_by=user_id)
 
 

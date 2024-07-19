@@ -63,11 +63,6 @@ def update_product_video(db: Session,  request: ProductVideoSchema, video_id: in
 
 
 
-
-
-
-
-
 # =========================================================================
 
 #  PRODUCT MODULE SECTION 
@@ -769,7 +764,6 @@ def set_new_price(
 
     # Check if the product is deleted
     product = db.query(ProductMaster).filter(ProductMaster.id == product_master_id).first()
-    print("product id is",product)
     if product and product.is_deleted == 'yes':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot set price for a deleted product")
 
@@ -811,6 +805,8 @@ def set_new_price(
         db.commit()
         db.refresh(new_price_list)
         return new_price_list
+
+
 
 def get_price_list_module(db:Session,product_id: Optional[int]=None,
                            module_name: Optional[str]=None,module_id: Optional[int]= None,product_module_price_id:Optional[int]=None,
@@ -1420,6 +1416,34 @@ def save_offer_details(
                 setattr(existing_master, key, value)
             existing_master.modified_by = user_id
             existing_master.modified_on = datetime.utcnow()
+            
+            existing_details = db.query(OfferDetails).filter(OfferDetails.offer_master_id == id).all()    
+            for det in existing_details:
+               det.is_deleted = 'yes'
+               det.deleted_by = user_id
+               det.deleted_on = datetime.utcnow()
+
+            if apply_to == ApplyTo.SELECTED :    
+               for detail_data in data.details:
+                  new_detail_data = detail_data.dict()
+                  new_detail_data.update({
+                        "offer_master_id": id,
+                        "created_by": user_id,
+                        "created_on": datetime.utcnow()
+                 })
+                  new_detail = OfferDetails(**new_detail_data)
+                  db.add(new_detail)
+            else:
+                details = db.query(ProductMaster.id).filter(ProductMaster.is_deleted == 'no').all()
+                for detail_data in details:
+                    new_detail_data = {
+                      "offer_master_id": id,
+                      "product_master_id": detail_data[0],
+                      "created_by": user_id,
+                      "created_on": datetime.utcnow()
+                   }
+                    new_detail = OfferDetails(**new_detail_data)
+                    db.add(new_detail)
 
         db.commit()
     except IntegrityError as e:
@@ -1748,23 +1772,52 @@ def save_coupon(db: Session , action_type: RecordActionType, id: int, coupon_dat
                      db.add(new_detail)
                
         elif action_type == RecordActionType.UPDATE_ONLY:
+
             existing_coupon = db.query(CouponMaster).filter(CouponMaster.id == id).first()
             if not existing_coupon:
                 raise HTTPException(status_code=404, detail=" record not found")
-
+            
             # Use the first item from coupon_data.master for update
             update_data = coupon_data.master[0].dict()
             for key, value in update_data.items():
-                setattr(existing_coupon, key, value)
-            
+                setattr(existing_coupon, key, value) 
+
+            existing_details = db.query(CouponDetails).filter(CouponDetails.coupon_master_id == id).all()    
+            for det in existing_details:
+               det.is_deleted = 'yes'
+               det.deleted_by = user_id
+               det.deleted_on = datetime.utcnow()
+
+            if apply_to == ApplyTo.SELECTED :    
+                for detail_data in coupon_data.details:
+                    new_detail_data = detail_data.dict()
+                    new_detail_data.update({
+                        "coupon_master_id": id,
+                        "created_by": user_id,
+                        "created_on": datetime.utcnow()
+                    })
+                    new_detail = CouponDetails(**new_detail_data)
+                    db.add(new_detail)
+            else:
+                 details = db.query(ProductMaster.id).filter(ProductMaster.is_deleted == 'no').all()
+                 for detail_data in details:
+                     new_detail_data = {
+                        "coupon_master_id": id,
+                        "product_master_id": detail_data[0],
+                        "created_by": user_id,
+                        "created_on": datetime.utcnow()
+                    }
+                     new_detail = CouponDetails(**new_detail_data)
+                     db.add(new_detail)
+          
         db.commit()
-    except IntegrityError as e:
-        db.rollback()
-        logger.error("IntegrityError: %s", str(e))
-        if 'Duplicate entry' in str(e):
-            raise HTTPException(status_code=400, detail="Duplicate entry detected.")
-        else:
-            raise e
+    # except IntegrityError as e:
+    #     db.rollback()
+    #     logger.error("IntegrityError: %s", str(e))
+    #     if 'Duplicate entry' in str(e):
+    #         raise HTTPException(status_code=400, detail="Duplicate entry detected.")
+    #     else:
+    #         raise e
     except OperationalError as e:
         db.rollback()
         logger.error("OperationalError: %s", str(e))
