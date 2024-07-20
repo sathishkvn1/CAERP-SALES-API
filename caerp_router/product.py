@@ -1227,6 +1227,22 @@ def save_coupon_details(
     db: Session =Depends(get_db),
     token: str = Depends(oauth2.oauth2_scheme)
 ):
+    """
+    Endpoint to save or update coupon details in the coupon master table and coupon details table.
+
+    Parameters:
+    - coupon_data (List[SaveCouponDetails]): The list of coupon data to save or update. This data contains both master data and details.
+    - action_type (RecordActionType): The action to perform. Use INSERT_ONLY to add new rows or UPDATE_ONLY to update existing rows.
+    - apply_to (ApplyTo): Determines the scope of application. Use ALL to apply to all products, otherwise use SELECT for selected products.
+    - id (Optional[int]): The ID of the coupon master to update. Required for updating an existing coupon master data. Default value is 0.
+    - db (Session): The database session dependency.
+    - token (str): The authorization token dependency.
+
+    Returns:
+    - JSON response with the status of the operation.
+    """
+
+
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     auth_info = authenticate_user(token)
@@ -1260,5 +1276,20 @@ def get_all_coupon_list(
     coupons : Status = Status.CURRENT, # date filter parameter, 
     db: Session = Depends(get_db)
 ):
+    """
+    Endpoint to get all coupon master details in the coupon master table and coupon details table.
+
+    Parameters:
+   
+    -**coupon_master_id** : id of the coupon master.
+
+    -**coupons** : it indicates the status of retrieved coupons. The values are CURRENT,UPCOMING and EXPIRED
+    - CURRENT : currently active coupons.
+    - UPCOMING : the coupons which will be active in the near future.
+    - EXPIRED : the coupons which are no longer active.
+
+    """
     coupon_list= db_product.get_all_coupon_list(db,coupon_master_id,coupons)
     return coupon_list
+
+

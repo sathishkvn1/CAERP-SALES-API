@@ -1386,6 +1386,14 @@ def save_offer_details(
             if apply_to == ApplyTo.SELECTED :    
                 for detail_data in data.details:
                     new_detail_data = detail_data.dict()
+
+                    product_master_id = new_detail_data.get("product_master_id")
+
+                    # Check if the product is deleted
+                    product = db.query(ProductMaster).filter(ProductMaster.id == product_master_id).first()
+                    if product and product.is_deleted == 'yes':
+                      raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot give offers for a deleted product")
+
                     new_detail_data.update({
                         "offer_master_id": new_master.id,
                         "created_by": user_id,
@@ -1426,6 +1434,14 @@ def save_offer_details(
             if apply_to == ApplyTo.SELECTED :    
                for detail_data in data.details:
                   new_detail_data = detail_data.dict()
+
+                  product_master_id = new_detail_data.get("product_master_id")
+
+                  # Check if the product is deleted
+                  product = db.query(ProductMaster).filter(ProductMaster.id == product_master_id).first()
+                  if product and product.is_deleted == 'yes':
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot give coupon for a deleted product")
+
                   new_detail_data.update({
                         "offer_master_id": id,
                         "created_by": user_id,
@@ -1783,7 +1799,7 @@ def save_coupon(db: Session , action_type: RecordActionType, id: int, coupon_dat
 
             existing_coupon = db.query(CouponMaster).filter(CouponMaster.id == id).first()
             if not existing_coupon:
-                raise HTTPException(status_code=404, detail=" record not found")
+                raise HTTPException(status_code=400, detail=" record not found")
             
             # Use the first item from coupon_data.master for update
             update_data = coupon_data.master[0].dict()
@@ -1904,7 +1920,7 @@ def get_all_coupon_list(
         if coupon_master_data:
           return coupon_master_data
         else:
-          raise HTTPException(status_code=404, detail="coupon not found")  
+          raise HTTPException(status_code=400, detail="coupon not found")  
     except Exception as e:
         print("Error:", e)  # Print the exception message for debugging
         raise HTTPException(status_code=500, detail=str(e))

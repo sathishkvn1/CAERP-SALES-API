@@ -1821,7 +1821,7 @@ class  OfferCategoryResponse(BaseModel):
 
 class OfferMasterSchema(BaseModel):
 
-    id                 : Optional[int] = None
+    # id                 : Optional[int] = None
     offer_category_id   : int
     offer_name          : str
     offer_percentage    : Optional[float]= None
@@ -1832,8 +1832,8 @@ class OfferMasterSchema(BaseModel):
 
 class OfferDetailsSchema(BaseModel):
 
-    offer_master_id     : int
-    product_master_id   : int
+    offer_master_id     : Optional[int] = None
+    product_master_id   : Optional[int] = None
 
 class SaveOfferDetailsRequest(BaseModel):
 
