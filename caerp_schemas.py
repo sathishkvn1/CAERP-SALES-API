@@ -1867,8 +1867,8 @@ class CouponMasterSchemaResponse(BaseModel):
 
 class CouponDetailsSchema(BaseModel):
 
-    coupon_master_id     : int
-    product_master_id   : int
+    coupon_master_id     : Optional[int] = None
+    product_master_id   : Optional[int] = None
 
 class SaveCouponDetails(BaseModel):
 
