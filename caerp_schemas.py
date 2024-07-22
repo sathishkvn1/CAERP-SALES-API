@@ -1825,9 +1825,25 @@ class OfferMasterSchema(BaseModel):
     offer_category_id   : int
     offer_name          : str
     offer_percentage    : Optional[float]= None
-    # offer_amount        : Optional[float]= None
     effective_from_date : date
     effective_to_date   : Optional[date] =None
+    
+
+class OfferMasterSchemaResponse(BaseModel):
+
+    id                   : Optional[int] = None
+    offer_category_id   : int
+    offer_name          : str
+    offer_percentage    : Optional[float]= None
+    effective_from_date : date
+    effective_to_date   : Optional[date] =None   
+    created_by: int
+    created_on: datetime
+    modified_by: Optional[int]
+    modified_on: Optional[datetime]
+    is_deleted: str
+    deleted_by: Optional[int]
+    deleted_on: Optional[datetime] 
    
 
 class OfferDetailsSchema(BaseModel):

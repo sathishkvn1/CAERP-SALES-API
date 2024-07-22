@@ -27,6 +27,7 @@ from sqlalchemy.exc import SQLAlchemyError,IntegrityError,OperationalError
 import logging
 from fastapi.responses import FileResponse
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -1924,5 +1925,38 @@ def get_all_coupon_list(
     except Exception as e:
         print("Error:", e)  # Print the exception message for debugging
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def delete_coupon_master(db, coupon_master_id,action_type,deleted_by):
+    existing_coupon = db.query(CouponMaster).filter(CouponMaster.id == coupon_master_id).first()
+
+    if existing_coupon is None:
+        raise HTTPException(status_code=404, detail="Coupon  not found")
+    
+    if(action_type== 'DELETE'):
+       existing_coupon.is_deleted = 'yes'
+       existing_coupon.deleted_by = deleted_by
+       existing_coupon.deleted_on = datetime.utcnow()
+            
+            
+       db.query(CouponDetails).filter(CouponDetails.coupon_master_id == coupon_master_id).update({
+         CouponDetails.is_deleted: 'yes',                
+         CouponDetails.deleted_by: deleted_by,
+         CouponDetails.deleted_on: datetime.utcnow()
+        }, synchronize_session=False)
+        
+       db.commit()
+       return {
+          "message": "Offer marked as deleted successfully",
+         }
+    if(action_type == 'UNDELETE'):
+        existing_coupon.is_deleted = 'no'
+        existing_coupon.deleted_by = None
+        existing_coupon.deleted_on = None
+        db.commit()
+
+        return {
+                "message": "Offer marked as Undeleted successfully",
+            }        
     
                   

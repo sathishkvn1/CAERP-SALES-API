@@ -9,12 +9,11 @@ from typing import Union
 from sqlalchemy import select
 from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductRating,ProductMaster, ProductModule, UserRole, ProductCategory, ProductGroup
 from caerp_schemas import AdminUserBaseForDelete,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
-from caerp_schemas import ProductMasterPriceSchema,CartDetailsSchema,CouponMasterSchema,OfferDetailsSchema, SaveOfferDetailsRequest,OfferMasterSchema,OfferCategoryResponse,ProductRating,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse, ProductFeaturesSchema, ProductFeaturesSchemaResponse, SaveCouponDetails, CouponMasterSchemaResponse
+from caerp_schemas import ProductMasterPriceSchema,CartDetailsSchema,CouponMasterSchema,OfferDetailsSchema, SaveOfferDetailsRequest,OfferMasterSchema,OfferCategoryResponse,ProductRating,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse, ProductFeaturesSchema, ProductFeaturesSchemaResponse, SaveCouponDetails, CouponMasterSchemaResponse, OfferMasterSchemaResponse
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
 from settings import BASE_URL
-
 from caerp_db.database import get_db
 from caerp_db import db_product
 from caerp_db.hash import Hash
@@ -1111,7 +1110,7 @@ def get_product_rating_comments(
 
 
 
-@router.get("/get_all_offer_list", response_model=List[OfferMasterSchema])
+@router.get("/get_all_offer_list", response_model=List[OfferMasterSchemaResponse])
 def get_all_offer_list(
     category_id: Optional[int] = None,
     offer_master_id: Optional[int]=None,
@@ -1291,5 +1290,21 @@ def get_all_coupon_list(
     """
     coupon_list= db_product.get_all_coupon_list(db,coupon_master_id,coupons)
     return coupon_list
+
+
+@router.delete("/delete_coupon_master")
+def delete_coupon_master(
+     coupon_master_id: int,
+     action_type: ActionType = ActionType.UNDELETE,
+     db: Session = Depends(get_db),
+     token: str = Depends(oauth2.oauth2_scheme)
+):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+
+    auth_info = authenticate_user(token)
+    user_id = auth_info["user_id"]
+        
+    return db_product.delete_coupon_master(db, coupon_master_id,action_type,deleted_by=user_id)
 
 
