@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from starlette.requests import Request
 
 from settings import BASE_URL
+
 from caerp_db.database import get_db
 from caerp_db import db_product
 from caerp_db.hash import Hash
@@ -1126,7 +1127,6 @@ def get_all_offer_list(
 def save_offer_details(
     
     data: List[SaveOfferDetailsRequest], 
-    action_type: RecordActionType,
     apply_to : ApplyTo,
     id: Optional[int] = 0 ,
     db: Session = Depends(get_db),
@@ -1157,7 +1157,7 @@ def save_offer_details(
     try:
         for offer_master in data:
             db_product.save_offer_details(
-                db, id, offer_master, user_id, action_type, apply_to
+                db, id, offer_master, user_id, apply_to
             )
 
         return {"success": True, "message": "Saved successfully"}
@@ -1220,7 +1220,6 @@ def save_cart_details(
 @router.post("/save_coupon_details")
 def save_coupon_details(
     coupon_data : List[SaveCouponDetails],
-    action_type: RecordActionType,
     apply_to: ApplyTo,
     id: Optional[int]= 0,
     db: Session =Depends(get_db),
@@ -1249,7 +1248,7 @@ def save_coupon_details(
     
     try:
         for coupon in coupon_data:
-           db_product.save_coupon(db,action_type,id,coupon,user_id,apply_to)
+           db_product.save_coupon(db,id,coupon,user_id,apply_to)
         
         return {"success": True, "message": "Saved successfully"}
         

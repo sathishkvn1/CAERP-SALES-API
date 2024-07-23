@@ -1796,7 +1796,7 @@ class ProductMasterPriceSchema(BaseModel):
     gst_rate : float 
     cess_rate : float  
     minimum_user : int
-    maximum_user : int
+    maximum_user : Optional[int] = None
     effective_from_date : date
     effective_to_date : Optional[str]= None
 
@@ -1827,11 +1827,10 @@ class OfferMasterSchema(BaseModel):
     offer_percentage    : Optional[float]= None
     effective_from_date : date
     effective_to_date   : Optional[date] =None
-    
 
 class OfferMasterSchemaResponse(BaseModel):
 
-    id                   : Optional[int] = None
+    id                 : Optional[int] = None
     offer_category_id   : int
     offer_name          : str
     offer_percentage    : Optional[float]= None

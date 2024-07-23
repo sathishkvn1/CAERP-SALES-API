@@ -27,7 +27,6 @@ from sqlalchemy.exc import SQLAlchemyError,IntegrityError,OperationalError
 import logging
 from fastapi.responses import FileResponse
 
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -988,7 +987,7 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
         # )
         # discount_details = db.execute(discount_query, {'product_id': product_id,'requested_date':requested_date}).fetchall()
         discount_query = text(
-            "SELECT product_master_id, offer_details_id, offer_name, offer_percentage, offer_amount, "
+            "SELECT product_master_id, offer_details_id, offer_name, offer_percentage "
             "effective_from_date, effective_to_date "
             "FROM view_offer_details "
             "WHERE product_master_id = :product_id AND effective_from_date <= :requested_date AND effective_to_date >= :requested_date"
@@ -1099,46 +1098,90 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
             discount_name = ""
             
             if discount: 
-                if discount['offer_amount']:
-                        discount_percentage = (discount['offer_amount']/product_data.price)*100
-                        discount_amount     = discount['offer_amount']
-                        discount_name       =  discount['offer_name']
+                # if discount['offer_amount']:
+                #         discount_percentage = (discount['offer_amount']/product_data.price)*100
+                #         discount_amount     = discount['offer_amount']
+                #         discount_name       =  discount['offer_name']
                         # print("discount amount", discount_percentage)
                 if discount['offer_percentage']:
-                        discount_amount = product_data.price*(discount['offer_percentage']/100)
+                        discount_amount = product_data.base_price*(discount['offer_percentage']/100)
                         discount_percentage =discount['offer_percentage']
                         discount_name       = discount['offer_name']
                 discount_info = {
                         "discount_percentage" : discount_percentage,
                         "discount_amount"      : discount_amount,
-                        "discounted_price"     : product_data.price - discount_amount,
+                        "discounted_price"     : product_data.base_price - discount_amount,
                         "discount_name"        : discount_name
                     }
+            price_details = {
+                      "base_price": product_data.base_price,
+                      "additional_price_per_user": product_data.additional_price_per_user,
+                      "discount_percentage": discount_percentage,
+                      "discount_amount": discount_amount,
+                      "discounted_amount": product_data.base_price - discount_amount
+                     }
+ 
             total_rating_details = total_ratings_map.get(product_id,'')
+
             product_master_image_filename= f"{product_id}.jpg"
+
             category_id=product_data.category_id
             category_query = text(
-            "SELECT category_name "
+            "SELECT category_name " 
             "FROM product_category "
-           
             "WHERE id = :category_id "         
             
-        )
+             )
         
-        # Execute the query with parameters
+            # Execute the query with parameters
             params = {'category_id': category_id}
         
             category_name = db.execute(category_query, params).first()
             # field_name = 'category_name' 
-
             # category_name = get_info(field_name,ProductCategory,product_data.category_id)
+
+
+            group_id=product_data.group_id
+            group_query = text(
+            "SELECT group_name " 
+            "FROM product_group "
+            "WHERE id = :group_id "         
+             )
+        
+            # Execute the query with parameters
+            params = {'group_id': group_id}
+        
+            group_name = db.execute(group_query, params).first()
+
+            # Fetch product modules
+            module_query = text(
+              "SELECT module_name, module_description "
+              "FROM product_module "
+              "WHERE product_master_id = :product_id AND is_deleted = 'no'"
+             )
+            product_modules = db.execute(module_query, {'product_master_id': product_id}).fetchall()
+
+            modules = [{"module_name": module.module_name, "module_description": module.module_description} for module in product_modules]
+
+            # Fetch product features
+            feature_query = text(
+              "SELECT feature "
+              "FROM product_features "
+              "WHERE product_master_id = :product_id AND is_deleted = 'no'"
+              )
+            product_features = db.execute(feature_query, {'product_master_id': product_id}).fetchall()
+
+            features = [{"feature_name": feature.feature} for feature in product_features]
+
             response_item={
                 "product_master_id" : product_data.product_master_id,
                 "product_master_price_id": product_data.product_master_price_id,
                 "product_name"      : product_data.product_name,
                 "product_code"      : product_data.product_code,
-                "category_name"       : category_name[0],
-
+                "category_id"  : category_id,
+                "category_name"  : category_name[0],
+                "group_id"  : group_id,
+                "group_name"   : group_name,
                 "image_url"         : image_path,                
                 "price"             : product_data.price,
                 # "inclusive_of_taxes": True,
@@ -1364,16 +1407,15 @@ def save_offer_details(
     id: int,
     data: SaveOfferDetailsRequest,
     user_id: int,
-    action_type: RecordActionType,
     apply_to: ApplyTo
 ):
-    if action_type == RecordActionType.INSERT_ONLY and id != 0:
-        raise HTTPException(status_code=400, detail="Invalid action: For INSERT_ONLY, id should be 0")
-    elif action_type == RecordActionType.UPDATE_ONLY and id <= 0:
-        raise HTTPException(status_code=400, detail="Invalid action: For UPDATE_ONLY, id should be greater than 0")
+    # if action_type == RecordActionType.INSERT_ONLY and id != 0:
+    #     raise HTTPException(status_code=400, detail="Invalid action: For INSERT_ONLY, id should be 0")
+    # elif action_type == RecordActionType.UPDATE_ONLY and id <= 0:
+    #     raise HTTPException(status_code=400, detail="Invalid action: For UPDATE_ONLY, id should be greater than 0")
 
     try:
-        if action_type == RecordActionType.INSERT_ONLY:
+        if id == 0:
             for master_data in data.master:
                 new_master_data = master_data.dict()
                 new_master_data.update({
@@ -1414,7 +1456,7 @@ def save_offer_details(
                      new_detail = OfferDetails(**new_detail_data)
                      db.add(new_detail)
 
-        elif action_type == RecordActionType.UPDATE_ONLY:
+        else:
             existing_master = db.query(OfferMaster).filter(OfferMaster.id == id).first()
             if not existing_master:
                 raise HTTPException(status_code=404, detail="Master record not found")
@@ -1747,15 +1789,15 @@ def get_cart_product_details_with_prices(
 
 
 
-def save_coupon(db: Session , action_type: RecordActionType, id: int, coupon_data: SaveCouponDetails, user_id: int, apply_to: ApplyTo):
+def save_coupon(db: Session , id: int, coupon_data: SaveCouponDetails, user_id: int, apply_to: ApplyTo):
      
-    if action_type == RecordActionType.INSERT_ONLY and id != 0:
-        raise HTTPException(status_code=400, detail="Invalid action: For INSERT_ONLY, id should be 0")
-    elif action_type == RecordActionType.UPDATE_ONLY and id <= 0:
-        raise HTTPException(status_code=400, detail="Invalid action: For UPDATE_ONLY, id should be greater than 0")
+    # if action_type == RecordActionType.INSERT_ONLY and id != 0:
+    #     raise HTTPException(status_code=400, detail="Invalid action: For INSERT_ONLY, id should be 0")
+    # elif action_type == RecordActionType.UPDATE_ONLY and id <= 0:
+    #     raise HTTPException(status_code=400, detail="Invalid action: For UPDATE_ONLY, id should be greater than 0")
 
     try:
-        if action_type == RecordActionType.INSERT_ONLY:
+        if id == 0:
             for coupon_details in coupon_data.master:
                 new_coupon_details = coupon_details.dict()
                 new_coupon_details["created_on"] = datetime.utcnow()
@@ -1796,7 +1838,7 @@ def save_coupon(db: Session , action_type: RecordActionType, id: int, coupon_dat
                      new_detail = CouponDetails(**new_detail_data)
                      db.add(new_detail)
                
-        elif action_type == RecordActionType.UPDATE_ONLY:
+        else:
 
             existing_coupon = db.query(CouponMaster).filter(CouponMaster.id == id).first()
             if not existing_coupon:
@@ -1844,13 +1886,13 @@ def save_coupon(db: Session , action_type: RecordActionType, id: int, coupon_dat
                      db.add(new_detail)
           
         db.commit()
-    # except IntegrityError as e:
-    #     db.rollback()
-    #     logger.error("IntegrityError: %s", str(e))
-    #     if 'Duplicate entry' in str(e):
-    #         raise HTTPException(status_code=400, detail="Duplicate entry detected.")
-    #     else:
-    #         raise e
+    except IntegrityError as e:
+        db.rollback()
+        logger.error("IntegrityError: %s", str(e))
+        if 'Duplicate entry' in str(e):
+            raise HTTPException(status_code=400, detail="Duplicate entry detected.")
+        else:
+            raise e
     except OperationalError as e:
         db.rollback()
         logger.error("OperationalError: %s", str(e))
