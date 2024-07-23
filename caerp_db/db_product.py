@@ -1006,7 +1006,7 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
         total_results = db.execute(total_query, {'product_id': product_id}).fetchall()
     else:
         discount_query = text(
-            "SELECT product_master_id, offer_details_id, offer_name, offer_percentage, offer_amount, "
+            "SELECT product_master_id, offer_details_id, offer_name, offer_percentage "
             "effective_from_date, effective_to_date "
             "FROM view_offer_details "
             "WHERE effective_from_date <= :requested_date AND effective_to_date >= :requested_date"
@@ -1039,7 +1039,7 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
         discount_data[row[0]] = {
             # "product_master_id" : row[0],
             "offer_name"     : row[2],
-            "offer_amount" : row[4],
+            # "offer_amount" : row[4],
             "offer_percentage":row[3]
         }
     # print("discount_data ------------------",discount_data)
@@ -1113,19 +1113,22 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
                         "discounted_price"     : product_data.base_price - discount_amount,
                         "discount_name"        : discount_name
                     }
+            base_price = product_data.base_price
+            additional_price_per_user = product_data.additional_price_per_user
+            discounted_amount = base_price - discount_amount if discount else base_price    
             price_details = {
-                      "base_price": product_data.base_price,
-                      "additional_price_per_user": product_data.additional_price_per_user,
+                      "base_price": base_price,
+                      "additional_price_per_user": additional_price_per_user,
                       "discount_percentage": discount_percentage,
                       "discount_amount": discount_amount,
-                      "discounted_amount": product_data.base_price - discount_amount
+                      "discounted_amount": discounted_amount
                      }
  
             total_rating_details = total_ratings_map.get(product_id,'')
 
             product_master_image_filename= f"{product_id}.jpg"
 
-            category_id=product_data.category_id
+            category_id=product_data.product_category_category_id
             category_query = text(
             "SELECT category_name " 
             "FROM product_category "
@@ -1140,8 +1143,7 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
             # field_name = 'category_name' 
             # category_name = get_info(field_name,ProductCategory,product_data.category_id)
 
-
-            group_id=product_data.group_id
+            group_id=product_data.product_group_id
             group_query = text(
             "SELECT group_name " 
             "FROM product_group "
@@ -1152,6 +1154,17 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
             params = {'group_id': group_id}
         
             group_name = db.execute(group_query, params).first()
+            
+            prod_master_query = text(
+                "SELECT has_instalments,is_deleted "
+                "FROM product_master "
+                "WHERE id = :product_id"
+            )
+            params = {'product_id': product_id}
+            master_det = db.execute(prod_master_query, params).first()
+
+            has_instalments = master_det.has_instalments if master_det else None
+            # is_deleted = master_det.is_deleted if master_det else None
 
             # Fetch product modules
             module_query = text(
@@ -1159,7 +1172,8 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
               "FROM product_module "
               "WHERE product_master_id = :product_id AND is_deleted = 'no'"
              )
-            product_modules = db.execute(module_query, {'product_master_id': product_id}).fetchall()
+            params = {'product_id': product_id}
+            product_modules = db.execute(module_query, params).fetchall()
 
             modules = [{"module_name": module.module_name, "module_description": module.module_description} for module in product_modules]
 
@@ -1169,29 +1183,37 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
               "FROM product_features "
               "WHERE product_master_id = :product_id AND is_deleted = 'no'"
               )
-            product_features = db.execute(feature_query, {'product_master_id': product_id}).fetchall()
+            params = {'product_id': product_id}
+            product_features = db.execute(feature_query, params).fetchall()
 
             features = [{"feature_name": feature.feature} for feature in product_features]
 
             response_item={
                 "product_master_id" : product_data.product_master_id,
                 "product_master_price_id": product_data.product_master_price_id,
-                "product_name"      : product_data.product_name,
-                "product_code"      : product_data.product_code,
+                "product_name"      : product_data.product_master_product_name,
+                "product_code"      : product_data.product_master_product_code,
                 "category_id"  : category_id,
                 "category_name"  : category_name[0],
                 "group_id"  : group_id,
                 "group_name"   : group_name,
-                "image_url"         : image_path,                
-                "price"             : product_data.price,
+                "image_url"    : image_path,                
+                # "price"        : product_data.price,
                 # "inclusive_of_taxes": True,
                 # "emi_details"       : "EMI starts at ₹3,456. No Cost EMI available",
                 # "emi_options_url"   : "https://example.com/emi-options",
                 "description"       : {
                             "main": product_data.product_description_main,
                             "sub": product_data.product_description_sub
-                    },                
-                
+                             },                
+                "has_module"   : product_data.product_master_has_module,
+                "minimum_user" : product_data.product_master_price_minimum_user,
+                "maximum_user" : product_data.product_master_price_maximum_user,
+                "has_instalments"  : has_instalments,
+                # "is_deleted"       : is_deleted,
+                "price_details": price_details,
+                 "features"    : features,
+                 "modules"     : modules  
                 # "total_rating": total_ratings_map.get(product_id,''),
                 # "ratings"           :  product_ratings
             }
@@ -1207,79 +1229,130 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
         response.append(response_item)
         return response
     else:
-          response = []
-    for product_data in product_master_data:
-        product_id = product_data.product_master_id
-        product_master_image_filename= f"{product_id}.jpg"
-        # image_path = os.path.join(UPLOAD_DIR_MASTER_IMAGE_VIDEO, product_master_image_filename)
-        # image_path = f"{BASE_URL}/uploads/product_master_image_videos/{product_master_image_filename}"
-        image_path = f"{BASE_URL}/product/save_product_master/{product_master_image_filename}"
+        response = []
+        for product_data in product_master_data:
+           product_id = product_data.product_master_id
+           product_master_image_filename= f"{product_id}.jpg"
+           # image_path = os.path.join(UPLOAD_DIR_MASTER_IMAGE_VIDEO, product_master_image_filename)
+           # image_path = f"{BASE_URL}/uploads/product_master_image_videos/{product_master_image_filename}"
+           image_path = f"{BASE_URL}/product/save_product_master/{product_master_image_filename}"
 
-        # if os.path.exists(image_path):
-        #      image_path =  f"{BASE_URL}/uploads/product_master_image_videos/{product_master_image_filename}"
-        # else:
-        #     image_path = ""
+           # if os.path.exists(image_path):
+           #      image_path =  f"{BASE_URL}/uploads/product_master_image_videos/{product_master_image_filename}"
+           # else:
+           #     image_path = ""
        
-        discount = discount_data.get(product_id,[])
-        discount_amount = 0
-        discount_percentage = 0
-        discount_info ={}
-        if discount:
-            if discount['offer_amount']:
-                    discount_percentage = (discount['offer_amount']/product_data.price)*100
-                    discount_amount     = discount['offer_amount']
+           discount = discount_data.get(product_id,[])
+           discount_amount = 0
+           discount_percentage = 0
+           discount_info ={}
+           if discount:
+              # if discount['offer_amount']:
+              #         discount_percentage = (discount['offer_amount']/product_data.price)*100
+              #         discount_amount     = discount['offer_amount']
                     # print("discount amount", discount_percentage)
-            if discount['offer_percentage']:
-                        discount_amount = product_data.price*(discount['offer_percentage']/100)
+              if discount['offer_percentage']:
+                        discount_amount = product_data.base_price*(discount['offer_percentage']/100)
                         discount_percentage =discount['offer_percentage']
-            discount_info = {
+              discount_info = {
                         "discount_percentage" : discount_percentage,
                         "discount_amount"      : discount_amount,
-                        "discounted_price"     : product_data.price - discount_amount,
+                        "discounted_price"     : product_data.base_price - discount_amount,
                         "discount_name"        : discount['offer_name']
                     }
-        total_rating_details = total_ratings_map.get(product_id,'') 
-        # field_name = 'category_name' 
-        # category_name = get_info(field_name,ProductCategory,product_data.category_id)
-        category_id=product_data.category_id
-        category_query = text(
+              base_price = product_data.base_price
+              additional_price_per_user = product_data.additional_price_per_user
+              discounted_amount = base_price - discount_amount if discount else base_price    
+              price_details = {
+                      "base_price": base_price,
+                      "additional_price_per_user": additional_price_per_user,
+                      "discount_percentage": discount_percentage,
+                      "discount_amount": discount_amount,
+                      "discounted_amount": discounted_amount
+                     }   
+           total_rating_details = total_ratings_map.get(product_id,'') 
+           # field_name = 'category_name' 
+           # category_name = get_info(field_name,ProductCategory,product_data.category_id)
+           category_id=product_data.product_category_category_id
+           category_query = text(
             "SELECT category_name "
             "FROM product_category "
            
             "WHERE id = :category_id "         
-            
-        )
+            )
         
-        # Execute the query with parameters
-        params = {'category_id': category_id}
+           # Execute the query with parameters
+           params = {'category_id': category_id}
         
-        category_name = db.execute(category_query, params).first()
+           category_name = db.execute(category_query, params).first()
 
-        # response.append({
-        response_item={
+           group_id=product_data.product_group_id
+           group_query = text(
+            "SELECT group_name " 
+            "FROM product_group "
+            "WHERE id = :group_id "         
+           )
+           # Execute the query with parameters
+           params = {'group_id': group_id}
+        
+           group_name = db.execute(group_query, params).first()
+           
+           # Fetch product features
+           feature_query = text(
+              "SELECT feature "
+              "FROM product_features "
+              "WHERE product_master_id = :product_id AND is_deleted = 'no'"
+              )
+           params = {'product_id': product_id}
+           product_features = db.execute(feature_query, params).fetchall()
+
+           features = [{"feature_name": feature.feature} for feature in product_features]
+
+           prod_master_query = text(
+                "SELECT has_instalments,is_deleted "
+                "FROM product_master "
+                "WHERE id = :product_id"
+            )
+           params = {'product_id': product_id}
+           master_det = db.execute(prod_master_query, params).first()
+
+           has_instalments = master_det.has_instalments if master_det else None
+           is_deleted = master_det.is_deleted if master_det else None
+
+           # response.append({
+           response_item={
             "product_master_id": product_data.product_master_id,
             "product_master_price_id": product_data.product_master_price_id,
-            "product_name"  : product_data.product_name,
-            "product_code"  : product_data.product_code,
-            "category_name"   : category_name[0],
+            "product_name"      : product_data.product_master_product_name,
+            "product_code"      : product_data.product_master_product_code,
+            "category_id"  : category_id,
+            "category_name"  : category_name[0],
+            "group_id"  : group_id,
+            "group_name"   : group_name,
+            "has_module"   : product_data.product_master_has_module,
+            "minimum_user" : product_data.product_master_price_minimum_user,
+            "maximum_user" : product_data.product_master_price_maximum_user,
+            "has_instalments"  : has_instalments,
+            "is_deleted"       : is_deleted,
             "image_url"     : image_path,
+            "price_details": price_details,
+            "features"    : features
             # "image_url":  f"{BASE_URL}/product/save_product_master/{product_master_image_filename}",
             # "offer_price"   : product_data.price,
-            "price": product_data.price,
+            #"price": product_data.price,
             # "discount"      : discount_info  if discount_info else None,
-            "description"   :product_data.product_description_main, 
-            # "total_rating": total_ratings_map.get(product_id,''),
+            #"total_rating": total_ratings_map.get(product_id,''),
             
-        }
-        if total_rating_details:
+           }
+           if total_rating_details:
              response_item["total_rating"]= total_rating_details
-        if discount_info:
-            response_item["discount"] = discount_info
+           if discount_info:
+             response_item["discount"] = discount_info
         
-# Append the response item to the response list
-        response.append(response_item)
+           # Append the response item to the response list
+           response.append(response_item)
 
-    return response
+        return response
 
     
 

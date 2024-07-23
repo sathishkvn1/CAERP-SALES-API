@@ -611,7 +611,7 @@ def delete_product_video(
 @router.post('/save_product_features/{feature_id}', response_model=ProductFeaturesSchema)
 def save_product_feature(
         product_feature_data: ProductFeaturesSchema ,
-        feature_id: int =0,  # Default to 0 for add operation
+        feature_id: int = 0,  # Default to 0 for add operation
         db: Session = Depends(get_db),
         token: str = Depends(oauth2.oauth2_scheme)):
     if not token:
@@ -1138,7 +1138,6 @@ def save_offer_details(
 
     Parameters:
     - data (List[SaveOfferDetailsRequest]): The list of offer data to save or update. This data contains both master data and details.
-    - action_type (RecordActionType): The action to perform. Use INSERT_ONLY to add new rows or UPDATE_ONLY to update existing rows.
     - apply_to (ApplyTo): Determines the scope of application. Use ALL to apply to all products, otherwise use SELECT for selected products.
     - id (Optional[int]): The ID of the offer master to update. Required for updating an existing offer master data. Default value is 0.
     - db (Session): The database session dependency.
@@ -1230,7 +1229,6 @@ def save_coupon_details(
 
     Parameters:
     - coupon_data (List[SaveCouponDetails]): The list of coupon data to save or update. This data contains both master data and details.
-    - action_type (RecordActionType): The action to perform. Use INSERT_ONLY to add new rows or UPDATE_ONLY to update existing rows.
     - apply_to (ApplyTo): Determines the scope of application. Use ALL to apply to all products, otherwise use SELECT for selected products.
     - id (Optional[int]): The ID of the coupon master to update. Required for updating an existing coupon master data. Default value is 0.
     - db (Session): The database session dependency.
