@@ -6,7 +6,7 @@ from UserDefinedConstants.user_defined_constants import ActiveStatus
 from caerp_auth.authentication import authenticate_user
 from caerp_db.models import  AdminUser,ProductMasterPrice,OfferDetails,OfferMaster,OfferCategory,ProductModulePrice, Designation,ProductRating,ViewProductModulePrice,CustomerRegister,ViewProductMasterPrice,InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
 from caerp_db.models import CartDetails,CouponMaster,ProductFeatures, ProductGroup, CouponDetails
-from caerp_schemas import AdminUserBaseForDelete,CartDetailsSchema,CouponMasterSchema,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema, ProductFeaturesSchema, ProductFeaturesSchemaResponse, ProductMasterSchemaResponse, SaveCouponDetails
+from caerp_schemas import AdminUserBaseForDelete,CartDetailsSchema,CouponMasterSchema,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema, ProductFeaturesSchema, ProductFeaturesSchemaResponse, ProductMasterSchemaResponse, SaveCouponDetails, CouponDetailsSchema, CouponMasterSchemaResponse,OfferMasterSchemaResponse
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 from sqlalchemy import text, select
@@ -1113,10 +1113,12 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
                         "discounted_price"     : product_data.base_price - discount_amount,
                         "discount_name"        : discount_name
                     }
-            base_price = product_data.base_price
-            additional_price_per_user = product_data.additional_price_per_user
-            discounted_amount = base_price - discount_amount if discount else base_price    
-            price_details = {
+            price_details = None
+            if product_data.base_price is not None and product_data.additional_price_per_user is not None:    
+              base_price = product_data.base_price
+              additional_price_per_user = product_data.additional_price_per_user
+              discounted_amount = base_price - discount_amount if discount else base_price    
+              price_details = {
                       "base_price": base_price,
                       "additional_price_per_user": additional_price_per_user,
                       "discount_percentage": discount_percentage,
@@ -1211,12 +1213,14 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
                 "maximum_user" : product_data.product_master_price_maximum_user,
                 "has_instalments"  : has_instalments,
                 # "is_deleted"       : is_deleted,
-                "price_details": price_details,
+                # "price_details": price_details,
                  "features"    : features,
                  "modules"     : modules  
                 # "total_rating": total_ratings_map.get(product_id,''),
                 # "ratings"           :  product_ratings
             }
+        if price_details:
+            response_item["price_details"] = price_details    
         if total_rating_details:
               response_item["total_rating"] = total_rating_details
         # if product_ratings:
@@ -1260,10 +1264,12 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
                         "discounted_price"     : product_data.base_price - discount_amount,
                         "discount_name"        : discount['offer_name']
                     }
-              base_price = product_data.base_price
-              additional_price_per_user = product_data.additional_price_per_user
-              discounted_amount = base_price - discount_amount if discount else base_price    
-              price_details = {
+              price_details = None
+              if product_data.base_price is not None and product_data.additional_price_per_user is not None:
+                 base_price = product_data.base_price
+                 additional_price_per_user = product_data.additional_price_per_user
+                 discounted_amount = base_price - discount_amount if discount else base_price    
+                 price_details = {
                       "base_price": base_price,
                       "additional_price_per_user": additional_price_per_user,
                       "discount_percentage": discount_percentage,
@@ -1335,7 +1341,7 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
             "has_instalments"  : has_instalments,
             "is_deleted"       : is_deleted,
             "image_url"     : image_path,
-            "price_details": price_details,
+            # "price_details": price_details,
             "features"    : features
             # "image_url":  f"{BASE_URL}/product/save_product_master/{product_master_image_filename}",
             # "offer_price"   : product_data.price,
@@ -1344,6 +1350,8 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
             #"total_rating": total_ratings_map.get(product_id,''),
             
            }
+           if price_details:
+            response_item["price_details"] = price_details
            if total_rating_details:
              response_item["total_rating"]= total_rating_details
            if discount_info:
@@ -1445,29 +1453,68 @@ def get_all_offer_list(
                         
                         ):
     try:
-        current_date = datetime.today()
-        query = db.query(OfferMaster).filter(OfferMaster.is_deleted == 'no')
-        
-        if category_id:
-            query = query.filter(OfferMaster.offer_category_id == category_id)
-        
         if offer_master_id:
-            query = query.filter(OfferMaster.id == offer_master_id)
+           offer = db.query(OfferMaster).filter(OfferMaster.id == offer_master_id,OfferMaster.is_deleted == 'no').first()  
+
+           if offer is None:
+              raise HTTPException(status_code=400, detail="Offer not found")
+
+           details_query = db.query(OfferDetails).filter(
+                         and_(
+                             OfferDetails.offer_master_id == offer.id,
+                             OfferDetails.is_deleted == 'no'
+                         )
+                     )
+           details_data = details_query.all()
+
+           details = [
+                        OfferDetailsSchema(
+                             id=detail.id,
+                             offer_master_id=detail.offer_master_id,
+                             product_master_id=detail.product_master_id,
+                             is_deleted=detail.is_deleted
+                         ) for detail in details_data
+                     ] 
+          
+           result = []
+           
+           result.append(
+                         OfferMasterSchemaResponse(
+                             id=offer.id,
+                             offer_category_id=offer.offer_category_id,
+                             offer_name=offer.offer_name,
+                             offer_percentage=offer.offer_percentage,
+                             effective_from_date=offer.effective_from_date,
+                             effective_to_date=offer.effective_to_date,
+                             is_deleted=offer.is_deleted,
+                             details=details
+                         )
+                     )
+           return result
+        else:
+            current_date = datetime.today()
+            query = db.query(OfferMaster).filter(OfferMaster.is_deleted == 'no')
         
-        if operator:
-            if operator == Status.CURRENT:
-                query = query.filter(
+            if category_id:
+              query = query.filter(OfferMaster.offer_category_id == category_id)
+        
+                 
+            if operator:
+               if operator == Status.CURRENT:
+                  query = query.filter(
                     OfferMaster.effective_from_date <= current_date,
                     OfferMaster.effective_to_date >= current_date
-                )
-            elif operator == Status.UPCOMMING:
-                query = query.filter(OfferMaster.effective_from_date > current_date)
-            elif operator == Status.EXPIRED:
-                query = query.filter(OfferMaster.effective_to_date < current_date)
+                  )
+               elif operator == Status.UPCOMMING:
+                 query = query.filter(OfferMaster.effective_from_date > current_date)
+               elif operator == Status.EXPIRED:
+                 query = query.filter(OfferMaster.effective_to_date < current_date)
         
-        offer_master_data = query.all()
-        print(query.statement.compile(compile_kwargs={"literal_binds": True}))
-        return offer_master_data
+            offer_master_data = query.all()
+            if offer_master_data:
+              return offer_master_data
+            else:
+             raise HTTPException(status_code=400, detail="offer not found")
     except Exception as e:
         print("Error:", e)  # Print the exception message for debugging
         raise HTTPException(status_code=500, detail=str(e))
@@ -2015,13 +2062,51 @@ def get_all_coupon_list(
                         operator : Optional[Status] = None 
                        ):
     try:
-        current_date = datetime.today()
-        query = db.query(CouponMaster).filter(CouponMaster.is_deleted == 'no')
-        
+                        
         if coupon_master_id:
-            query = query.filter(CouponMaster.id == coupon_master_id)
+          coupon = db.query(CouponMaster).filter(CouponMaster.id == coupon_master_id,CouponMaster.is_deleted == 'no').first()  
+
+          if coupon is None:
+              raise HTTPException(status_code=400, detail="Coupon not found")
+
+          details_query = db.query(CouponDetails).filter(
+                        and_(
+                            CouponDetails.coupon_master_id == coupon.id,
+                            CouponDetails.is_deleted == 'no'
+                        )
+                    )
+          details_data = details_query.all()
+
+          details = [
+                        CouponDetailsSchema(
+                            id=detail.id,
+                            coupon_master_id=detail.coupon_master_id,
+                            product_master_id=detail.product_master_id,
+                            is_deleted=detail.is_deleted
+                        ) for detail in details_data
+                    ] 
+          
+          result = []
+           
+          result.append(
+                        CouponMasterSchemaResponse(
+                            id=coupon.id,
+                            coupon_name=coupon.coupon_name,
+                            coupon_code=coupon.coupon_code,
+                            coupon_percentage=coupon.coupon_percentage,
+                            effective_from_date=coupon.effective_from_date,
+                            effective_to_date=coupon.effective_to_date,
+                            is_deleted=coupon.is_deleted,
+                            details=details
+                        )
+                    )
+          return result
+        else:
+          current_date = datetime.today()
+          query = db.query(CouponMaster).filter(CouponMaster.is_deleted == 'no')
+        #   query = query.filter(CouponMaster.id == coupon_master_id)
         
-        if operator:
+          if operator:
             if operator == Status.CURRENT:
                 query = query.filter(
                     CouponMaster.effective_from_date <= current_date,
@@ -2032,11 +2117,11 @@ def get_all_coupon_list(
             elif operator == Status.EXPIRED:
                 query = query.filter(CouponMaster.effective_to_date < current_date)
         
-        coupon_master_data = query.all()
-        if coupon_master_data:
-          return coupon_master_data
-        else:
-          raise HTTPException(status_code=400, detail="coupon not found")  
+          coupon_master_data = query.all()
+          if coupon_master_data:
+            return coupon_master_data
+          else:
+           raise HTTPException(status_code=400, detail="coupon not found")  
     except Exception as e:
         print("Error:", e)  # Print the exception message for debugging
         raise HTTPException(status_code=500, detail=str(e))

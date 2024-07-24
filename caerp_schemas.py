@@ -1828,6 +1828,14 @@ class OfferMasterSchema(BaseModel):
     effective_from_date : date
     effective_to_date   : Optional[date] =None
 
+
+class OfferDetailsSchema(BaseModel):
+
+    offer_master_id     : Optional[int] = None
+    product_master_id   : Optional[int] = None
+    is_deleted : str
+
+
 class OfferMasterSchemaResponse(BaseModel):
 
     id                 : Optional[int] = None
@@ -1836,24 +1844,23 @@ class OfferMasterSchemaResponse(BaseModel):
     offer_percentage    : Optional[float]= None
     effective_from_date : date
     effective_to_date   : Optional[date] =None   
-    created_by: int
-    created_on: datetime
-    modified_by: Optional[int]
-    modified_on: Optional[datetime]
+    # created_by: int
+    # created_on: datetime
+    # modified_by: Optional[int]
+    # modified_on: Optional[datetime]
     is_deleted: str
-    deleted_by: Optional[int]
-    deleted_on: Optional[datetime] 
+    # deleted_by: Optional[int]
+    # deleted_on: Optional[datetime] 
+    details: List[OfferDetailsSchema] = []
    
 
-class OfferDetailsSchema(BaseModel):
-
-    offer_master_id     : Optional[int] = None
-    product_master_id   : Optional[int] = None
 
 class SaveOfferDetailsRequest(BaseModel):
 
     master: list[OfferMasterSchema]
     details: Optional[list[OfferDetailsSchema]]=None 
+
+
 
 class CartDetailsSchema(BaseModel):
 
@@ -1870,6 +1877,12 @@ class CouponMasterSchema(BaseModel):
     effective_from_date : date
     effective_to_date   : Optional[date]
 
+class CouponDetailsSchema(BaseModel):
+
+    coupon_master_id     : Optional[int] = None
+    product_master_id   : Optional[int] = None
+    is_deleted : str
+
 class CouponMasterSchemaResponse(BaseModel):
     id : int
     coupon_name : str
@@ -1879,11 +1892,9 @@ class CouponMasterSchemaResponse(BaseModel):
     effective_from_date : date
     effective_to_date   : Optional[date]
     is_deleted: str
+    details: List[CouponDetailsSchema] = []
 
-class CouponDetailsSchema(BaseModel):
 
-    coupon_master_id     : Optional[int] = None
-    product_master_id   : Optional[int] = None
 
 class SaveCouponDetails(BaseModel):
 

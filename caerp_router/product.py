@@ -1119,7 +1119,7 @@ def get_all_offer_list(
     db: Session = Depends(get_db)
 ):
     offer_list= db_product.get_all_offer_list(db,category_id,offer_master_id,offers)
-    return offer_list
+    return offer_list if offer_list is not None else []
 
 
 
@@ -1286,7 +1286,7 @@ def get_all_coupon_list(
 
     """
     coupon_list= db_product.get_all_coupon_list(db,coupon_master_id,coupons)
-    return coupon_list
+    return coupon_list if coupon_list is not None else []
 
 
 @router.delete("/delete_coupon_master")
