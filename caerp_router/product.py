@@ -461,9 +461,9 @@ def get_product_module_by_product_id(
      db: Session = Depends(get_db)
      ):
     product_module_details = db_product.get_product_module_by_product_id(db, id)
-    if not product_module_details:
-        raise HTTPException(status_code=404, detail="No products found for this id")
-    return product_module_details
+    # if not product_module_details:
+    #     raise HTTPException(status_code=404, detail="No products found for this id")
+    return product_module_details if product_module_details is not None else []
 
 
 
@@ -628,15 +628,16 @@ def save_product_feature(
 
 
 
-@router.get("/get_product_feature_by_id/{product_id}", response_model=List[ProductFeaturesSchemaResponse])
+@router.get("/get_product_feature_by_id", response_model=List[ProductFeaturesSchemaResponse])
 def get_product_feature_by_id(
-    product_id: int,
+    product_master_id: int,
+    product_feature_id: Optional[int] = None,
      db: Session = Depends(get_db)
      ):
-    product_feature_details = db_product.get_product_feature_by_id(db, product_id)
-    if not product_feature_details:
-        raise HTTPException(status_code=404, detail="No product feature found for this id")
-    return product_feature_details
+    product_feature_details = db_product.get_product_feature_by_id(db, product_master_id, product_feature_id)
+    # if not product_feature_details:
+    #     raise HTTPException(status_code=404, detail="No product feature found for this product")
+    return product_feature_details if product_feature_details is not None else []
 
 
 
@@ -861,8 +862,7 @@ def get_price_list_master(
         price_list_results =db_product.get_price_list_master(db,product_id,product_price_id,product_name,requested_date,operator)
 
         if not price_list_results:
-           raise HTTPException(status_code=404, detail="No price list found for the given criteria")
-
+           return []
         # return price_list_results
         # products: Dict[int, Dict[str, any]] = {}
         products: List[Dict[str, any]] = []
@@ -886,8 +886,8 @@ def get_price_list_master(
                 "additional_price_per_user": result.additional_price_per_user,
                 "gst_rate": result.product_master_price_gst_rate,
                 "cess_rate": result.product_master_price_cess_rate,
-                "minimum_user": result.product_master_price_minimum_user,
-                "maximum_user": result.product_master_price_maximum_user,
+                # "minimum_user": result.product_master_price_minimum_user,
+                # "maximum_user": result.product_master_price_maximum_user,
                 "effective_from_date": result.effective_from_date,
                 "effective_to_date": result.effective_to_date,
                 "has_module":result.product_master_has_module,
@@ -940,7 +940,7 @@ def get_price_list_module(
         price_list_results =db_product.get_price_list_module(db,product_master_id,module_name,module_id,product_module_price_id,product_master_price_id,requested_date,operator)
         
         if not price_list_results:
-           raise HTTPException(status_code=404, detail="No price list found for the given criteria")
+           return []
 
         # return price_list_results
         # products: Dict[int, Dict[str, any]] = {}
@@ -960,8 +960,8 @@ def get_price_list_module(
                 "product_master_price_base_price": result.product_master_price_base_price,
                 "product_master_price_gst_rate": result.product_master_price_gst_rate,
                 "product_master_price_cess_rate": result.product_master_price_cess_rate,
-                "product_master_price_minimum_user": result.product_master_price_minimum_user,
-                "product_master_price_maximum_user": result.product_master_price_maximum_user,             
+                # "product_master_price_minimum_user": result.product_master_price_minimum_user,
+                # "product_master_price_maximum_user": result.product_master_price_maximum_user,             
                 "module_base_price": result.module_base_price,
                 "additional_price_per_user": result.additional_price_per_user,
                 "gst_rate": result.gst_rate,
@@ -1127,7 +1127,7 @@ def get_all_offer_list(
 def save_offer_details(
     
     data: List[SaveOfferDetailsRequest], 
-    apply_to : ApplyTo,
+    # apply_to : ApplyTo,
     id: Optional[int] = 0 ,
     db: Session = Depends(get_db),
     token: str = Depends(oauth2.oauth2_scheme)
@@ -1138,7 +1138,6 @@ def save_offer_details(
 
     Parameters:
     - data (List[SaveOfferDetailsRequest]): The list of offer data to save or update. This data contains both master data and details.
-    - apply_to (ApplyTo): Determines the scope of application. Use ALL to apply to all products, otherwise use SELECT for selected products.
     - id (Optional[int]): The ID of the offer master to update. Required for updating an existing offer master data. Default value is 0.
     - db (Session): The database session dependency.
     - token (str): The authorization token dependency.
@@ -1156,7 +1155,7 @@ def save_offer_details(
     try:
         for offer_master in data:
             db_product.save_offer_details(
-                db, id, offer_master, user_id, apply_to
+                db, id, offer_master, user_id
             )
 
         return {"success": True, "message": "Saved successfully"}
@@ -1219,7 +1218,6 @@ def save_cart_details(
 @router.post("/save_coupon_details")
 def save_coupon_details(
     coupon_data : List[SaveCouponDetails],
-    apply_to: ApplyTo,
     id: Optional[int]= 0,
     db: Session =Depends(get_db),
     token: str = Depends(oauth2.oauth2_scheme)
@@ -1229,7 +1227,6 @@ def save_coupon_details(
 
     Parameters:
     - coupon_data (List[SaveCouponDetails]): The list of coupon data to save or update. This data contains both master data and details.
-    - apply_to (ApplyTo): Determines the scope of application. Use ALL to apply to all products, otherwise use SELECT for selected products.
     - id (Optional[int]): The ID of the coupon master to update. Required for updating an existing coupon master data. Default value is 0.
     - db (Session): The database session dependency.
     - token (str): The authorization token dependency.
@@ -1246,7 +1243,7 @@ def save_coupon_details(
     
     try:
         for coupon in coupon_data:
-           db_product.save_coupon(db,id,coupon,user_id,apply_to)
+           db_product.save_coupon(db,id,coupon,user_id)
         
         return {"success": True, "message": "Saved successfully"}
         

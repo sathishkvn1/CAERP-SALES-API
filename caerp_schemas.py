@@ -1795,8 +1795,8 @@ class ProductMasterPriceSchema(BaseModel):
     additional_price_per_user : float
     gst_rate : float 
     cess_rate : float  
-    minimum_user : int
-    maximum_user : Optional[int] = None
+    # minimum_user : int
+    # maximum_user : Optional[int] = None
     effective_from_date : date
     effective_to_date : Optional[str]= None
 
@@ -1819,6 +1819,8 @@ class  OfferCategoryResponse(BaseModel):
     id              : int
     offer_category  : str
 
+
+
 class OfferMasterSchema(BaseModel):
 
     # id                 : Optional[int] = None
@@ -1831,9 +1833,8 @@ class OfferMasterSchema(BaseModel):
 
 class OfferDetailsSchema(BaseModel):
 
-    offer_master_id     : Optional[int] = None
     product_master_id   : Optional[int] = None
-    is_deleted : str
+    # is_deleted : str
 
 
 class OfferMasterSchemaResponse(BaseModel):
@@ -1857,17 +1858,18 @@ class OfferMasterSchemaResponse(BaseModel):
 
 class SaveOfferDetailsRequest(BaseModel):
 
-    master: list[OfferMasterSchema]
-    details: Optional[list[OfferDetailsSchema]]=None 
+    master: OfferMasterSchema
+    details: list[OfferDetailsSchema] 
 
 
 
 class CartDetailsSchema(BaseModel):
-
     
     product_master_id : int
     customer_id       : int
     saved_for_later   : Optional[BooleanFlag] ='no'
+
+
 
 class CouponMasterSchema(BaseModel):
     coupon_name : str
@@ -1879,9 +1881,8 @@ class CouponMasterSchema(BaseModel):
 
 class CouponDetailsSchema(BaseModel):
 
-    coupon_master_id     : Optional[int] = None
     product_master_id   : Optional[int] = None
-    is_deleted : str
+    # is_deleted : str
 
 class CouponMasterSchemaResponse(BaseModel):
     id : int
@@ -1898,8 +1899,8 @@ class CouponMasterSchemaResponse(BaseModel):
 
 class SaveCouponDetails(BaseModel):
 
-    master: list[CouponMasterSchema]
-    details: Optional[list[CouponDetailsSchema]]=None     
+    master: CouponMasterSchema
+    details: list[CouponDetailsSchema]     
 
 
 
