@@ -2,11 +2,11 @@
 from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File
 from typing import List, Optional,Dict,Any
 from UserDefinedConstants.user_defined_constants import DeletedStatus,Operator,Status,RecordActionType,ApplyTo
-from UserDefinedConstants.user_defined_constants import ActiveStatus
+from UserDefinedConstants.user_defined_constants import ActiveStatus, InstallmentStatus
 from caerp_auth.authentication import authenticate_user
 from caerp_db.models import  AdminUser,ProductMasterPrice,OfferDetails,OfferMaster,OfferCategory,ProductModulePrice, Designation,ProductRating,ViewProductModulePrice,CustomerRegister,ViewProductMasterPrice,InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
 from caerp_db.models import CartDetails,CouponMaster,ProductFeatures, ProductGroup, CouponDetails
-from caerp_schemas import AdminUserBaseForDelete,CartDetailsSchema,CouponMasterSchema,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema, ProductFeaturesSchema, ProductFeaturesSchemaResponse, ProductMasterSchemaResponse, SaveCouponDetails, CouponDetailsSchema, CouponMasterSchemaResponse,OfferMasterSchemaResponse
+from caerp_schemas import AdminUserBaseForDelete,CartDetailsSchema,CouponMasterSchema,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema, ProductFeaturesSchema, ProductFeaturesSchemaResponse, ProductMasterSchemaResponse, SaveCouponDetails, CouponDetailsSchema, CouponMasterSchemaResponse,OfferMasterSchemaResponse, InstallmentDetailsForGet
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 from sqlalchemy import text, select
@@ -788,7 +788,7 @@ def set_new_price(
     if record_actions == RecordActionType.UPDATE_ONLY:
         price_list = db.query(ProductMasterPrice).filter(ProductMasterPrice.id == price_id).first()
         if price_list is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price List not found")
+           return []
 
         for key, value in price_list_data_dict.items():
             setattr(price_list, key, value)
@@ -801,7 +801,8 @@ def set_new_price(
     else:
         # Create a new price list entry
         existing_price_list = db.query(ProductMasterPrice).filter(
-            ProductMasterPrice.product_master_id == product_master_id
+            ProductMasterPrice.product_master_id == product_master_id,
+            ProductMasterPrice.is_deleted == 'no'
         ).order_by(ProductMasterPrice.effective_from_date.desc()).first()
 
         price_list_data_dict["created_on"] = datetime.utcnow()
@@ -811,7 +812,7 @@ def set_new_price(
         if existing_price_list is not None:
             existing_price_list.modified_on = datetime.utcnow()
             existing_price_list.modified_by = user_id
-            existing_price_list.effective_to_date = new_price_list.effective_from_date
+            existing_price_list.effective_to_date = new_price_list.effective_from_date - timedelta(days=1)
 
         db.add(new_price_list)
         db.commit()
@@ -889,7 +890,7 @@ def set_new_module_price(db:Session, price_data:ProductModulePriceSchema,user_id
        if record_actions==RecordActionType.UPDATE_ONLY:
             price_list = db.query(ProductModulePrice).filter(ProductModulePrice .id == price_id).first()
             if price_list is None:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price List not found")
+               return [] 
             # price_list_data_dict = price_data.dict(exclude_unset=True)# Ensure effective_to_date is properly handled
             # if 'effective_to_date' in price_list_data_dict:
             #     if price_list_data_dict['effective_to_date'] == '':
@@ -909,7 +910,9 @@ def set_new_module_price(db:Session, price_data:ProductModulePriceSchema,user_id
         # price_list_data_dict = price_data.dict()
         product_master_price_id = price_list_data_dict.get("product_master_price_id")
         existing_price_list = db.query(ProductModulePrice).filter(
-                    ProductModulePrice.product_master_price_id == product_master_price_id).order_by(
+                    ProductModulePrice.product_master_price_id == product_master_price_id,
+                    ProductModulePrice.is_deleted == 'no'
+                    ).order_by(
                     ProductModulePrice.effective_from_date.desc()).first()
         # if not existing_price_list:
         price_list_data_dict["created_on"] = datetime.utcnow()
@@ -918,13 +921,11 @@ def set_new_module_price(db:Session, price_data:ProductModulePriceSchema,user_id
         if existing_price_list is not None:
             existing_price_list.modified_on = datetime.utcnow()
             existing_price_list.modified_by = user_id
-            existing_price_list.effective_to_date = new_price_list.effective_from_date
+            existing_price_list.effective_to_date = new_price_list.effective_from_date - timedelta(days=1)
         db.add(new_price_list)
         db.commit()
         db.refresh(new_price_list)
         return new_price_list
-
-
 
 
 
@@ -959,7 +960,7 @@ def save_product_rating(db: Session, request: ProductRating, id: int,user_id: in
    
    
      
-def get_product_complete_details(product_id : Optional[int]=None,db: Session = Depends(get_db)):
+def get_product_complete_details(product_id : Optional[int]=None, page: Optional[int] = None, page_size: Optional[int] = None, db: Session = Depends(get_db)):
     requested_date = datetime.today()
     product_ratings = [
     {"star": '1', "count": 0},
@@ -967,26 +968,17 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
     {"star": '3', "count": 0},
     {"star": '4', "count": 0},
     {"star": '5', "count": 0}
-]
+   ]
     # Fetch product master data
     product_master_query = db.query(ViewProductMasterPrice).filter(
          ViewProductMasterPrice.is_deleted =='no',
         ViewProductMasterPrice.effective_from_date <= requested_date,       
-            ViewProductMasterPrice.effective_to_date >= requested_date
-         
-    )
-
-    if product_id:
-        product_master_query = product_master_query.filter(
-            ViewProductMasterPrice.product_master_id == product_id,
-            
-        )
-
-    product_master_data = product_master_query.all()
-    if not product_master_data:
-        return []
-    
-    
+          or_(
+               ViewProductMasterPrice.effective_to_date >= requested_date,
+               ViewProductMasterPrice.effective_to_date == None
+             )
+          )
+                   
     # Query for total rating count and average rating
     if product_id:
 
@@ -1005,7 +997,6 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
             "WHERE product_master_id = :product_id AND effective_from_date <= :requested_date AND effective_to_date >= :requested_date"
         )
         discount_details = db.execute(discount_query, {'product_id': product_id, 'requested_date':requested_date}).fetchall()
-
 
         total_query = text(
             "SELECT product_master_id, COUNT(product_master_id) AS total_rating_count, "
@@ -1086,9 +1077,19 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
                 product_ratings[4]["count"] = count
 
        # print(product_master_query.statement.compile(compile_kwargs={"literal_binds": True}))
-
     
     if product_id:
+        product_master_query = product_master_query.filter(
+            ViewProductMasterPrice.product_master_id == product_id,
+        )
+
+        if page is not None or page_size is not None:
+           return {"message": "page and page size is not required when product master id is given"}
+        
+        product_master_data = product_master_query.all()
+        if not product_master_data:
+          return []
+        
         product_master_image_filename= f"{product_id}.jpg"
         # image_path = os.path.join(UPLOAD_DIR_MASTER_IMAGE_VIDEO, product_master_image_filename)
         # image_path = f"{BASE_URL}/uploads/product_master_image_video/{product_master_image_filename}"
@@ -1125,21 +1126,10 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
                         "discounted_price"     : product_data.base_price - discount_amount,
                         "discount_name"        : discount_name
                     }
-            # price_details = None
-            # base_price = 0
-            # additional_price_per_user = 0
-            # if product_data.base_price is not None and product_data.additional_price_per_user is not None:    
-            #   base_price = product_data.base_price
-            #   additional_price_per_user = product_data.additional_price_per_user
-            #   discounted_amount = base_price - discount_amount if discount else base_price    
-            #   price_details = {
-            #           "base_price": base_price,
-            #           "additional_price_per_user": additional_price_per_user,
-            #           "discount_percentage": discount_percentage,
-            #           "discount_amount": discount_amount,
-            #           "discounted_amount": discounted_amount
-            #          }
- 
+            price_details = None
+            base_price = 0
+            additional_price_per_user = 0
+             
             total_rating_details = total_ratings_map.get(product_id,'')
 
             product_master_image_filename= f"{product_id}.jpg"
@@ -1149,8 +1139,7 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
             "SELECT category_name " 
             "FROM product_category "
             "WHERE id = :category_id "         
-            
-             )
+            )
         
             # Execute the query with parameters
             params = {'category_id': category_id}
@@ -1183,18 +1172,7 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
             min_no_of_users = master_det.min_no_of_users if master_det else None
             max_no_of_users = master_det.max_no_of_users if master_det else None
             # is_deleted = master_det.is_deleted if master_det else None
-
-            # Fetch product modules
-            module_query = text(
-              "SELECT module_name, module_description "
-              "FROM product_module "
-              "WHERE product_master_id = :product_id AND is_deleted = 'no'"
-             )
-            params = {'product_id': product_id}
-            product_modules = db.execute(module_query, params).fetchall()
-
-            modules = [{"module_name": module.module_name, "module_description": module.module_description} for module in product_modules]
-
+            
             # Fetch product features
             feature_query = text(
               "SELECT feature "
@@ -1205,25 +1183,15 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
             product_features = db.execute(feature_query, params).fetchall()
 
             features = [{"feature_name": feature.feature} for feature in product_features]
-            discount_amount = 0
-            discount_percentage = 0
-          
-            if discount:
-              if discount['offer_percentage']:
-                  discount_amount = product_data.base_price*(discount['offer_percentage']/100)
-                  discount_percentage =discount['offer_percentage']
+           
             base_price = product_data.base_price
             additional_price_per_user = product_data.additional_price_per_user
-            discounted_amount = base_price - discount_amount if discount else base_price
-            print(discount_percentage)
+                        
             price_details = {
             "base_price": base_price,
-            "additional_price_per_user": additional_price_per_user,
-            "discount_percentage": discount_percentage,
-            "discount_amount": discount_amount,
-            "discounted_amount": discounted_amount
-           }
-
+            "additional_price_per_user": additional_price_per_user
+            }
+           
             response_item={
                 "product_master_id" : product_data.product_master_id,
                 "product_master_price_id": product_data.product_master_price_id,
@@ -1249,25 +1217,58 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
                 # "is_deleted"       : is_deleted,
                 "price_details": price_details,
                  "features"    : features,
-                 "modules"     : modules  
                 # "total_rating": total_ratings_map.get(product_id,''),
                 # "ratings"           :  product_ratings
             }
-        # if price_details:
-        #     response_item["price_details"] = price_details    
-        if total_rating_details:
+            if product_data.product_master_has_module == 'yes':
+               module_query = text(
+               "SELECT module_name, module_description "
+               "FROM product_module "
+               "WHERE product_master_id = :product_id AND is_deleted = 'no'"
+                )
+               params = {'product_id': product_id}
+               product_modules = db.execute(module_query, params).fetchall()
+               modules = [{"module_name": module.module_name, "module_description": module.module_description} for module in product_modules]
+               response_item["modules"] = modules
+                
+            if total_rating_details:
               response_item["total_rating"] = total_rating_details
-        # if product_ratings:
-              response_item["ratings"] = product_ratings
+            # if product_ratings:
+            response_item["ratings"] = product_ratings
 
-        if discount:
-                    response_item["discount"] = discount_info
+            if discount:
+              response_item["discount"] = discount_info
 
-        # Append the response item to the response list
-        response.append(response_item)
+            # Append the response item to the response list
+            response.append(response_item)
         return response
     else:
-        response = []
+        # Calculate total records
+        total_records = product_master_query.count()
+    
+        # #apply pagination
+        if page and page_size:
+           product_master_data = product_master_query.offset((page - 1) * page_size).limit(page_size).all()
+        else:
+           product_master_data = product_master_query.all()
+        if not product_master_data:
+           return []
+    
+        # # Calculate total pages
+        total_pages = 0
+        if page_size:
+           total_pages = (total_records + page_size - 1)
+
+        response = {
+            "pagination": {
+                "total_records": total_records,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": total_pages
+            },
+            "products": []
+          }
+        
         for product_data in product_master_data:
            product_id = product_data.product_master_id
            product_master_image_filename= f"{product_id}.jpg"
@@ -1290,28 +1291,18 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
               #         discount_amount     = discount['offer_amount']
                     # print("discount amount", discount_percentage)
               if discount['offer_percentage']:
-                        discount_amount = product_data.base_price*(discount['offer_percentage']/100)
-                        discount_percentage =discount['offer_percentage']
+                 discount_amount = product_data.base_price*(discount['offer_percentage']/100)
+                 discount_percentage =discount['offer_percentage']
               discount_info = {
                         "discount_percentage" : discount_percentage,
                         "discount_amount"      : discount_amount,
                         "discounted_price"     : product_data.base_price - discount_amount,
                         "discount_name"        : discount['offer_name']
                     }
-            #   price_details = None
-            #   base_price = 0
-            #   additional_price_per_user = 0
-            #   if product_data.base_price is not None and product_data.additional_price_per_user is not None:
-            #      base_price = product_data.base_price
-            #      additional_price_per_user = product_data.additional_price_per_user
-            #      discounted_amount = base_price - discount_amount if discount else base_price    
-            #      price_details = {
-            #           "base_price": base_price,
-            #           "additional_price_per_user": additional_price_per_user,
-            #           "discount_percentage": discount_percentage,
-            #           "discount_amount": discount_amount,
-            #           "discounted_amount": discounted_amount
-            #          }   
+           price_details = None
+           base_price = 0
+           additional_price_per_user = 0
+            
            total_rating_details = total_ratings_map.get(product_id,'') 
            # field_name = 'category_name' 
            # category_name = get_info(field_name,ProductCategory,product_data.category_id)
@@ -1362,26 +1353,15 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
            min_no_of_users = master_det.min_no_of_users if master_det else None
            max_no_of_users = master_det.max_no_of_users if master_det else None
            is_deleted = master_det.is_deleted if master_det else None
-           discount_amount = 0
-           discount_percentage = 0
-          
-           if discount:
-              if discount['offer_percentage']:
-                  discount_amount = product_data.base_price*(discount['offer_percentage']/100)
-                  discount_percentage =discount['offer_percentage']
+
            base_price = product_data.base_price
            additional_price_per_user = product_data.additional_price_per_user
-           discounted_amount = base_price - discount_amount if discount else base_price
-           print(discount_percentage)
+                      
            price_details = {
             "base_price": base_price,
-            "additional_price_per_user": additional_price_per_user,
-            "discount_percentage": discount_percentage,
-            "discount_amount": discount_amount,
-            "discounted_amount": discounted_amount
-           }
-
-           # response.append({
+            "additional_price_per_user": additional_price_per_user
+          }
+                   
            response_item={
             "product_master_id": product_data.product_master_id,
             "product_master_price_id": product_data.product_master_price_id,
@@ -1406,16 +1386,15 @@ def get_product_complete_details(product_id : Optional[int]=None,db: Session = D
             #"total_rating": total_ratings_map.get(product_id,''),
             
            }
-        #    if price_details:
-        #     response_item["price_details"] = price_details
+           
            if total_rating_details:
              response_item["total_rating"]= total_rating_details
            if discount_info:
              response_item["discount"] = discount_info
         
            # Append the response item to the response list
-           response.append(response_item)
-
+           response["products"].append(response_item)
+       
         return response
 
     
@@ -2125,6 +2104,7 @@ def get_all_coupon_list(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
 def delete_coupon_master(db, coupon_master_id,action_type,deleted_by):
     existing_coupon = db.query(CouponMaster).filter(CouponMaster.id == coupon_master_id).first()
 
@@ -2155,6 +2135,69 @@ def delete_coupon_master(db, coupon_master_id,action_type,deleted_by):
 
         return {
                 "message": "Offer marked as Undeleted successfully",
-            }        
+            }     
+
+
+
+def get_all_installments(
+                        db : Session,
+                        status : InstallmentStatus,
+                        installment_master_id : Optional[int]=None,
+                        installment_detail_id : Optional[int] = None,
+                    ):
+    query = db.query(InstallmentMaster).filter(InstallmentMaster.is_deleted == 'no')
+
+    # Filter by status
+    if InstallmentStatus:
+       if status == InstallmentStatus.ACTIVE:
+          query = query.filter(InstallmentMaster.is_active == 'yes')
+       elif status == InstallmentStatus.INACTIVE:
+          query = query.filter(InstallmentMaster.is_active == 'no')
+
+    # Filter by installment_master_id
+    if installment_master_id:
+        query = query.filter(InstallmentMaster.id == installment_master_id)
+
+    # Get the results
+    installment_masters = query.all()
+
+    if not installment_masters:
+       return []
+    
+    result = []
+    for master in installment_masters:
+        master_details_query = db.query(InstallmentDetails).filter(InstallmentDetails.installment_master_id == master.id)
+        if installment_detail_id:
+            master_details_query = master_details_query.filter(InstallmentDetails.id == installment_detail_id)
+        master_details = master_details_query.all()
+        
+        details=[
+                InstallmentDetailsForGet(
+                    id=detail.id,
+                    installment_master_id=detail.installment_master_id,
+                    installment_name=detail.installment_name,
+                    payment_rate=detail.payment_rate,
+                    due_date=detail.due_date,
+                    is_deleted=detail.is_deleted
+                )
+                for detail in master_details
+         ]
+                 
+        result.append(
+                      InstallmentMasterForGet(
+                      id=master.id,
+                      number_of_installments=master.number_of_installments,
+                      is_active=master.is_active,
+                      active_from_date=master.active_from_date,
+                      is_deleted=master.is_deleted,
+                      details=details
+                     )
+           )   
+    
+    return result
+    
+
+
+
     
                   

@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File,Query,Request
 from typing import List, Optional,Dict
 from UserDefinedConstants.user_defined_constants import  DeletedStatus,Operator,Status,ActiveStatus,ActionType,ApplyTo,RecordActionType
-from UserDefinedConstants.user_defined_constants import ActiveStatus, ApplyTo
+from UserDefinedConstants.user_defined_constants import ActiveStatus, ApplyTo, InstallmentStatus
 from caerp_auth.authentication import authenticate_user
 from typing import Union
 from sqlalchemy import select
@@ -445,6 +445,7 @@ def get_product_module_image_url(id: int):
     return {"photo_url": f"{BASE_URL}/product/save_product_module/{profile_photo_filename}"}
 
 
+
 @router.get("/get_product_module_by_id/{module_id}", response_model=List[ProductModuleSchemaResponse])
 def get_product_module_by_id(
     module_id: int,
@@ -454,6 +455,8 @@ def get_product_module_by_id(
     if not product_module_details:
         raise HTTPException(status_code=404, detail="No products found for this id")
     return product_module_details
+
+
 
 @router.get("/get_product_module_by_product_id/{id}", response_model=List[ProductModuleSchemaResponse])
 def get_product_module_by_product_id(
@@ -1047,6 +1050,8 @@ def save_product_rating(
 @router.get("/get_product_complete_details")
 def get_product_complete_details(
     product_id: Optional[int] =None,
+    page : Optional[int] = None,
+    page_size : Optional[int] = None,
     db: Session = Depends(get_db),
     cart: Optional[str]= None,
     customer_id: Optional[int]= None,    
@@ -1057,6 +1062,8 @@ def get_product_complete_details(
 
         Parameters:
         - product_id: (Optional) The ID of the product to be returned.
+        - page: (Optional) Current page number.
+        - page_size: (Optional) Number of records per page
         - cart: (Optional) If `cart = 'yes'`, this will return the product list within the cart.
         - customer_id: (Optional) The ID of the customer for displaying cart details.
         - saved_for_later: (Optional) Available values - 'yes' or 'no'. If 'yes', the cart list saved for later will be returned.
@@ -1069,7 +1076,7 @@ def get_product_complete_details(
             cart_details = db_product.get_cart_product_details_with_prices(db,customer_id,product_id,saved_for_later)
             return cart_details
     else:
-        product_rating_details = db_product.get_product_complete_details(product_id,db)
+        product_rating_details = db_product.get_product_complete_details(product_id,page,page_size,db)
         return product_rating_details
     
 
@@ -1301,4 +1308,29 @@ def delete_coupon_master(
         
     return db_product.delete_coupon_master(db, coupon_master_id,action_type,deleted_by=user_id)
 
+
+
+@router.get("/get_all_installments", response_model=List[InstallmentMasterForGet])
+def get_all_installments(
+    installment_master_id: Optional[int] = None,
+    installment_details_id: Optional[int] = None,
+    status : InstallmentStatus = InstallmentStatus.ACTIVE,
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint to get all installment master details in the installment master table and details table.
+
+    Parameters:
+   
+    -**installment_master_id** : id of the installment master.
+
+    -**installment_details_id** : id of the installment details.
+
+    -**status** : it indicates the status of retrieved installments. The values are ACTIVE and INACTIVE
+    - ACTIVE : currently active installments.
+    - INACTIVE : currently inactive installments.
+   
+    """
+    installment_list= db_product.get_all_installments(db,status,installment_master_id,installment_details_id)
+    return installment_list if installment_list is not None else []
 

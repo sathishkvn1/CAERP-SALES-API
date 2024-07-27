@@ -1070,21 +1070,43 @@ class InstallmentMasterBase(BaseModel):
     is_active: BooleanFlag = 'no'
     active_from_date: Optional[date] = None
     
-    
+
+class InstallmentDetailsForGet(BaseModel):
+    id:int
+    installment_master_id: int
+    installment_name: str
+    payment_rate: float 
+    due_date: date
+    # modified_by: Optional[int]
+    # modified_on: Optional[datetime]
+    # created_by: int
+    # created_on: datetime
+    is_deleted: str
+    # deleted_by: Optional[int]
+    # deleted_on: Optional[datetime] 
+
 class InstallmentMasterForGet(BaseModel):
     id:int
     number_of_installments: int
     is_active: BooleanFlag = 'no'
     active_from_date: Optional[date] = None
-    modified_by: Optional[int]
-    modified_on: Optional[datetime]
-    created_by: int
+    # modified_by: Optional[int]
+    # modified_on: Optional[datetime]
+    # created_by: int
     is_deleted: str
-    created_on: datetime
-    deleted_by: Optional[int]
-    deleted_on: Optional[datetime]
+    # created_on: datetime
+    # deleted_by: Optional[int]
+    # deleted_on: Optional[datetime]
+    details: List[InstallmentDetailsForGet] = []
      
         
+class InstallmentDetailsBase(BaseModel):
+    installment_master_id: int
+    installment_name: str
+    payment_rate: float 
+    due_date: date    
+
+
         
         
         # //////////////////////////////////////////////
@@ -1208,17 +1230,6 @@ class ProductFeaturesSchemaResponse(BaseModel):
 
 
 
-class InstallmentDetailsBase(BaseModel):
-    installment_master_id: int
-    installment_name: str
-    payment_rate: float 
-    due_date: date
-    
-
-
-
-    
-    
 class CustomerInstallmentMasterBase(BaseModel):
     customer_id: int
     installment_master_id: int
@@ -1328,19 +1339,7 @@ class InstallmentEdit(BaseModel):
     class Config:
         orm_mode = True
         
-class InstallmentDetailsForGet(BaseModel):
-    id:int
-    installment_master_id: int
-    installment_name: str
-    payment_rate: float 
-    due_date: date
-    modified_by: Optional[int]
-    modified_on: Optional[datetime]
-    created_by: int
-    created_on: datetime
-    is_deleted: str
-    deleted_by: Optional[int]
-    deleted_on: Optional[datetime]
+
     
 #///
 class PancardSchemaResponse(BaseModel):
@@ -1835,6 +1834,11 @@ class OfferDetailsSchema(BaseModel):
 
     product_master_id   : Optional[int] = None
     # is_deleted : str
+
+
+# class OfferDetailsSchemaResponse(BaseModel):
+#     product_master_id   : Optional[int] = None
+#     is_deleted          : str
 
 
 class OfferMasterSchemaResponse(BaseModel):
