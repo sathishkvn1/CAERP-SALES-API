@@ -60,3 +60,8 @@ class Status(str,Enum):
     CURRENT     = "CURRENT"
     UPCOMMING   = "UPCOMMING"
     EXPIRED     = "EXPIRED"
+
+
+class InstallmentStatus(str,Enum):
+    ACTIVE    = "ACTIVE"
+    INACTIVE  = "INACTIVE"
