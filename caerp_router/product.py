@@ -1082,37 +1082,26 @@ def get_product_complete_details(
 
 @router.get("/get_product_rating_comments")
 def get_product_rating_comments(
-    product_id : int,
-    limit   :   Optional[int]= None,
-    db: Session = Depends(get_db)):
-    product_rating_comments = db_product.get_product_rating_comments(db,product_id,limit)
-    # product_rating_comments =[
-    #     {
-    #         "product_master_id": 1,
-    #         "product_code": "ABC123",
-    #         "product_name": "Product 1", 
-    #         "Comments":[{
-    #             "user_name": "user1",
-    #             "comment" : "comment 1",
-    #             "date_of_comment":"2024-04-20"
-                
-    #         },
-    #         {
-    #             "user_name": "user2",
-    #             "comment" : "comment 2",
-    #             "date_of_comment":"2024-04-20"
-                
-    #         },
-    #         {
-    #             "user_name": "user3",
-    #             "comment" : "comment 3",
-    #             "date_of_comment":"2024-05-20"
-                
-    #         },
-    #         ]
+    product_id : Optional[int] = None,
+    page       : Optional[int] = None,
+    page_size  : Optional[int] = None,
+    limit      : Optional[int]= None,
+    db         : Session = Depends(get_db)):
+    
+    """
+        Endpoint to get all product rating details.
 
-    # }
-    # ]
+        Parameters:
+        - product_id: (Optional) The ID of the product to be returned.
+        - page: (Optional) Current page number.
+        - page_size: (Optional) Number of records per page
+        
+        - db (Session): The database session dependency.
+
+        Returns:
+        - JSON response with the status of the operation.
+    """
+    product_rating_comments = db_product.get_product_rating_comments(db,product_id,limit,page,page_size)
     return product_rating_comments
 
 

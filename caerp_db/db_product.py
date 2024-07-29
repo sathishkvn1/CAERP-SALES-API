@@ -30,6 +30,8 @@ from fastapi.responses import FileResponse
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+
 def save_product_video(db: Session,  request: ProductVideoSchema, user_id: int):
 
     # if product_video_id == 0:
@@ -103,7 +105,8 @@ def update_product_video(db: Session,  request: ProductVideoSchema, video_id: in
 #              print(f"An error occurred: {e}") 
              
 #         return new_product_module
-    
+
+
 
 def save_product_module(db: Session, request: ProductModuleSchema, display_order: int, user_id: int):
     
@@ -155,6 +158,8 @@ def save_product_module(db: Session, request: ProductModuleSchema, display_order
     # finally:
         # db.close()
 
+
+
 def update_product_module(db: Session,  request: ProductModuleSchema, module_id: int, user_id: int):
 
         # Update operation
@@ -169,6 +174,7 @@ def update_product_module(db: Session,  request: ProductModuleSchema, module_id:
         db.commit()
         db.refresh(product_module)
         return product_module
+
 
 
 #=========================================================================
@@ -206,9 +212,10 @@ def save_product_master(db: Session,  request: ProductMasterSchema, user_id: int
         db.commit()
         db.refresh(new_product_master_price)
 
-
         return new_product_master
-    
+
+
+
 def update_product_master(db: Session,  request: ProductMasterSchema, product_master_id: int, user_id: int):    
 
         # Update operation
@@ -316,6 +323,7 @@ def delete_product_master(db: Session, product_id: int,action_type:str,deleted_b
                 "message": "Product marked as Undeleted successfully",
 
             }
+
 
 
 # =========================================================================
@@ -436,9 +444,6 @@ def delete_product_module(db: Session, module_id: int,action_type:str,deleted_by
 #  PRODUCT VIDEO SECTION 
 # ==========================================================================
 
-
-
-
 def get_all_product_video_by_deleted_status(db: Session, deleted_status: DeletedStatus):
     if deleted_status == DeletedStatus.DELETED:
         return db.query(ProductVideo).filter(ProductVideo.is_deleted == 'yes').all()
@@ -454,10 +459,8 @@ def get_all_product_video_by_deleted_status(db: Session, deleted_status: Deleted
 
 
 def get_product_video_by_id(db: Session,id: int):
-        
-        return db.query(ProductVideo).filter(ProductVideo.id== id).all()
+    return db.query(ProductVideo).filter(ProductVideo.id== id).all()
     
-
 
 
 def get_product_video_by_product_master_id(db: Session, id: int):
@@ -475,10 +478,8 @@ def delete_product_video(db: Session, video_id: int,deleted_by: int):
     existing_video.deleted_on = datetime.utcnow()
    
     db.commit()
-
     return {
         "message": "Product video marked as deleted successfully",
-
     }
 
 
@@ -498,7 +499,6 @@ def save_product_features(db: Session,  request: ProductFeaturesSchema, product_
         db.commit()
         db.refresh(new_product_feature)
         return new_product_feature
-    
     else:
         # Update operation
         product_feature = db.query(ProductFeatures).filter(ProductFeatures.id == product_feature_id).first()
@@ -542,12 +542,13 @@ def delete_product_feature(db: Session, feature_id: int):
         raise HTTPException(status_code=404, detail="Product feature not found")
 
     existing_feature.is_deleted = 'yes'
-       
+    
     db.commit()
-
     return {
         "message": "Product Feature marked as deleted successfully",
     }
+
+
 
 #################################################################################################################   
     
@@ -586,6 +587,7 @@ def create_installments(db: Session, installment_data: InstallmentCreate, user_i
     return db_installment_master, installment_details
 
 
+
 def update_installment_master(db: Session, installment_id: int, data: dict, user_id: int):
     db_installment = db.query(InstallmentMaster).filter(InstallmentMaster.id == installment_id).first()
     if db_installment:
@@ -598,6 +600,8 @@ def update_installment_master(db: Session, installment_id: int, data: dict, user
         return db_installment
     return None
 
+
+
 def update_installment_details(db: Session, installment_id: int, data: dict, user_id: int):
     db_installment_details = db.query(InstallmentDetails).filter(InstallmentDetails.installment_master_id == installment_id).all()
     if db_installment_details:
@@ -609,7 +613,6 @@ def update_installment_details(db: Session, installment_id: int, data: dict, use
         db.commit()
         return db_installment_details
     return None
-
 
 
 def delete_installment_master(db: Session, id: int, deleted_by: int):
@@ -631,10 +634,11 @@ def delete_installment_master(db: Session, id: int, deleted_by: int):
     }, synchronize_session=False)
 
     db.commit()
-
     return {
         "message": "Installment master and related details deleted successfully",
     }
+
+
 
 #=======================================================================================
 
@@ -705,7 +709,8 @@ def get_price_list_master(db:Session,product_id: Optional[int]=None,product_pric
     price_list_results = query.all()
     print(query.statement.compile(compile_kwargs={"literal_binds": True}))
     return price_list_results
-   
+
+
 # def delete_price_list_master(db:Session,price_i).fid:int):
 #      existing_price= db.query(ProductMasterPricelter(ProductMasterPrice.id == price_id).first()
 
@@ -758,6 +763,7 @@ def get_price_list_master(db:Session,product_id: Optional[int]=None,product_pric
 #         db.refresh(new_price_list)
 #         return new_price_list
      
+
 
 def set_new_price(
     db: Session,
@@ -873,7 +879,6 @@ def get_price_list_module(db:Session,product_id: Optional[int]=None,
 
   
 def set_new_module_price(db:Session, price_data:ProductModulePriceSchema,user_id: int,record_actions:RecordActionType,price_id:Optional[int]):
-        
     
        price_list_data_dict = price_data.dict(exclude_unset=True)# Ensure effective_to_date is properly handled
        if 'effective_to_date' in price_list_data_dict:
@@ -906,7 +911,6 @@ def set_new_module_price(db:Session, price_data:ProductModulePriceSchema,user_id
             return price_list
 
        else:
-       
         # price_list_data_dict = price_data.dict()
         product_master_price_id = price_list_data_dict.get("product_master_price_id")
         existing_price_list = db.query(ProductModulePrice).filter(
@@ -942,7 +946,6 @@ def save_product_rating(db: Session, request: ProductRating, id: int,user_id: in
         db.commit()
         db.refresh(new_product_rating)
         return new_product_rating
-    
     else:
         # Update operation
         product_rating = db.query(ProductRating).filter(ProductRating .id == id).first()
@@ -962,6 +965,7 @@ def save_product_rating(db: Session, request: ProductRating, id: int,user_id: in
      
 def get_product_complete_details(product_id : Optional[int]=None, page: Optional[int] = None, page_size: Optional[int] = None, db: Session = Depends(get_db)):
     requested_date = datetime.today()
+    requested_date = requested_date.date()
     product_ratings = [
     {"star": '1', "count": 0},
     {"star": '2', "count": 0},
@@ -1254,7 +1258,7 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
         if not product_master_data:
            return []
     
-        # # Calculate total pages
+        # Calculate total pages
         total_pages = 0
         if page_size:
            total_pages = (total_records + page_size - 1)
@@ -1400,12 +1404,12 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
     
 
 # def get_product_rating_comments(db: Session , product_id: Optional[int]=None)-> List[Dict[str, Any]]:
-def get_product_rating_comments(db: Session, product_id: int, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+def get_product_rating_comments(db: Session, product_id: Optional[int] = None, limit: Optional[int] = None, page: Optional[int] = None, page_size: Optional[int] = None) -> List[Dict[str, Any]]:
     requested_date = datetime.today()
-    
+    requested_date = requested_date.date()
     # Query for product details
     if product_id:
-        product_master_data = db.query(ViewProductMasterPrice).filter(
+        product_master_query = db.query(ViewProductMasterPrice).filter(
             ViewProductMasterPrice.is_deleted =='no',
             ViewProductMasterPrice.product_master_id == product_id,
             ViewProductMasterPrice.effective_from_date <= requested_date,
@@ -1414,70 +1418,137 @@ def get_product_rating_comments(db: Session, product_id: int, limit: Optional[in
                 ViewProductMasterPrice.effective_to_date == None
             )
         )
+        
+        if page is not None or page_size is not None:
+           return {"message": "page and page size is not required when product master id is given"} 
+
+        product_master_data= product_master_query.all()
+
+        if not product_master_data:
+           return []
+
+        # Initialize response list
+        response = []
+
+        # Iterate over product data
+        for product in product_master_data:
+            product_id = product.product_master_id
+
+            # # Query for comments
+            comments_query = text(
+              "SELECT pr.id, pr.user_id, cr.first_name as user_name, pr.rating,pr.comment, pr.created_on as date_of_comment "
+              "FROM product_rating pr "
+              "JOIN customer_register cr ON pr.user_id = cr.id "
+              "WHERE pr.product_master_id = :product_id AND pr.comment !=''"
+              "ORDER BY pr.created_on DESC "
+              + ("LIMIT :limit" if limit is not None else "")
+            )
+        
+            # Execute the query with parameters
+            params = {'product_id': product_id}
+            if limit is not None:
+               params['limit'] = limit
+        
+            comments_results = db.execute(comments_query, params).fetchall()
+         
+            comments = [
+              { 
+                "review_id" : row.id,
+                "user_id"   : row.user_id,
+                "username"  : row.user_name,
+                "rating"    : row.rating,
+                "comment"   : row.comment,
+                "review_date": row.date_of_comment.strftime("%Y-%m-%d"),
+                # "reviewer_image": f"{BASE_URL}/customer/image/add_customer_profile_image/{row.user_id}.jpg" 
+              }                 # if row.user_id else f"{BASE_URL}/uploads/customer_profile_photo/default.jpg"            }
+              for row in comments_results
+            ]
+
+            # Append product details to response
+            response.append({
+               "product_master_id": product.product_master_id,
+               "product_name": product.product_master_product_name,
+               "reviews": comments
+             })
+
+        return response
     else:
-        product_master_data = db.query(ViewProductMasterPrice).filter(
+        product_master_query = db.query(ViewProductMasterPrice).filter(
+            ViewProductMasterPrice.is_deleted =='no',
             ViewProductMasterPrice.effective_from_date <= requested_date,
             or_(
                 ViewProductMasterPrice.effective_to_date >= requested_date,
                 ViewProductMasterPrice.effective_to_date == None
             )
         )
-    print(product_master_data.statement.compile(compile_kwargs={"literal_binds": True}))
-    product_master_data= product_master_data.all()
+        # print(product_master_query.statement.compile(compile_kwargs={"literal_binds": True}))
 
-    # Initialize response list
-    response = []
-
-    # Iterate over product data
-    for product in product_master_data:
-        product_id = product.product_master_id
-
-        # # Query for comments
-        comments_query = text(
-            "SELECT pr.user_id, cr.first_name as user_name, pr.rating,pr.comment, pr.created_on as date_of_comment "
-            "FROM product_rating pr "
-            "JOIN customer_register cr ON pr.user_id = cr.id "
-            "WHERE pr.product_master_id = :product_id AND pr.comment !=''"
-            "ORDER BY pr.created_on DESC "
-            + ("LIMIT :limit" if limit is not None else "")
-        )
+        # Calculate total records
+        total_records = product_master_query.count()
+    
+        # #apply pagination
+        if page and page_size:
+           product_master_data = product_master_query.offset((page - 1) * page_size).limit(page_size).all()
+        else:
+           product_master_data = product_master_query.all()
+        if not product_master_data:
+           return []
         
-        # Execute the query with parameters
-        params = {'product_id': product_id}
-        if limit is not None:
-            params['limit'] = limit
+        # Calculate total pages
+        total_pages = 0
+        if page_size:
+           total_pages = (total_records + page_size - 1)
+
+        # Initialize response list
+        response = []
+
+        # Iterate over product data
+        for product in product_master_data:
+            product_id = product.product_master_id
+
+            # # Query for comments
+            comments_query = text(
+               "SELECT pr.id, pr.user_id, cr.first_name as user_name, pr.rating,pr.comment, pr.created_on as date_of_comment "
+               "FROM product_rating pr "
+               "JOIN customer_register cr ON pr.user_id = cr.id "
+               "WHERE pr.product_master_id = :product_id AND pr.comment !=''"
+               "ORDER BY pr.created_on DESC "
+               + ("LIMIT :limit" if limit is not None else "")
+            )
         
-        comments_results = db.execute(comments_query, params).fetchall()
-        # )
-        # comments_results = db.execute(comments_query, {'product_id': product_id}).fetchall()
-       
- 
-        comments = [
-            {
-                "reviewer"  : row.user_name,
+            # Execute the query with parameters
+            params = {'product_id': product_id}
+            if limit is not None:
+               params['limit'] = limit
+        
+            comments_results = db.execute(comments_query, params).fetchall()
+         
+            comments = [
+              {
+                "review_id" : row.id,  
+                "user_id"   : row.user_id,
+                "username"  : row.user_name,
                 "rating"    : row.rating,
-                "review_text"   : row.comment,
-                "date_of_comment": row.date_of_comment.strftime("%Y-%m-%d"),
-                "reviewer_image": f"{BASE_URL}/customer/image/add_customer_profile_image/{row.user_id}.jpg" 
-            }                         # if row.user_id else f"{BASE_URL}/uploads/customer_profile_photo/default.jpg"            }
-            for row in comments_results
-        ]
+                "comment"   : row.comment,
+                "review_date": row.date_of_comment.strftime("%Y-%m-%d"),
+                # "reviewer_image": f"{BASE_URL}/customer/image/add_customer_profile_image/{row.user_id}.jpg" 
+              }                         # if row.user_id else f"{BASE_URL}/uploads/customer_profile_photo/default.jpg"            }
+               for row in comments_results
+             ]
 
-        # Append product details to response
-        response.append({
-            "product_master_id": product.product_master_id,
-            "product_name": product.product_name,
-            "product_code": product.product_code,
-            "price": product.price,
-            "main_description": product.product_description_main,
-            # "ratings": product_ratings,
-            # "total_rating_count": total_product_ratings,
-            "Comments": comments
-        })
+            # Append product details to response
+            response.append({
+               "total_records"    : total_records,
+                "page"            : page,
+                "page_size"       : page_size,
+                "total_pages"     : total_pages, 
+               "product_master_id": product.product_master_id,
+               "product_name": product.product_master_product_name,
+               "reviews": comments
+               })
 
-    return response
+        return response
      
-
 
 
 def get_all_offer_list(
@@ -1528,6 +1599,7 @@ def get_all_offer_list(
            return result
         else:
             current_date = datetime.today()
+            current_date = current_date.date()
             query = db.query(OfferMaster).filter(OfferMaster.is_deleted == 'no')
         
             if category_id:
@@ -1681,7 +1753,6 @@ def delete_offer_master(db, offer_master_id,action_type,deleted_by):
 
             return {
                 "message": "Offer marked as Undeleted successfully",
-
             }
 
 
@@ -1779,7 +1850,9 @@ def delete_offer_master(db, offer_master_id,action_type,deleted_by):
 #     except Exception as e:
 #         print("Error:", e)  # Print the exception message for debugging
 #         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
+
 def save_cart_details(db: Session , cart_data : CartDetailsSchema, action_type: RecordActionType, id: int):
     if action_type == RecordActionType.INSERT_ONLY and id != 0:
         raise HTTPException(status_code=400, detail="Invalid action: For INSERT_ONLY, id should be 0")
@@ -2082,6 +2155,7 @@ def get_all_coupon_list(
           return result
         else:
           current_date = datetime.today()
+          current_date = current_date.date()
           query = db.query(CouponMaster).filter(CouponMaster.is_deleted == 'no')
         #   query = query.filter(CouponMaster.id == coupon_master_id)
         

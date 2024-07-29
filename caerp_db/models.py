@@ -741,6 +741,23 @@ class InstallmentMaster(caerp_base):
     deleted_on              = Column(DateTime, nullable=True)  # Allow NULL values for deleted_on
 
 
+
+class InstallmentDetails(caerp_base):
+    __tablename__ = "installment_details"
+
+    id                      = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    installment_master_id   = Column(Integer,  nullable=False)
+    installment_name        = Column(String(200), default=None)
+    payment_rate            = Column(DECIMAL(10, 2), nullable=False)
+    due_date                = Column(Date, nullable=False)
+    created_by              = Column(Integer, nullable=False)
+    created_on              = Column(DateTime, nullable=False, default=datetime.utcnow)
+    modified_by             = Column(Integer, default=None)
+    modified_on             = Column(DateTime, default=None)
+    is_deleted              = Column(Enum('yes', 'no'), nullable=False, default='no')
+    deleted_by              = Column(Integer, default=None)
+    deleted_on              = Column(DateTime, default=None)
+
     
 class ProductMaster(caerp_base):
     __tablename__= "product_master"
@@ -829,21 +846,7 @@ class ProductFeatures(caerp_base):
     feature              = Column(String(50), nullable=False)
     is_deleted           = Column(Enum('yes', 'no'), nullable=False, default='no')
     
-class InstallmentDetails(caerp_base):
-    __tablename__ = "installment_details"
 
-    id                      = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    installment_master_id   = Column(Integer,  nullable=False)
-    installment_name        = Column(String(200), default=None)
-    payment_rate            = Column(DECIMAL(10, 2), nullable=False)
-    due_date                = Column(Date, nullable=False)
-    created_by              = Column(Integer, nullable=False)
-    created_on              = Column(DateTime, nullable=False, default=datetime.utcnow)
-    modified_by             = Column(Integer, default=None)
-    modified_on             = Column(DateTime, default=None)
-    is_deleted              = Column(Enum('yes', 'no'), nullable=False, default='no')
-    deleted_by              = Column(Integer, default=None)
-    deleted_on              = Column(DateTime, default=None)
 
 
 class CustomerInstallmentMaster(caerp_base):
