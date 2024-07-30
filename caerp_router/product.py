@@ -659,55 +659,15 @@ def delete_product_feature(
 
 
 #////
-@router.get("/get_all_installment_master/",response_model=List[InstallmentMasterForGet])
-async def get_all_installment_master(deleted_status: DeletedStatus = DeletedStatus.NOT_DELETED,
-                              db: Session = Depends(get_db),
-                             ):
-    return get_all_installment_master_by_status(db, deleted_status)
 
-def get_all_installment_master_by_status(db: Session, deleted_status: DeletedStatus):
-    if deleted_status == DeletedStatus.DELETED:
-        return db.query(InstallmentMaster).filter(InstallmentMaster.is_deleted == 'yes').all()
-    elif deleted_status == DeletedStatus.NOT_DELETED:
-        return db.query(InstallmentMaster).filter(InstallmentMaster.is_deleted == 'no').all()
-    elif deleted_status == DeletedStatus.ALL:
-        return db.query(InstallmentMaster).all()
-    else:
-       
-        raise ValueError("Invalid deleted_status")
     
 
 
-@router.get("/get_installment_details_by_id/{id}", response_model=InstallmentDetailsForGet)
-def get_installment_details_by_id(id: int,
-                      db: Session = Depends(get_db)
-                      ):
-
-
-    installment_master = db_product.get_installment_details_by_id(db,id)
-    if installment_master is None:
-        raise HTTPException(status_code=404, detail="Not found")
-
-    return installment_master
 
 
 
-@router.get("/get_all_installment_details/",response_model=List[InstallmentDetailsForGet])
-async def get_all_installment_details(deleted_status: DeletedStatus = DeletedStatus.NOT_DELETED,
-                              db: Session = Depends(get_db),
-                             ):
-    return get_all_installment_details_by_status(db, deleted_status)
 
-def get_all_installment_details_by_status(db: Session, deleted_status: DeletedStatus):
-    if deleted_status == DeletedStatus.DELETED:
-        return db.query(InstallmentDetails).filter(InstallmentDetails.is_deleted == 'yes').all()
-    elif deleted_status == DeletedStatus.NOT_DELETED:
-        return db.query(InstallmentDetails).filter(InstallmentDetails.is_deleted == 'no').all()
-    elif deleted_status == DeletedStatus.ALL:
-        return db.query(InstallmentDetails).all()
-    else:
-       
-        raise ValueError("Invalid deleted_status")
+
 
 
 @router.post("/save_installments/", response_model=None)
@@ -776,46 +736,11 @@ def delete_installment_master(
 
 
 
-# @router.get("/get_installment_masters/", response_model=List[InstallmentMasterForGet])
-# def get_installment_masters(
-#     status: ActiveStatus = Query(..., description="Filter by status: 'all' for all records, 'yes' for active records, 'no' for deleted records"),
-#     db: Session = Depends(get_db)
-# ):
-#     query = db.query(InstallmentMaster)
-    
-#     if status == ActiveStatus.ACTIVE:
-#         query = query.filter(InstallmentMaster.is_active == 'yes')
-#     elif status == ActiveStatus.DELETED:
-#         query = query.filter(InstallmentMaster.is_deleted == 'no')
-
-#     return query.all()
 
 
-@router.get("/installment_masters/", response_model=List[InstallmentMasterForGet])
-def get_installment_masters(
-    status: ActiveStatus = ActiveStatus.ALL,
-    db: Session = Depends(get_db)
-):
-    query = db.query(InstallmentMaster)
-    
-    if status == ActiveStatus.ACTIVE:
-        query = query.filter(and_(InstallmentMaster.is_active == 'yes', InstallmentMaster.is_deleted == 'no'))
-    elif status == ActiveStatus.NOT_DELETED:
-        query = query.filter(and_(InstallmentMaster.is_deleted == 'no'))
-    elif status == ActiveStatus.DELETED:
-        query = query.filter(and_(InstallmentMaster.is_deleted == 'yes'))
-    elif status == ActiveStatus.ALL:
-        pass  # Return all records without applying any additional filters
 
-    return query.all()
 
-@router.get("/get_installment_details/{installment_master_id}", response_model=List[InstallmentDetailsForGet])
-def get_installment_details(
-    installment_master_id: int,
-    db: Session = Depends(get_db)
-):
-    query = db.query(InstallmentDetails).filter(InstallmentDetails.installment_master_id == installment_master_id).all()
-    return query
+
 
 
 @router.get("/installments/", response_model=List[InstallmentMasterForGet])
@@ -1299,7 +1224,7 @@ def delete_coupon_master(
 
 
 
-@router.get("/get_all_installments", response_model=List[InstallmentMasterForGet])
+@router.get("/get_all_installments")
 def get_all_installments(
     installment_master_id: Optional[int] = None,
     installment_details_id: Optional[int] = None,
@@ -1322,4 +1247,6 @@ def get_all_installments(
     """
     installment_list= db_product.get_all_installments(db,status,installment_master_id,installment_details_id)
     return installment_list if installment_list is not None else []
+
+
 

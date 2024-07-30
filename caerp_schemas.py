@@ -1073,7 +1073,7 @@ class InstallmentMasterBase(BaseModel):
 
 class InstallmentDetailsForGet(BaseModel):
     id:int
-    installment_master_id: int
+    # installment_master_id: int
     installment_name: str
     payment_rate: float 
     due_date: date
@@ -1106,9 +1106,16 @@ class InstallmentDetailsBase(BaseModel):
     payment_rate: float 
     due_date: date    
 
+class InstallmentDetailsResponse(BaseModel):
+    # id: int
+    installment_master_id: int
+    installment_name: str
+    payment_rate: float 
+    due_date: date
+    created_by: int
+    created_on: datetime
+    is_deleted: str 
 
-        
-        
         # //////////////////////////////////////////////
         
 class  ProductMasterSchema(BaseModel):
