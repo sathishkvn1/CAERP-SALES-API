@@ -571,6 +571,7 @@ def create_installments(db: Session, installment_data: InstallmentCreate, user_i
     installment_details = []
     for detail in installment_data.installment_details:
         installment_detail = InstallmentDetails(
+            # id=detail.id,
             installment_master_id=db_installment_master.id,
             installment_name=detail.installment_name,
             payment_rate=detail.payment_rate,
@@ -2321,7 +2322,7 @@ def get_all_installments(
 
        details=[
                 InstallmentDetailsResponse(
-                    # id=detail.id,
+                    id=detail.id,
                     installment_master_id=detail.installment_master_id,
                     installment_name=detail.installment_name,
                     payment_rate=detail.payment_rate,
