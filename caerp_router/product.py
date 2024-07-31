@@ -743,19 +743,6 @@ def delete_installment_master(
 
 
 
-@router.get("/installments/", response_model=List[InstallmentMasterForGet])
-def get_installment_masters(
-    filter: InstallmentFilter = Depends(),
-    db: Session = Depends(get_db)
-):
-    query = db.query(InstallmentMaster)
-    
-    if filter.is_active:
-        query = query.filter(InstallmentMaster.is_active == filter.is_active)
-    if filter.is_deleted:
-        query = query.filter(InstallmentMaster.is_deleted == filter.is_deleted)
-
-    return query.all()
 
 
 #====================================================================================================

@@ -1248,6 +1248,7 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
                          "module_id"                : module.id,
                          "module_name"              : module.module_name,
                          "module_description"       : module.module_description,
+                         "is_default"               : module.is_default,
                          "module_base_price"        : module.module_base_price,
                          "additional_price_per_user": module.additional_price_per_user,
                          "module_image_url"         : module_image_path
@@ -1597,8 +1598,6 @@ def get_all_offer_list(
                                 )
                         )
            
-           print(str(details_query.statement.compile(dialect=db.bind.dialect)))
-
            details_data = details_query.all()
 
            details = [
@@ -2149,7 +2148,10 @@ def get_all_coupon_list(
           if coupon is None:
              return []  
 
-          details_query = db.query(CouponDetails).filter(
+          details_query = db.query(CouponDetails).join(
+                            ProductMaster,
+                            CouponDetails.product_master_id == ProductMaster.id
+                        ).filter(
                         and_(
                             CouponDetails.coupon_master_id == coupon.id,
                             CouponDetails.is_deleted == 'no'
@@ -2211,7 +2213,7 @@ def delete_coupon_master(db, coupon_master_id,action_type,deleted_by):
     existing_coupon = db.query(CouponMaster).filter(CouponMaster.id == coupon_master_id).first()
 
     if existing_coupon is None:
-        raise HTTPException(status_code=404, detail="Coupon  not found")
+      return []
     
     if(action_type== 'DELETE'):
        existing_coupon.is_deleted = 'yes'
@@ -2227,7 +2229,7 @@ def delete_coupon_master(db, coupon_master_id,action_type,deleted_by):
         
        db.commit()
        return {
-          "message": "Offer marked as deleted successfully",
+          "message": "Coupon marked as deleted successfully",
          }
     if(action_type == 'UNDELETE'):
         existing_coupon.is_deleted = 'no'
@@ -2236,7 +2238,7 @@ def delete_coupon_master(db, coupon_master_id,action_type,deleted_by):
         db.commit()
 
         return {
-                "message": "Offer marked as Undeleted successfully",
+                "message": "Coupon marked as Undeleted successfully",
             }     
 
 
@@ -2270,24 +2272,24 @@ def get_all_installments(
         
            details=[
                 InstallmentDetailsForGet(
-                    id=detail.id,
-                    installment_master_id=detail.installment_master_id,
-                    installment_name=detail.installment_name,
-                    payment_rate=detail.payment_rate,
-                    due_date=detail.due_date,
-                    is_deleted=detail.is_deleted
+                    id                    = detail.id,
+                    installment_master_id = detail.installment_master_id,
+                    installment_name      = detail.installment_name,
+                    payment_rate          = detail.payment_rate,
+                    due_date              = detail.due_date,
+                    is_deleted            = detail.is_deleted
                 )
                 for detail in master_details
              ]
                  
            result.append(
                       InstallmentMasterForGet(
-                      id=master.id,
-                      number_of_installments=master.number_of_installments,
-                      is_active=master.is_active,
-                      active_from_date=master.active_from_date,
-                      is_deleted=master.is_deleted,
-                      details=details
+                      id                     = master.id,
+                      number_of_installments = master.number_of_installments,
+                      is_active              = master.is_active,
+                      active_from_date       = master.active_from_date,
+                      is_deleted             = master.is_deleted,
+                      details                = details
                      )
              )   
        return result
