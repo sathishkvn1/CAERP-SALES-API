@@ -994,12 +994,16 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
         # )
         # discount_details = db.execute(discount_query, {'product_id': product_id,'requested_date':requested_date}).fetchall()
         discount_query = text(
-            "SELECT product_master_id, offer_details_id, offer_name, offer_percentage "
+            "SELECT product_master_id, offer_details_id, offer_name, offer_percentage, "
             "effective_from_date, effective_to_date "
             "FROM view_offer_details "
-            "WHERE product_master_id = :product_id AND effective_from_date <= :requested_date AND effective_to_date >= :requested_date"
+            "WHERE product_master_id = :product_id "
+            "AND ((effective_from_date <= :requested_date AND effective_to_date >= :requested_date OR effective_to_date IS NULL) "
+            "AND offer_details_is_deleted = 'no')"
         )
+       
         discount_details = db.execute(discount_query, {'product_id': product_id, 'requested_date':requested_date}).fetchall()
+        # discount_details = db.execute(discount_query, {'product_id': product_id}).fetchall()
 
         total_query = text(
             "SELECT product_master_id, COUNT(product_master_id) AS total_rating_count, "
@@ -1012,12 +1016,14 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
         total_results = db.execute(total_query, {'product_id': product_id}).fetchall()
     else:
         discount_query = text(
-            "SELECT product_master_id, offer_details_id, offer_name, offer_percentage "
+            "SELECT product_master_id, offer_details_id, offer_name, offer_percentage, "
             "effective_from_date, effective_to_date "
             "FROM view_offer_details "
-            "WHERE effective_from_date <= :requested_date AND effective_to_date >= :requested_date"
+            "WHERE (effective_from_date <= :requested_date AND effective_to_date >= :requested_date OR effective_to_date IS NULL) "
+            "AND offer_details_is_deleted = 'no'"
         )
         discount_details = db.execute(discount_query, {'requested_date': requested_date}).fetchall()
+        # discount_details = db.execute(discount_query).fetchall()
         
         total_query = text(
            
@@ -1086,11 +1092,11 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
             ViewProductMasterPrice.product_master_id == product_id,
         )
 
-        if page is not None or page_size is not None:
-           return {"message": "page and page size is not required when product master id is given"}
+        # if page is not None or page_size is not None:
+        #    return {"message": "page and page size is not required when product master id is given"}
         
         product_master_data = product_master_query.all()
-        if not product_master_data:
+        if not  product_master_data:
           return []
         
         product_master_image_filename= f"{product_id}.jpg"
@@ -1225,13 +1231,29 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
             }
             if product_data.product_master_has_module == 'yes':
                module_query = text(
-               "SELECT module_name, module_description "
-               "FROM product_module "
-               "WHERE product_master_id = :product_id AND is_deleted = 'no'"
+                 "SELECT pm.id, pm.module_name, pm.module_description,pm.is_default, pmp.module_base_price, pmp.additional_price_per_user "
+                 "FROM product_module pm "
+                 "JOIN view_product_modules_price pmp ON pm.product_master_id = pmp.product_master_id AND pm.id = pmp.module_id "
+                 "WHERE pm.product_master_id = :product_id AND pm.is_deleted = 'no'"
                 )
                params = {'product_id': product_id}
                product_modules = db.execute(module_query, params).fetchall()
-               modules = [{"module_name": module.module_name, "module_description": module.module_description} for module in product_modules]
+
+               modules = []
+               for module in product_modules:
+                   module_image_filename = f"{module.id}.jpg"
+                   module_image_path = f"{BASE_URL}/product/save_product_module/{module_image_filename}"
+        
+                   module_info = {
+                         "module_id"                : module.id,
+                         "module_name"              : module.module_name,
+                         "module_description"       : module.module_description,
+                         "module_base_price"        : module.module_base_price,
+                         "additional_price_per_user": module.additional_price_per_user,
+                         "module_image_url"         : module_image_path
+                   }
+                   modules.append(module_info)
+
                response_item["modules"] = modules
                 
             if total_rating_details:
@@ -1418,8 +1440,8 @@ def get_product_rating_comments(db: Session, product_id: Optional[int] = None, l
             )
         )
         
-        if page is not None or page_size is not None:
-           return {"message": "page and page size is not required when product master id is given"} 
+        # if page is not None or page_size is not None:
+        #    return {"message": "page and page size is not required when product master id is given"} 
 
         product_master_data= product_master_query.all()
 
@@ -1564,12 +1586,19 @@ def get_all_offer_list(
            if offer is None:
               return []
            
-           details_query = db.query(OfferDetails).filter(
-                         and_(
-                             OfferDetails.offer_master_id == offer.id,
-                             OfferDetails.is_deleted == 'no'
-                         )
-                     )
+           details_query = db.query(OfferDetails).join(
+                            ProductMaster,
+                            OfferDetails.product_master_id == ProductMaster.id
+                        ).filter(
+                            and_(
+                                OfferDetails.offer_master_id == offer.id,
+                                OfferDetails.is_deleted == 'no',
+                                ProductMaster.is_deleted == 'no',
+                                )
+                        )
+           
+           print(str(details_query.statement.compile(dialect=db.bind.dialect)))
+
            details_data = details_query.all()
 
            details = [
@@ -2380,7 +2409,6 @@ def get_all_installments(
         )
     
     return result
-
 
 
 

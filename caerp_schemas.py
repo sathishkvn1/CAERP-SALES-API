@@ -1107,7 +1107,7 @@ class InstallmentDetailsBase(BaseModel):
     due_date: date    
 
 class InstallmentDetailsResponse(BaseModel):
-    id: int
+    # id: int
     installment_master_id: int
     installment_name: str
     payment_rate: float 
