@@ -801,6 +801,7 @@ class ProductModule(caerp_base):
     module_name         = Column(String(100), nullable=False)
     module_description  = Column(String(5000), nullable=False)
     display_order       = Column(Integer, nullable=False,default=1)
+    is_default          = Column(Enum('yes', 'no'), nullable=False, default='no')
     created_by          = Column(Integer, default=None)
     created_on          = Column(DateTime, nullable=False, default=func.now())
     modified_by         = Column(Integer, default=None)
