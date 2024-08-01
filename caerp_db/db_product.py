@@ -184,7 +184,6 @@ def update_product_module(db: Session,  request: ProductModuleSchema, module_id:
 #=========================================================
 
 def save_product_master(db: Session,  request: ProductMasterSchema, user_id: int ):
-
    
         # Add operation
         product_master_data_dict = request.dict()

@@ -68,8 +68,7 @@ def save_product_master(
      # Check authorization
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-    
+        
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
     # try:
@@ -106,8 +105,7 @@ def update_product_master(
      # Check authorization
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-    
+        
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
     try:
@@ -152,7 +150,6 @@ def upload_product_main_video(
         file_path = f"{UPLOAD_DIR_MASTER_IMAGE_VIDEO}/{product_master.id}.mp4"
         with open(file_path, "wb") as f:
             f.write(file_content)
-
        
         db.commit()
 
@@ -161,7 +158,8 @@ def upload_product_main_video(
 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to upload video")
-   
+
+
 #...........................................................
 
 @router.get("/video/get_product_master_video/{id}", response_model=dict)
@@ -210,18 +208,16 @@ def get_product_master_image(id: int):
 
 @router.get("/get_product_master_by_id/{product_id}", response_model=ProductMasterSchemaResponse)
 def get_product_master_by_id(product_id: int, db: Session = Depends(get_db)):
+    
     product_master_details = db_product.get_product_master_by_id(db, product_id)
-    if not product_master_details:
-        raise HTTPException(status_code=404, detail="No products found for this id")
-    return product_master_details
+    return product_master_details if product_master_details is not None else []
 
 
 @router.get("/get_product_master_by_code/{product_code}", response_model=List[ProductMasterSchemaResponse])
 def get_product_master_by_code(product_code: str, db: Session = Depends(get_db)):
+    
     product_master_details = db_product.get_product_master_by_code(db, product_code)
-    if not product_master_details:
-        raise HTTPException(status_code=404, detail="No products found for this id")
-    return product_master_details
+    return product_master_details if product_master_details is not None else []
 
 
 @router.get("/get_all_productmaster/", response_model=List[ProductMasterSchemaResponse])
@@ -246,8 +242,7 @@ def get_products(db: Session = Depends(get_db)):
         .join(ProductCategory, ProductMaster.category_id == ProductCategory.id)
         .join(ProductGroup, ProductMaster.group_id == ProductGroup.id)
         .where(ProductMaster.is_deleted == 'no')
-       
-    )
+     )
     
     results = db.execute(stmt).all()
     products = [ProductMasterSchemaResponse(**row._asdict()) for row in results]
@@ -267,8 +262,7 @@ def delete_product_master(
 
     auth_info = authenticate_user(token)
     user_id = auth_info["user_id"]
-    
-    
+     
     return db_product.delete_product_master(db, product_id,action_type,deleted_by=user_id)
 
 
@@ -309,8 +303,7 @@ def save_product_category(
         token: str = Depends(oauth2.oauth2_scheme)):
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-    
+        
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
     try:
@@ -333,8 +326,7 @@ def get_product_category_by_id(
      db: Session = Depends(get_db)
      ):
     product_category_details = db_product.get_product_category_by_id(db, category_id)
-    if not product_category_details:
-        raise HTTPException(status_code=404, detail="No products found for this id")
+    
     return product_category_details
 
 
@@ -452,9 +444,8 @@ def get_product_module_by_id(
      db: Session = Depends(get_db)
      ):
     product_module_details = db_product.get_product_module_by_id(db, module_id)
-    if not product_module_details:
-        raise HTTPException(status_code=404, detail="No products found for this id")
-    return product_module_details
+    
+    return product_module_details if product_module_details is not None else []
 
 
 
@@ -582,9 +573,8 @@ def get_product_video_by_product_master_id(
      db: Session = Depends(get_db)
      ):
     product_video_details = db_product.get_product_video_by_product_master_id(db, video_id)
-    if not product_video_details:
-        raise HTTPException(status_code=404, detail="No products found for this id")
-    return product_video_details
+    
+    return product_video_details if product_video_details is not None else []
 
 
 # @router.get("videos/get_product_additional_video/{user_id}", response_model=dict)
@@ -660,14 +650,6 @@ def delete_product_feature(
 
 #////
 
-    
-
-
-
-
-
-
-
 
 
 @router.post("/save_installments/", response_model=None)
@@ -720,9 +702,6 @@ def delete_installment_master(
                      id: int,
                      db: Session = Depends(get_db),
                      token: str = Depends(oauth2.oauth2_scheme)):
-    
-    
-    
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     
@@ -730,17 +709,6 @@ def delete_installment_master(
     user_id = auth_info["user_id"]
 
     return db_product.delete_installment_master(db, id, deleted_by=user_id)
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -915,8 +883,7 @@ def set_new_module_price(
     -effective_to_date (Optional[date]): The end date until which the price is effective. Can be `None` or an empty string (`""`).
     Returns:
     - JSON response with the status of the operation.
-    """
-
+   """
 
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
@@ -991,6 +958,7 @@ def get_product_complete_details(
         product_rating_details = db_product.get_product_complete_details(product_id,page,page_size,db)
         return product_rating_details
     
+
 
 @router.get("/get_product_rating_comments")
 def get_product_rating_comments(

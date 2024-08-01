@@ -1126,7 +1126,7 @@ class  ProductMasterSchema(BaseModel):
     product_description_main : Optional[str]
     product_description_sub  :Optional[str]
     has_module       : Optional[str]
-    min_no_of_users : Optional[int]
+    min_no_of_users : int
     max_no_of_users : Optional[int]
     has_instalments : Optional[str]
 
@@ -1142,7 +1142,7 @@ class ProductMasterSchemaResponse(BaseModel):
     product_description_main: Optional[str]
     product_description_sub: Optional[str]
     has_module: Optional[str]
-    min_no_of_users: Optional[int]
+    min_no_of_users: int
     max_no_of_users: Optional[int]
     has_instalments: Optional[str]
     is_deleted: str
@@ -1181,6 +1181,7 @@ class ProductModuleSchema(BaseModel):
     module_name         : str
     module_description  : str
     display_order       : int
+    is_default          : str
     
 
 class ProductModuleSchemaResponse(BaseModel):
@@ -1190,6 +1191,7 @@ class ProductModuleSchemaResponse(BaseModel):
     module_name         : str
     module_description  : str
     display_order       : int
+    is_default          : str
     modified_by         : Optional[int]
     modified_on         : Optional[datetime]
     created_by          : int
