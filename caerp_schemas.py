@@ -1119,32 +1119,32 @@ class InstallmentDetailsResponse(BaseModel):
         # //////////////////////////////////////////////
         
 class  ProductMasterSchema(BaseModel):
-    product_code     : Optional[str]
-    product_name     : Optional[str]
-    category_id      : Optional[int]
-    group_id         : Optional[int]
-    product_description_main : Optional[str]
-    product_description_sub  :Optional[str]
-    has_module       : Optional[str]
+    product_code     : str
+    product_name     : str
+    category_id      : int
+    group_id         : int
+    product_description_main : Optional[str] = None
+    product_description_sub  :Optional[str] = None
+    has_module       : str
     min_no_of_users : int
-    max_no_of_users : Optional[int]
-    has_instalments : Optional[str]
+    max_no_of_users : Optional[int] = None
+    has_instalments : str
 
   
 class ProductMasterSchemaResponse(BaseModel):
     id: int
-    product_code: Optional[str]
-    product_name: Optional[str]
-    category_id: Optional[int]
-    category_name: Optional[str]
-    group_id: Optional[int]
-    group_name: Optional[str]
-    product_description_main: Optional[str]
-    product_description_sub: Optional[str]
-    has_module: Optional[str]
+    product_code: str
+    product_name: str
+    category_id: int
+    category_name: str
+    group_id: int
+    group_name: str
+    product_description_main: Optional[str] = None
+    product_description_sub: Optional[str] = None
+    has_module: str
     min_no_of_users: int
-    max_no_of_users: Optional[int]
-    has_instalments: Optional[str]
+    max_no_of_users: Optional[int] = None
+    has_instalments: str
     is_deleted: str
   
      

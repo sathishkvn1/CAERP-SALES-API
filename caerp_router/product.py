@@ -96,7 +96,7 @@ def save_product_master(
 
 @router.post('/update_product_master/{product_id}', response_model=ProductMasterSchema)
 def update_product_master(
-        product_master_data: ProductMasterSchema =Depends(),
+        product_master_data: ProductMasterSchema = Depends(),
         product_id: int =0,  # Default to 0 for add operation
         db: Session = Depends(get_db),
         token: str = Depends(oauth2.oauth2_scheme)
@@ -208,9 +208,10 @@ def get_product_master_image(id: int):
 
 @router.get("/get_product_master_by_id/{product_id}", response_model=ProductMasterSchemaResponse)
 def get_product_master_by_id(product_id: int, db: Session = Depends(get_db)):
-    
     product_master_details = db_product.get_product_master_by_id(db, product_id)
-    return product_master_details if product_master_details is not None else []
+    if product_master_details is None:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return product_master_details
 
 
 @router.get("/get_product_master_by_code/{product_code}", response_model=List[ProductMasterSchemaResponse])

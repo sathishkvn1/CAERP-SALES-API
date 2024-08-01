@@ -247,9 +247,7 @@ def get_all_product_master_by_deleted_status(db: Session, deleted_status: Delete
 
 
 
-
-def get_product_master_by_id(db: Session,id: int):
-    # return db.query(ProductMaster).filter(ProductMaster.id== id).all()
+def get_product_master_by_id(db: Session, id: int):
     stmt = (
         select(
             ProductMaster.id,
@@ -278,8 +276,7 @@ def get_product_master_by_id(db: Session,id: int):
        product = ProductMasterSchemaResponse(**result._asdict())
        return product
     else:
-       return []
-
+       return None
 
 def get_product_master_by_code(db: Session,code: str):
         
