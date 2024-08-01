@@ -165,7 +165,7 @@ def update_product_module(db: Session,  request: ProductModuleSchema, module_id:
         # Update operation
         product_module = db.query(ProductModule).filter(ProductModule.id == module_id).first()
         if product_module is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product Module not found")
+           return [] 
         product_module_data_dict = request.dict(exclude_unset=True)
         for key, value in product_module_data_dict.items():
             setattr(product_module, key, value)
@@ -221,7 +221,7 @@ def update_product_master(db: Session,  request: ProductMasterSchema, product_ma
         # Update operation
         product_master = db.query(ProductMaster).filter(ProductMaster.id == product_master_id).first()
         if product_master is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product Master not found")
+           return [] 
         product_master_data_dict = request.dict(exclude_unset=True)
         for key, value in product_master_data_dict.items():
             setattr(product_master, key, value)
@@ -279,7 +279,7 @@ def get_product_master_by_id(db: Session,id: int):
        product = ProductMasterSchemaResponse(**result._asdict())
        return product
     else:
-       raise HTTPException(status_code=404, detail="Product not found")
+       return []
 
 
 def get_product_master_by_code(db: Session,code: str):
@@ -293,7 +293,7 @@ def delete_product_master(db: Session, product_id: int,action_type:str,deleted_b
     existing_product = db.query(ProductMaster).filter(ProductMaster.id == product_id).first()
 
     if existing_product is None:
-        raise HTTPException(status_code=404, detail="Product not found")
+       return [] 
     if(action_type== 'DELETE'):
 
             existing_product.is_deleted = 'yes'
@@ -321,7 +321,6 @@ def delete_product_master(db: Session, product_id: int,action_type:str,deleted_b
 
             return {
                 "message": "Product marked as Undeleted successfully",
-
             }
 
 
@@ -348,7 +347,7 @@ def save_product_category(db: Session,  request: ProductCategorySchema, product_
         # Update operation
         product_category = db.query(ProductCategory).filter(ProductCategory .id == product_category_id).first()
         if product_category is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product Category not found")
+           return []
         product_category_data_dict = request.dict(exclude_unset=True)
         for key, value in product_category_data_dict.items():
             setattr(product_category, key, value)
@@ -383,7 +382,7 @@ def delete_product_category(db: Session, category_id: int,deleted_by: int):
     existing_product = db.query(ProductCategory).filter(ProductCategory.id == category_id).first()
 
     if existing_product is None:
-        raise HTTPException(status_code=404, detail="Product category not found")
+       return [] 
 
     existing_product.is_deleted = 'yes'
     existing_product.deleted_by = deleted_by
@@ -411,7 +410,7 @@ def delete_product_module(db: Session, module_id: int,action_type:str,deleted_by
     existing_product = db.query(ProductModule).filter(ProductModule.id == module_id).first()
 
     if existing_product is None:
-        raise HTTPException(status_code=404, detail="Product module not found")
+       return [] 
     if(action_type== 'DELETE'):
 
         existing_product.is_deleted = 'yes'
@@ -471,8 +470,8 @@ def delete_product_video(db: Session, video_id: int,deleted_by: int):
     existing_video = db.query(ProductVideo).filter(ProductVideo.id == video_id).first()
 
     if existing_video is None:
-        raise HTTPException(status_code=404, detail="Product video not found")
-
+       return [] 
+    
     existing_video.is_deleted = 'yes'
     existing_video.deleted_by = deleted_by
     existing_video.deleted_on = datetime.utcnow()
@@ -504,7 +503,7 @@ def save_product_features(db: Session,  request: ProductFeaturesSchema, product_
         product_feature = db.query(ProductFeatures).filter(ProductFeatures.id == product_feature_id).first()
         
         if product_feature is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product Feature not found")
+           return []
         product_feature_data_dict = request.dict(exclude_unset=True)
         for key, value in product_feature_data_dict.items():
             setattr(product_feature, key, value)
@@ -539,8 +538,8 @@ def delete_product_feature(db: Session, feature_id: int):
     existing_feature = db.query(ProductFeatures).filter(ProductFeatures.id == feature_id).first()
 
     if existing_feature is None:
-        raise HTTPException(status_code=404, detail="Product feature not found")
-
+       return [] 
+    
     existing_feature.is_deleted = 'yes'
     
     db.commit()
@@ -618,7 +617,7 @@ def delete_installment_master(db: Session, id: int, deleted_by: int):
     existing_installment_master = db.query(InstallmentMaster).filter(InstallmentMaster.id == id).first()
 
     if existing_installment_master is None:
-        raise HTTPException(status_code=404, detail="Installment master not found")
+       return []
 
     # Mark the installment master as deleted
     existing_installment_master.is_deleted = 'yes'
@@ -912,8 +911,10 @@ def set_new_module_price(db:Session, price_data:ProductModulePriceSchema,user_id
        else:
         # price_list_data_dict = price_data.dict()
         product_master_price_id = price_list_data_dict.get("product_master_price_id")
+        module_id = price_list_data_dict.get("module_id")
         existing_price_list = db.query(ProductModulePrice).filter(
                     ProductModulePrice.product_master_price_id == product_master_price_id,
+                    ProductModulePrice.module_id == module_id,
                     ProductModulePrice.is_deleted == 'no'
                     ).order_by(
                     ProductModulePrice.effective_from_date.desc()).first()
@@ -949,7 +950,7 @@ def save_product_rating(db: Session, request: ProductRating, id: int,user_id: in
         # Update operation
         product_rating = db.query(ProductRating).filter(ProductRating .id == id).first()
         if product_rating is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price List not found")
+           return [] 
         product_rating_data_dict = request.dict(exclude_unset=True)
         for key, value in product_rating_data_dict.items():
             setattr(product_rating, key, value)
@@ -965,6 +966,7 @@ def save_product_rating(db: Session, request: ProductRating, id: int,user_id: in
 def get_product_complete_details(product_id : Optional[int]=None, page: Optional[int] = None, page_size: Optional[int] = None, db: Session = Depends(get_db)):
     requested_date = datetime.today()
     requested_date = requested_date.date()
+
     product_ratings = [
     {"star": '1', "count": 0},
     {"star": '2', "count": 0},
@@ -1041,9 +1043,9 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
     total_ratings_map = {}
     for row in total_results:
         total_ratings_map[row[0]] = {
-              "total_rating_count" : row[1],
-            "average_rating"     : row[2],
-            "total_review_count" : row[3]            
+              "total_rating_count": row[1],
+            "average_rating"      : row[2],
+            "total_review_count"  : row[3]            
         }
 
     discount_data ={}
@@ -1126,14 +1128,14 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
                 #         discount_name       =  discount['offer_name']
                         # print("discount amount", discount_percentage)
                 if discount['offer_percentage']:
-                        discount_amount = product_data.base_price*(discount['offer_percentage']/100)
-                        discount_percentage =discount['offer_percentage']
+                        discount_amount     = product_data.base_price*(discount['offer_percentage']/100)
+                        discount_percentage = discount['offer_percentage']
                         discount_name       = discount['offer_name']
                 discount_info = {
                         "discount_percentage" : discount_percentage,
-                        "discount_amount"      : discount_amount,
-                        "discounted_price"     : product_data.base_price - discount_amount,
-                        "discount_name"        : discount_name
+                        "discount_amount"     : discount_amount,
+                        "discounted_price"    : product_data.base_price - discount_amount,
+                        "discount_name"       : discount_name
                     }
             price_details = None
             base_price = 0
@@ -1197,35 +1199,35 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
             additional_price_per_user = product_data.additional_price_per_user
                         
             price_details = {
-            "base_price": base_price,
+            "base_price"               : base_price,
             "additional_price_per_user": additional_price_per_user
             }
            
             response_item={
-                "product_master_id" : product_data.product_master_id,
+                "product_master_id"      : product_data.product_master_id,
                 "product_master_price_id": product_data.product_master_price_id,
-                "product_name"      : product_data.product_master_product_name,
-                "product_code"      : product_data.product_master_product_code,
-                "category_id"  : category_id,
-                "category_name"  : category_name[0],
-                "group_id"  : group_id,
-                "group_name"   : group_name,
-                "image_url"    : image_path,                
+                "product_name"           : product_data.product_master_product_name,
+                "product_code"           : product_data.product_master_product_code,
+                "category_id"            : category_id,
+                "category_name"          : category_name[0],
+                "group_id"               : group_id,
+                "group_name"             : group_name,
+                "image_url"              : image_path,                
                 # "price"        : product_data.price,
                 # "inclusive_of_taxes": True,
                 # "emi_details"       : "EMI starts at ₹3,456. No Cost EMI available",
                 # "emi_options_url"   : "https://example.com/emi-options",
-                "description"       : {
+                "description"            : {
                             "main": product_data.product_description_main,
                             "sub": product_data.product_description_sub
                              },                
-                "has_module"   : product_data.product_master_has_module,
-                "minimum_user" : min_no_of_users,
-                "maximum_user" : max_no_of_users,
-                "has_instalments"  : has_instalments,
+                "has_module"             : product_data.product_master_has_module,
+                "minimum_user"           : min_no_of_users,
+                "maximum_user"           : max_no_of_users,
+                "has_instalments"        : has_instalments,
                 # "is_deleted"       : is_deleted,
-                "price_details": price_details,
-                 "features"    : features,
+                "price_details"          : price_details,
+                 "features"              : features,
                 # "total_rating": total_ratings_map.get(product_id,''),
                 # "ratings"           :  product_ratings
             }
@@ -1288,9 +1290,9 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
         response = {
             "pagination": {
                 "total_records": total_records,
-                "page": page,
-                "page_size": page_size,
-                "total_pages": total_pages
+                "page"         : page,
+                "page_size"    : page_size,
+                "total_pages"  : total_pages
             },
             "products": []
           }
@@ -1317,13 +1319,13 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
               #         discount_amount     = discount['offer_amount']
                     # print("discount amount", discount_percentage)
               if discount['offer_percentage']:
-                 discount_amount = product_data.base_price*(discount['offer_percentage']/100)
-                 discount_percentage =discount['offer_percentage']
+                 discount_amount     = product_data.base_price*(discount['offer_percentage']/100)
+                 discount_percentage = discount['offer_percentage']
               discount_info = {
                         "discount_percentage" : discount_percentage,
-                        "discount_amount"      : discount_amount,
-                        "discounted_price"     : product_data.base_price - discount_amount,
-                        "discount_name"        : discount['offer_name']
+                        "discount_amount"     : discount_amount,
+                        "discounted_price"    : product_data.base_price - discount_amount,
+                        "discount_name"       : discount['offer_name']
                     }
            price_details = None
            base_price = 0
@@ -1378,7 +1380,7 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
            has_instalments = master_det.has_instalments if master_det else None
            min_no_of_users = master_det.min_no_of_users if master_det else None
            max_no_of_users = master_det.max_no_of_users if master_det else None
-           is_deleted = master_det.is_deleted if master_det else None
+           is_deleted      = master_det.is_deleted if master_det else None
 
            base_price = product_data.base_price
            additional_price_per_user = product_data.additional_price_per_user
@@ -1389,22 +1391,22 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
           }
                    
            response_item={
-            "product_master_id": product_data.product_master_id,
+            "product_master_id"      : product_data.product_master_id,
             "product_master_price_id": product_data.product_master_price_id,
-            "product_name"      : product_data.product_master_product_name,
-            "product_code"      : product_data.product_master_product_code,
-            "category_id"  : category_id,
-            "category_name"  : category_name[0],
-            "group_id"  : group_id,
-            "group_name"   : group_name,
-            "has_module"   : product_data.product_master_has_module,
-            "minimum_user" : min_no_of_users,
-            "maximum_user" : max_no_of_users,
-            "has_instalments"  : has_instalments,
-            "is_deleted"       : is_deleted,
-            "image_url"     : image_path,
-            "price_details": price_details,
-            "features"    : features
+            "product_name"           : product_data.product_master_product_name,
+            "product_code"           : product_data.product_master_product_code,
+            "category_id"            : category_id,
+            "category_name"          : category_name[0],
+            "group_id"               : group_id,
+            "group_name"             : group_name,
+            "has_module"             : product_data.product_master_has_module,
+            "minimum_user"           : min_no_of_users,
+            "maximum_user"           : max_no_of_users,
+            "has_instalments"        : has_instalments,
+            "is_deleted"             : is_deleted,
+            "image_url"              : image_path,
+            "price_details"          : price_details,
+            "features"               : features
             # "image_url":  f"{BASE_URL}/product/save_product_master/{product_master_image_filename}",
             # "offer_price"   : product_data.price,
             #"price": product_data.price,
@@ -1475,11 +1477,11 @@ def get_product_rating_comments(db: Session, product_id: Optional[int] = None, l
          
             comments = [
               { 
-                "review_id" : row.id,
-                "user_id"   : row.user_id,
-                "username"  : row.user_name,
-                "rating"    : row.rating,
-                "comment"   : row.comment,
+                "review_id"  : row.id,
+                "user_id"    : row.user_id,
+                "username"   : row.user_name,
+                "rating"     : row.rating,
+                "comment"    : row.comment,
                 "review_date": row.date_of_comment.strftime("%Y-%m-%d"),
                 # "reviewer_image": f"{BASE_URL}/customer/image/add_customer_profile_image/{row.user_id}.jpg" 
               }                 # if row.user_id else f"{BASE_URL}/uploads/customer_profile_photo/default.jpg"            }
@@ -1547,11 +1549,11 @@ def get_product_rating_comments(db: Session, product_id: Optional[int] = None, l
          
             comments = [
               {
-                "review_id" : row.id,  
-                "user_id"   : row.user_id,
-                "username"  : row.user_name,
-                "rating"    : row.rating,
-                "comment"   : row.comment,
+                "review_id"  : row.id,  
+                "user_id"    : row.user_id,
+                "username"   : row.user_name,
+                "rating"     : row.rating,
+                "comment"    : row.comment,
                 "review_date": row.date_of_comment.strftime("%Y-%m-%d"),
                 # "reviewer_image": f"{BASE_URL}/customer/image/add_customer_profile_image/{row.user_id}.jpg" 
               }                         # if row.user_id else f"{BASE_URL}/uploads/customer_profile_photo/default.jpg"            }
@@ -1565,8 +1567,8 @@ def get_product_rating_comments(db: Session, product_id: Optional[int] = None, l
                 "page_size"       : page_size,
                 "total_pages"     : total_pages, 
                "product_master_id": product.product_master_id,
-               "product_name": product.product_master_product_name,
-               "reviews": comments
+               "product_name"     : product.product_master_product_name,
+               "reviews"          : comments
                })
 
         return response
@@ -1578,8 +1580,7 @@ def get_all_offer_list(
                         category_id : Optional[int]=None,
                         offer_master_id : Optional[int]=None ,
                         operator : Optional[Status] = None 
-                        
-                        ):
+                      ):
     try:
         if offer_master_id:
            offer = db.query(OfferMaster).filter(OfferMaster.id == offer_master_id,OfferMaster.is_deleted == 'no').first()  
@@ -1602,10 +1603,10 @@ def get_all_offer_list(
 
            details = [
                         OfferDetailsSchema(
-                             id=detail.id,
-                             offer_master_id=detail.offer_master_id,
-                             product_master_id=detail.product_master_id,
-                             is_deleted=detail.is_deleted
+                             id                = detail.id,
+                             offer_master_id   = detail.offer_master_id,
+                             product_master_id = detail.product_master_id,
+                             is_deleted        = detail.is_deleted
                          ) for detail in details_data
                      ] 
           
@@ -1613,14 +1614,14 @@ def get_all_offer_list(
            
            result.append(
                          OfferMasterSchemaResponse(
-                             id=offer.id,
-                             offer_category_id=offer.offer_category_id,
-                             offer_name=offer.offer_name,
-                             offer_percentage=offer.offer_percentage,
-                             effective_from_date=offer.effective_from_date,
-                             effective_to_date=offer.effective_to_date,
-                             is_deleted=offer.is_deleted,
-                             details=details
+                             id                  = offer.id,
+                             offer_category_id   = offer.offer_category_id,
+                             offer_name          = offer.offer_name,
+                             offer_percentage    = offer.offer_percentage,
+                             effective_from_date = offer.effective_from_date,
+                             effective_to_date   = offer.effective_to_date,
+                             is_deleted          = offer.is_deleted,
+                             details             = details
                          )
                      )
            return result
@@ -1631,8 +1632,7 @@ def get_all_offer_list(
         
             if category_id:
               query = query.filter(OfferMaster.offer_category_id == category_id)
-        
-                 
+                         
             if operator:
                if operator == Status.CURRENT:
                   query = query.filter(
@@ -1678,26 +1678,25 @@ def save_offer_details(
            db.flush()  # Ensure new_master.id is available for details
             # if apply_to == ApplyTo.SELECTED :    
            for detail_data in data.details:
-                    new_detail_data = detail_data.dict()
+               new_detail_data = detail_data.dict()
+               product_master_id = new_detail_data.get("product_master_id")
 
-                    product_master_id = new_detail_data.get("product_master_id")
+               # Check if the product is deleted
+               product = db.query(ProductMaster).filter(ProductMaster.id == product_master_id).first()
+               if product and product.is_deleted == 'yes':
+                  raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot give offers for a deleted product")
 
-                    # Check if the product is deleted
-                    product = db.query(ProductMaster).filter(ProductMaster.id == product_master_id).first()
-                    if product and product.is_deleted == 'yes':
-                      raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot give offers for a deleted product")
-
-                    new_detail_data.update({
+               new_detail_data.update({
                         "offer_master_id": new_master.id,
                         "created_by": user_id,
                         "created_on": datetime.utcnow()
-                    })
-                    new_detail = OfferDetails(**new_detail_data)
-                    db.add(new_detail)
+                   })
+               new_detail = OfferDetails(**new_detail_data)
+               db.add(new_detail)
         else:
             existing_master = db.query(OfferMaster).filter(OfferMaster.id == id).first()
             if not existing_master:
-                raise HTTPException(status_code=404, detail="Master record not found")
+               return []
 
             master_update_data = data.master.dict()
             for key, value in master_update_data.items():
@@ -1720,7 +1719,7 @@ def save_offer_details(
                 # Check if the product is deleted
                 product = db.query(ProductMaster).filter(ProductMaster.id == product_master_id).first()
                 if product and product.is_deleted == 'yes':
-                  raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot give coupon for a deleted product")
+                  raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot give offers for a deleted product")
 
                 new_detail_data.update({
                         "offer_master_id": id,
@@ -1748,11 +1747,12 @@ def save_offer_details(
         raise e
 
 
+
 def delete_offer_master(db, offer_master_id,action_type,deleted_by):
     existing_offer = db.query(OfferMaster).filter(OfferMaster.id == offer_master_id).first()
 
     if existing_offer is None:
-        raise HTTPException(status_code=404, detail="Offer  not found")
+       return []
     if(action_type== 'DELETE'):
 
             existing_offer.is_deleted = 'yes'
@@ -1978,8 +1978,8 @@ def get_cart_product_details_with_prices(
                     total_discount_amount += discount.get('discount_amount', 0.0)
 
                     cart_item_response = {
-                        "cart_id": cart_item.id,
-                        "customer_id": cart_item.customer_id,
+                        "cart_id"        : cart_item.id,
+                        "customer_id"    : cart_item.customer_id,
                         "saved_for_later": cart_item.saved_for_later,
                         "product_details": product_details,
                     }
@@ -1990,17 +1990,17 @@ def get_cart_product_details_with_prices(
         final_price = total_price_before_tax + tax_amount
         price_item_response = {
              
-                "total_price": total_price,
+                "total_price"          : total_price,
                 "total_discount_amount": total_discount_amount,
-                "tax_percentage" : "18 %",
-                "tax_amount": tax_amount,
-                "final_price": final_price
+                "tax_percentage"       : "18 %",
+                "tax_amount"           : tax_amount,
+                "final_price"          : final_price
             }
         
         if cart_item_responses:
            
             response = {
-            "cart_details": cart_item_responses,
+            "cart_details" : cart_item_responses,
             "price_details": price_item_response
         }
         else:
@@ -2054,7 +2054,7 @@ def save_coupon(db: Session , id: int, coupon_data: SaveCouponDetails, user_id: 
         else:
            existing_coupon = db.query(CouponMaster).filter(CouponMaster.id == id).first()
            if not existing_coupon:
-             raise HTTPException(status_code=400, detail=" record not found")
+             return []
             
            # Use the first item from coupon_data.master for update
            update_data = coupon_data.master.dict()
@@ -2154,17 +2154,18 @@ def get_all_coupon_list(
                         ).filter(
                         and_(
                             CouponDetails.coupon_master_id == coupon.id,
-                            CouponDetails.is_deleted == 'no'
+                            CouponDetails.is_deleted == 'no',
+                            ProductMaster.is_deleted == 'no'
+                          )
                         )
-                    )
           details_data = details_query.all()
 
           details = [
                         CouponDetailsSchema(
-                            id=detail.id,
-                            coupon_master_id=detail.coupon_master_id,
-                            product_master_id=detail.product_master_id,
-                            is_deleted=detail.is_deleted
+                            id                = detail.id,
+                            coupon_master_id  = detail.coupon_master_id,
+                            product_master_id = detail.product_master_id,
+                            is_deleted        = detail.is_deleted
                         ) for detail in details_data
                     ] 
           
@@ -2172,14 +2173,14 @@ def get_all_coupon_list(
            
           result.append(
                         CouponMasterSchemaResponse(
-                            id=coupon.id,
-                            coupon_name=coupon.coupon_name,
-                            coupon_code=coupon.coupon_code,
-                            coupon_percentage=coupon.coupon_percentage,
-                            effective_from_date=coupon.effective_from_date,
-                            effective_to_date=coupon.effective_to_date,
-                            is_deleted=coupon.is_deleted,
-                            details=details
+                            id                  = coupon.id,
+                            coupon_name         = coupon.coupon_name,
+                            coupon_code         = coupon.coupon_code,
+                            coupon_percentage   = coupon.coupon_percentage,
+                            effective_from_date = coupon.effective_from_date,
+                            effective_to_date   = coupon.effective_to_date,
+                            is_deleted          = coupon.is_deleted,
+                            details             = details
                         )
                     )
           return result
@@ -2273,7 +2274,7 @@ def get_all_installments(
            details=[
                 InstallmentDetailsForGet(
                     id                    = detail.id,
-                    installment_master_id = detail.installment_master_id,
+                    # installment_master_id = detail.installment_master_id,
                     installment_name      = detail.installment_name,
                     payment_rate          = detail.payment_rate,
                     due_date              = detail.due_date,
@@ -2320,24 +2321,24 @@ def get_all_installments(
 
            details = [
             InstallmentDetailsForGet(
-                id=detail.id,
-                installment_master_id=detail.installment_master_id,
-                installment_name=detail.installment_name,
-                payment_rate=detail.payment_rate,
-                due_date=detail.due_date,
-                is_deleted=detail.is_deleted
+                id                    = detail.id,
+                installment_master_id = detail.installment_master_id,
+                installment_name      = detail.installment_name,
+                payment_rate          = detail.payment_rate,
+                due_date              = detail.due_date,
+                is_deleted            = detail.is_deleted
                )
                 for detail in master_details
              ]
                  
            result.append(
             InstallmentMasterForGet(
-                id=master.id,
-                number_of_installments=master.number_of_installments,
-                is_active=master.is_active,
-                active_from_date=master.active_from_date,
-                is_deleted=master.is_deleted,
-                details=details
+                id                     = master.id,
+                number_of_installments = master.number_of_installments,
+                is_active              = master.is_active,
+                active_from_date       = master.active_from_date,
+                is_deleted             = master.is_deleted,
+                details                = details
               )
             )   
     
@@ -2353,14 +2354,14 @@ def get_all_installments(
 
        details=[
                 InstallmentDetailsResponse(
-                    id=detail.id,
-                    installment_master_id=detail.installment_master_id,
-                    installment_name=detail.installment_name,
-                    payment_rate=detail.payment_rate,
-                    due_date=detail.due_date,
-                    created_by=detail.created_by,
-                    created_on=detail.created_on,
-                    is_deleted=detail.is_deleted
+                    # id                    = detail.id,
+                    installment_master_id = detail.installment_master_id,
+                    installment_name      = detail.installment_name,
+                    payment_rate          = detail.payment_rate,
+                    due_date              = detail.due_date,
+                    created_by            = detail.created_by,
+                    created_on            = detail.created_on,
+                    is_deleted            = detail.is_deleted
                 )
                 for detail in installment_details
             ]
@@ -2389,24 +2390,24 @@ def get_all_installments(
 
         details = [
             InstallmentDetailsForGet(
-                id=detail.id,
-                installment_master_id=detail.installment_master_id,
-                installment_name=detail.installment_name,
-                payment_rate=detail.payment_rate,
-                due_date=detail.due_date,
-                is_deleted=detail.is_deleted
+                id                    = detail.id,
+                # installment_master_id = detail.installment_master_id,
+                installment_name      = detail.installment_name,
+                payment_rate          = detail.payment_rate,
+                due_date              = detail.due_date,
+                is_deleted            = detail.is_deleted
             )
             for detail in master_details
         ]
                  
         result.append(
             InstallmentMasterForGet(
-                id=master.id,
-                number_of_installments=master.number_of_installments,
-                is_active=master.is_active,
-                active_from_date=master.active_from_date,
-                is_deleted=master.is_deleted,
-                details=details
+                id                     = master.id,
+                number_of_installments = master.number_of_installments,
+                is_active              = master.is_active,
+                active_from_date       = master.active_from_date,
+                is_deleted             = master.is_deleted,
+                details                = details
             )
         )
     
