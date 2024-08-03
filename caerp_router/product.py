@@ -9,7 +9,7 @@ from typing import Union
 from sqlalchemy import select
 from caerp_db.models import  AdminUser, Designation, InstallmentDetails, InstallmentMaster, ProductRating,ProductMaster, ProductModule, UserRole, ProductCategory, ProductGroup
 from caerp_schemas import AdminUserBaseForDelete,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate,  InstallmentDetailsForGet, InstallmentEdit, InstallmentFilter, InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema
-from caerp_schemas import ProductMasterPriceSchema,CartDetailsSchema,CouponMasterSchema,OfferDetailsSchema, SaveOfferDetailsRequest,OfferMasterSchema,OfferCategoryResponse,ProductRating,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse, ProductFeaturesSchema, ProductFeaturesSchemaResponse, SaveCouponDetails, CouponMasterSchemaResponse, OfferMasterSchemaResponse
+from caerp_schemas import ProductMasterPriceSchema,CartDetailsSchema,CouponMasterSchema,OfferDetailsSchema, SaveOfferDetailsRequest,OfferMasterSchema,OfferCategoryResponse,ProductRating,ProductMasterSchemaResponse,ProductVideoSchemaResponse,ProductModuleSchemaResponse,ProductCategorySchemaResponse, ProductFeaturesSchema, ProductFeaturesSchemaResponse, SaveCouponDetails, CouponMasterSchemaResponse, OfferMasterSchemaResponse,UpdateInstallmentRequest
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
@@ -50,8 +50,6 @@ router = APIRouter(
 #     product = db_product.get_all_product_master_by_deleted_status(db, deleted_status)
 #     # return {"product master": product}
 #     return product
-
-
 
 
 
@@ -110,7 +108,6 @@ def update_product_master(
     user_id = auth_info["user_id"]
     try:
         new_product = db_product.update_product_master(db, product_master_data,product_id,user_id)
-        
         return new_product
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed operation")
@@ -160,6 +157,8 @@ def upload_product_main_video(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to upload video")
 
 
+
+
 #...........................................................
 
 @router.get("/video/get_product_master_video/{id}", response_model=dict)
@@ -168,6 +167,7 @@ def get_product_master_video(id: int):
     product_master_video_filename = f"{id}.mp4"  
     # BASE_URL="http://127.0.0.1:8010/"
     return {"photo_url": f"{BASE_URL}/product/save_product_master/{product_master_video_filename}"}
+
 
 
 
@@ -196,7 +196,9 @@ def update_admin_user_image(
     # Return the updated user data
     return product
 
-  
+
+
+
 @router.get("/image/get_product_master_image/{id}", response_model=dict)
 def get_product_master_image(id: int):
     
@@ -214,11 +216,14 @@ def get_product_master_by_id(product_id: int, db: Session = Depends(get_db)):
     return product_master_details
 
 
+
 @router.get("/get_product_master_by_code/{product_code}", response_model=List[ProductMasterSchemaResponse])
 def get_product_master_by_code(product_code: str, db: Session = Depends(get_db)):
     
     product_master_details = db_product.get_product_master_by_code(db, product_code)
     return product_master_details if product_master_details is not None else []
+
+
 
 
 @router.get("/get_all_productmaster/", response_model=List[ProductMasterSchemaResponse])
@@ -265,8 +270,6 @@ def delete_product_master(
     user_id = auth_info["user_id"]
      
     return db_product.delete_product_master(db, product_id,action_type,deleted_by=user_id)
-
-
 
 
 # @router.delete("/delete/product_master/{product_id}")
@@ -379,6 +382,7 @@ def save_product_module(
 
 
 
+
 @router.post('/update_product_module/{module_id}', response_model=ProductModuleSchema)
 def update_product_module(
         product_module_data: ProductModuleSchema =Depends(),
@@ -398,6 +402,7 @@ def update_product_module(
 
 
 #_____________________________________________________
+
 @router.post('/update_product_module_image/{id}', response_model=ProductModuleSchemaResponse)
 def update_admin_user_image(
         id: int,
@@ -423,8 +428,6 @@ def update_admin_user_image(
 
     # Return the updated user data
     return user
-
-
 
 
 #_____________________________________________________
@@ -476,7 +479,6 @@ def delete_product_module(
     auth_info = authenticate_user(token)
     user_id = auth_info["user_id"]
     
-    
     return db_product.delete_product_module(db, module_id,action_type,deleted_by=user_id)
 
 
@@ -491,9 +493,10 @@ async def get_all_product_video(deleted_status: DeletedStatus = DeletedStatus.NO
     return product
 
 
-
 import logging
 logger = logging.getLogger(__name__)
+
+
 
 @router.post('/save_product_additional_videos/', response_model=ProductVideoSchema)
 def save_product_video(
@@ -534,8 +537,7 @@ def update_product_video(
 ):
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-    
+   
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
     try:
@@ -546,14 +548,13 @@ def update_product_video(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed operation")
 
 
+
 @router.get("/video/get_product_additonal_video/{id}", response_model=dict)
 def get_product_additonal_video(id: int):
     
     profile_photo_filename = f"{id}.mp4"  
     # BASE_URL="http://127.0.0.1:5000"
     return {"photo_url": f"{BASE_URL}/product/save_product_additional_videos/{profile_photo_filename}"}
-
-
 
 
 
@@ -566,6 +567,7 @@ def get_product_video_by_id(
     if not product_video_details:
         raise HTTPException(status_code=404, detail="No products found for this id")
     return product_video_details
+
 
 
 @router.get("/get_product_additinal_video_by_product_master_id/{video_id}", response_model=List[ProductVideoSchemaResponse])
@@ -585,6 +587,7 @@ def get_product_video_by_product_master_id(
    
 #     return {"photo_url": f"{BASE_URL}/product/save_product_additional_video/{video_filename}"}
 
+
 @router.delete("/delete/product_video/{video_id}")
 def delete_product_video(
                      video_id: int,
@@ -598,6 +601,7 @@ def delete_product_video(
     user_id = auth_info["user_id"]
     
     return db_product.delete_product_video(db, video_id,deleted_by=user_id)
+
 
 
 #######################  Product Features   ########################################################
@@ -651,8 +655,6 @@ def delete_product_feature(
 
 #////
 
-
-
 @router.post("/save_installments/", response_model=None)
 def create_installments(
     installment_data: InstallmentCreate,
@@ -676,8 +678,6 @@ def create_installments(
     return {"installment_master": installment_master, "installment_details": installment_details}
 
 
-
-
 @router.post("/edit_installments/{installment_id}", response_model=None)
 def edit_installments(
     installment_id: int,
@@ -697,24 +697,22 @@ def edit_installments(
     return {"message": "Installment updated successfully"}
 
 
-@router.delete("/delete/installment_master/{id}")
-def delete_installment_master(
+# @router.delete("/delete/installment_master/{id}")
+# def delete_installment_master(
                      
-                     id: int,
-                     db: Session = Depends(get_db),
-                     token: str = Depends(oauth2.oauth2_scheme)):
-    if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+#                      id: int,
+#                      db: Session = Depends(get_db),s
+#                      token: str = Depends(oauth2.oauth2_scheme)):
+#     if not token:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     
-    auth_info = authenticate_user(token) 
-    user_id = auth_info["user_id"]
+#     auth_info = authenticate_user(token) 
+#     user_id = auth_info["user_id"]
 
-    return db_product.delete_installment_master(db, id, deleted_by=user_id)
-
-
-
+#     return db_product.delete_installment_master(db, id, deleted_by=user_id)
 
 #====================================================================================================
+
 
 # @router.post('/update_price_product_module')
 # def update_price_product_module(
@@ -731,7 +729,6 @@ def delete_installment_master(
 #         return {"success": True, "message": "Add new price list successfully"}
 #     else:
 #         return {"success": False, "message": "Invalid action"} 
-
 
 
 @router.get('/get_price_list_master')
@@ -912,8 +909,7 @@ def save_product_rating(
         token: str = Depends(oauth2.oauth2_scheme)):
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-    
+        
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
     # try:
@@ -925,6 +921,7 @@ def save_product_rating(
         "message": "Review submitted successfully"
         # "product_rating_id": product_rating_id
         }
+
 
 
 @router.get("/get_product_complete_details")
@@ -1193,9 +1190,7 @@ def get_all_installments(
     Parameters:
    
     -**installment_master_id** : id of the installment master.
-
     -**installment_details_id** : id of the installment details.
-
     -**status** : it indicates the status of retrieved installments. The values are ACTIVE and INACTIVE
     - ACTIVE : currently active installments.
     - INACTIVE : currently inactive installments.
@@ -1205,4 +1200,43 @@ def get_all_installments(
     return installment_list if installment_list is not None else []
 
 
+@router.post("/update_installments/{installment_master_id}")
+def update_installments(
+    data: List[UpdateInstallmentRequest],
+    installment_master_id: int,
+    installment_details_id: Optional[int] = None,
+    installment_status : InstallmentStatus = None,
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2.oauth2_scheme)
+):
+    """
+    Endpoint to update installment master and installment details.
 
+    Parameters:
+    - data (List[UpdateInstallmentRequest]): The list of installment data to update. This data contains both master data and details.
+    - installment_master_id: The id of installment master to update.
+    - installment_details_id (Optional[int]): The ID of the installment details to update.
+    - db (Session): The database session dependency.
+    - token (str): The authorization token dependency.
+
+    Returns:
+    - JSON response with the status of the operation.
+    """
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+    auth_info = authenticate_user(token) 
+    user_id = auth_info["user_id"]
+
+    try:
+        for installment in data:
+            db_product.update_installments(
+              db,installment,installment_status,user_id,installment_master_id,installment_details_id
+            )
+            return {"success": True, "message": "updated successfully"}
+            
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    

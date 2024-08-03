@@ -1065,11 +1065,9 @@ class CustomerSalesQueryForGet(BaseModel):
         
         
 class InstallmentMasterBase(BaseModel):
-    product_id: int
-    number_of_installments: int
-    is_active: BooleanFlag = 'no'
-    active_from_date: Optional[date] = None
-    
+    # number_of_installments: int
+    is_active: str
+        
 
 class InstallmentDetailsForGet(BaseModel):
     id:int
@@ -1077,31 +1075,19 @@ class InstallmentDetailsForGet(BaseModel):
     installment_name: str
     payment_rate: float 
     due_date: date
-    # modified_by: Optional[int]
-    # modified_on: Optional[datetime]
-    # created_by: int
-    # created_on: datetime
-    is_deleted: str
-    # deleted_by: Optional[int]
-    # deleted_on: Optional[datetime] 
+     
 
 class InstallmentMasterForGet(BaseModel):
     id:int
     number_of_installments: int
     is_active: BooleanFlag = 'no'
-    active_from_date: Optional[date] = None
     # modified_by: Optional[int]
     # modified_on: Optional[datetime]
-    # created_by: int
-    is_deleted: str
-    # created_on: datetime
-    # deleted_by: Optional[int]
-    # deleted_on: Optional[datetime]
     details: List[InstallmentDetailsForGet] = []
      
         
 class InstallmentDetailsBase(BaseModel):
-    installment_master_id: int
+    # installment_master_id: int
     installment_name: str
     payment_rate: float 
     due_date: date    
@@ -1112,12 +1098,17 @@ class InstallmentDetailsResponse(BaseModel):
     installment_name: str
     payment_rate: float 
     due_date: date
-    created_by: int
-    created_on: datetime
-    is_deleted: str 
+    
+
+
+class UpdateInstallmentRequest(BaseModel):
+    installment_master: InstallmentMasterBase
+    installment_details: Optional[List[InstallmentDetailsBase]] = None
+
 
         # //////////////////////////////////////////////
-        
+
+
 class  ProductMasterSchema(BaseModel):
     product_code     : str
     product_name     : str
@@ -1147,8 +1138,6 @@ class ProductMasterSchemaResponse(BaseModel):
     has_instalments: str
     is_deleted: str
   
-     
-
 
  
 # class  ProductCategorySchema(BaseModel):
@@ -1157,11 +1146,8 @@ class ProductMasterSchemaResponse(BaseModel):
 #     created_on        : Optional[datetime]
     
 class  ProductCategorySchema(BaseModel):
-    
     category_name     : Optional[str]
-    
-
-
+   
  
 class  ProductCategorySchemaResponse(BaseModel):
     id               : int
@@ -1304,7 +1290,6 @@ class InstallmentDetail(BaseModel):
 class InstallmentCreate(BaseModel):
     number_of_installments: int
     is_active: str
-    active_from_date: Optional[date] = None
     installment_details: List[InstallmentDetail]
 
     class Config:
@@ -1322,25 +1307,22 @@ class InstallmentDetails(BaseModel):
 class InstallmentMasterCreate(BaseModel):
     number_of_installments: int
     is_active: bool
-    active_from_date: date
-    created_by: int
+    
     
 class InstallmentMasterCreateForGet(BaseModel):
     number_of_installments: int
     is_active: bool
-    active_from_date: date
-    created_by: int
+    
 
 class InstallmentDetailsCreate(BaseModel):
     installment_master_id: int
     installment_name: str
     payment_rate: float
     due_date: date
-    created_by: int
+   
     
 class InstallmentEdit(BaseModel):
     is_active: Optional[BooleanFlag] = None
-    active_from_date: Optional[date] = None
     installment_name: Optional[str] = None
     payment_rate: Optional[float] = None
     due_date: Optional[date] = None
