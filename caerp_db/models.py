@@ -731,15 +731,9 @@ class InstallmentMaster(caerp_base):
     id                      = Column(Integer, primary_key=True, index=True)
     number_of_installments  = Column(Integer, nullable=False)
     is_active               = Column(Enum('yes', 'no'), default='no')
-    active_from_date        = Column(Date, default=None)
-    created_by              = Column(Integer, nullable=False)
-    created_on              = Column(DateTime, nullable=False, default=func.now())
     modified_by             = Column(Integer, nullable=False)
     modified_on             = Column(DateTime, nullable=False, default=func.now())
-    is_deleted              = Column(Enum('yes', 'no'), nullable=False, default='no')
-    deleted_by              = Column(Integer, nullable=True)  # Allow NULL values for deleted_by
-    deleted_on              = Column(DateTime, nullable=True)  # Allow NULL values for deleted_on
-
+    
 
 
 class InstallmentDetails(caerp_base):
@@ -750,13 +744,7 @@ class InstallmentDetails(caerp_base):
     installment_name        = Column(String(200), default=None)
     payment_rate            = Column(DECIMAL(10, 2), nullable=False)
     due_date                = Column(Date, nullable=False)
-    created_by              = Column(Integer, nullable=False)
-    created_on              = Column(DateTime, nullable=False, default=datetime.utcnow)
-    modified_by             = Column(Integer, default=None)
-    modified_on             = Column(DateTime, default=None)
-    is_deleted              = Column(Enum('yes', 'no'), nullable=False, default='no')
-    deleted_by              = Column(Integer, default=None)
-    deleted_on              = Column(DateTime, default=None)
+    
 
     
 class ProductMaster(caerp_base):
