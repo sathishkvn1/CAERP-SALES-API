@@ -603,28 +603,28 @@ def update_installment_details(db: Session, installment_id: int, data: dict, use
     return None
 
 
-def delete_installment_master(db: Session, id: int, deleted_by: int):
-    existing_installment_master = db.query(InstallmentMaster).filter(InstallmentMaster.id == id).first()
+# def delete_installment_master(db: Session, id: int, deleted_by: int):
+#     existing_installment_master = db.query(InstallmentMaster).filter(InstallmentMaster.id == id).first()
 
-    if existing_installment_master is None:
-       return []
+#     if existing_installment_master is None:
+#        return []
 
-    # Mark the installment master as deleted
-    existing_installment_master.is_deleted = 'yes'
-    existing_installment_master.deleted_by = deleted_by
-    existing_installment_master.deleted_on = datetime.utcnow()
+#     # Mark the installment master as deleted
+#     existing_installment_master.is_deleted = 'yes'
+#     existing_installment_master.deleted_by = deleted_by
+#     existing_installment_master.deleted_on = datetime.utcnow()
 
-    # Mark related installment details as deleted
-    db.query(InstallmentDetails).filter(InstallmentDetails.installment_master_id == id).update({
-        InstallmentDetails.is_deleted: 'yes',
-        InstallmentDetails.deleted_by: deleted_by,
-        InstallmentDetails.deleted_on: datetime.utcnow()
-    }, synchronize_session=False)
+#     # Mark related installment details as deleted
+#     db.query(InstallmentDetails).filter(InstallmentDetails.installment_master_id == id).update({
+#         InstallmentDetails.is_deleted: 'yes',
+#         InstallmentDetails.deleted_by: deleted_by,
+#         InstallmentDetails.deleted_on: datetime.utcnow()
+#     }, synchronize_session=False)
 
-    db.commit()
-    return {
-        "message": "Installment master and related details deleted successfully",
-    }
+#     db.commit()
+#     return {
+#         "message": "Installment master and related details deleted successfully",
+#     }
 
 
 
@@ -2394,14 +2394,13 @@ def update_installments(
     db : Session,
     request: UpdateInstallmentRequest,
     installment_status : InstallmentStatus,
-     user_id: int,
-    installment_master_id : int,
-    installment_details_id : Optional[int] = None,
-    ):
+    user_id: int,
+    installment_master_id : int
+   ):
     try:
        db_installment_master = db.query(InstallmentMaster).filter(InstallmentMaster.id == installment_master_id).first()
-       if not db_installment_master:
-           raise HTTPException(status_code=404, detail="InstallmentMaster not found")
+    #    if not db_installment_master:
+    #       raise HTTPException(status_code=404, detail="InstallmentMaster for this id not found")
 
        for key, value in request.installment_master.dict().items():
            setattr(db_installment_master, key, value)
@@ -2409,20 +2408,19 @@ def update_installments(
        db_installment_master.modified_on = datetime.utcnow()
 
        # Update InstallmentDetails if provided
-       if installment_details_id:
-          if request.installment_details:
-             for detail in request.installment_details:
-                 db_installment_detail = db.query(InstallmentDetails).filter(
-                 and_(
-                    InstallmentDetails.installment_master_id == installment_master_id,
-                    InstallmentDetails.id == installment_details_id
-                    )
-                 ).first()
-                 if db_installment_detail:
-                    for key, value in detail.dict().items():
-                        setattr(db_installment_detail, key, value)
-                 else:
-                    raise ValueError("InstallmentDetails not found")
+       if request.installment_details:
+            for detail in request.installment_details:
+                if detail.id:  # Ensure the ID is provided for the details to be updated
+                    db_installment_detail = db.query(InstallmentDetails).filter(
+                        InstallmentDetails.installment_master_id == installment_master_id,
+                        InstallmentDetails.id == detail.id
+                    ).first()
+                    if db_installment_detail:
+                       for key, value in detail.dict().items():
+                           if key != 'id':  # Exclude the primary key field from being updated
+                              setattr(db_installment_detail, key, value)
+                    else:
+                      raise ValueError(f"InstallmentDetails with id {detail.id} not found")
 
        db.commit()
        db.refresh(db_installment_master)

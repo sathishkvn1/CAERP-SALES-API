@@ -1087,6 +1087,7 @@ class InstallmentMasterForGet(BaseModel):
      
         
 class InstallmentDetailsBase(BaseModel):
+    id: int
     # installment_master_id: int
     installment_name: str
     payment_rate: float 

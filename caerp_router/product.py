@@ -1204,7 +1204,6 @@ def get_all_installments(
 def update_installments(
     data: List[UpdateInstallmentRequest],
     installment_master_id: int,
-    installment_details_id: Optional[int] = None,
     installment_status : InstallmentStatus = None,
     db: Session = Depends(get_db),
     token: str = Depends(oauth2.oauth2_scheme)
@@ -1215,7 +1214,6 @@ def update_installments(
     Parameters:
     - data (List[UpdateInstallmentRequest]): The list of installment data to update. This data contains both master data and details.
     - installment_master_id: The id of installment master to update.
-    - installment_details_id (Optional[int]): The ID of the installment details to update.
     - db (Session): The database session dependency.
     - token (str): The authorization token dependency.
 
@@ -1227,13 +1225,16 @@ def update_installments(
     
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
+    
+    db_installment_master = db.query(InstallmentMaster).filter(InstallmentMaster.id == installment_master_id).first()
+    if not db_installment_master:
+        return {"success": False, "message": f"Installment master for installment_master_id {installment_master_id} not found"} 
 
     try:
         for installment in data:
-            db_product.update_installments(
-              db,installment,installment_status,user_id,installment_master_id,installment_details_id
-            )
-            return {"success": True, "message": "updated successfully"}
+            db_product.update_installments(db,installment,installment_status,user_id,installment_master_id)
+            
+        return {"success": True, "message": "updated successfully"}
             
     except HTTPException as e:
         raise e
