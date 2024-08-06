@@ -644,7 +644,7 @@ def delete_product_feature(
 #############################################################################################################
 
 
-@router.post('/save_product_trial_features/{trial_feature_id}', response_model=ProductTrialFeatureSchema)
+@router.post('/save_product_trial_features/{trial_feature_id}')
 def save_product_trial_feature(
         product_trial_feature_data: ProductTrialFeatureSchema ,
         trial_feature_id: int = 0,  # Default to 0 for add operation
@@ -663,9 +663,10 @@ def save_product_trial_feature(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
        
     try:
-        trial_feature = db_product.save_product_trial_features(db, product_trial_feature_data,trial_feature_id)
-    
-        return trial_feature
+         trial_features = db_product.save_product_trial_features(db, product_trial_feature_data,trial_feature_id)
+         if trial_features:
+            return {"success": True, "message": "saved successfully"} 
+        
     except Exception as e:
        raise HTTPException(status_code=500, detail=str(e))
     
