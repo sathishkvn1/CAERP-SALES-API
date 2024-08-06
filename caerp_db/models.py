@@ -769,6 +769,8 @@ class ProductMaster(caerp_base):
     deleted_by          = Column(Integer, default=None)
     deleted_on          = Column(DateTime, default=None)
 
+
+
 class ProductCategory(caerp_base):
     __tablename__ = "product_category"
 
@@ -781,6 +783,8 @@ class ProductCategory(caerp_base):
     is_deleted          = Column(Enum('yes', 'no'), nullable=False, default='no')
     deleted_by          = Column(Integer, default=None)
     deleted_on          = Column(DateTime, default=None)
+
+
 
 class ProductModule(caerp_base):
     __tablename__ = "product_module"
@@ -834,8 +838,18 @@ class ProductFeatures(caerp_base):
     product_master_id    = Column(Integer, nullable=False)
     feature              = Column(String(50), nullable=False)
     is_deleted           = Column(Enum('yes', 'no'), nullable=False, default='no')
-    
 
+
+
+class ProductTrialFeatures(caerp_base):
+    __tablename__ = "product_trial_features"
+
+    id                 = Column(Integer, primary_key=True, autoincrement=True)
+    product_master_id  = Column(Integer, nullable=False)
+    feature            = Column(String(50), nullable=False)
+    description        = Column(String(1000), nullable=False)  
+    icon_class         = Column(String(100),nullable=False)
+    is_deleted         = Column(Enum('yes', 'no'), nullable=False, default='no')
 
 
 class CustomerInstallmentMaster(caerp_base):
@@ -845,6 +859,7 @@ class CustomerInstallmentMaster(caerp_base):
     customer_id             = Column(Integer,  nullable=False)
     installment_master_id   = Column(Integer,  nullable=False)
     total_amount_to_be_paid = Column(Float, nullable=False)
+
 
 
 class CustomerInstallmentDetails(caerp_base):
@@ -860,7 +875,9 @@ class CustomerInstallmentDetails(caerp_base):
     paid_amount                     = Column(Float, default=None)
     payment_mode_id                 = Column(Integer, default=None)
     transaction_id                  = Column(Integer,  default=None)
-    
+
+
+
 class PanCard(caerp_base):
     __tablename__   =   "app_pan_card_types"
 
@@ -868,11 +885,15 @@ class PanCard(caerp_base):
     pan_card_type_code	= Column(String(1), nullable=False)
     pan_card_type	    = Column(String(100), nullable=False)
 
+
+
 class Qualification(caerp_base):
     __tablename__   =   "app_qualification"
 
     id                  = Column(Integer, primary_key=True, autoincrement=True)
     qualification	    = Column(String(50), nullable=False)
+
+
 
 class ConstitutionTypes(caerp_base):
     __tablename__   =   "app_constitution_types"
@@ -880,13 +901,14 @@ class ConstitutionTypes(caerp_base):
     id                   = Column(Integer, primary_key=True, autoincrement=True)
     constitution_type	 = Column(String(50), nullable=False)
 
+
+
 class Profession(caerp_base):
     __tablename__  =  "app_profession"
     
     id                   = Column(Integer, primary_key=True, autoincrement=True)
     profession_name 	 = Column(String(100), nullable=False)
     profession_code      = Column(String(100), nullable=False)
-
 
 
     
@@ -918,8 +940,6 @@ class HomeTrendingNews(caerp_base):
     is_deleted          = Column(Enum('yes', 'no'), nullable=False, default='no')
     deleted_by          = Column(Integer, default=None)
     deleted_on          = Column(DateTime, default=None)
-
-
 
 
     
@@ -961,7 +981,8 @@ class JobVacancies(caerp_base):
     deleted_by          = Column(Integer, default=None)
     deleted_on          = Column(DateTime, default=None)
     
-    
+
+
 class JobApplication(caerp_base):
     __tablename__ = "app_site_job_applications"
 
@@ -973,6 +994,8 @@ class JobApplication(caerp_base):
     mobile_number	= Column(String(20), default=None)
     experience 		= Column(String(2000), default=None)
     message         = Column(String(2000), default=None)
+
+
 
 class MiracleFeatures(caerp_base):
     __tablename__ = "app_site_miracle_features"
@@ -991,7 +1014,6 @@ class MiracleFeatures(caerp_base):
     
 #--------------------------------------------------------------------------------------------------------------#--------------------------------------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------------------
-
 
 class EmailCredentials(caerp_base):
     __tablename__ = "app_email_api_settings"
@@ -1030,6 +1052,8 @@ class OtpGeneration(caerp_base):
     deleted_by          = Column(Integer, default=None)
     deleted_on          = Column(DateTime, default=None)
 
+
+
 class MobileCredentials(caerp_base):
     __tablename__ = "app_sms_api_settings"
 
@@ -1045,6 +1069,8 @@ class MobileCredentials(caerp_base):
     modified_on             = Column(DateTime, default=None)
     modified_by             = Column(Integer, default=None)
 
+
+
 class SmsTemplates(caerp_base):
      __tablename__ = "app_site_sms_templates"
 
@@ -1059,7 +1085,8 @@ class SmsTemplates(caerp_base):
      modified_by             = Column(Integer, default=None)
      is_active               = Column(Enum('yes', 'no'), nullable=False, default='yes')
      
-     
+
+
 class CustomerPasswordReset(caerp_base):
     __tablename__ = 'customer_password_reset_requests'
 
@@ -1067,8 +1094,6 @@ class CustomerPasswordReset(caerp_base):
     customer_id             = Column(Integer, nullable=False)
     request_token           = Column(String(500), nullable=False)
     request_timestamp       = Column(DateTime, nullable=False, default=func.now())
-
-
 
 # class PriceListProductMaster(caerp_base):
 #     __tablename__ = 'price_list_product_master'
@@ -1193,6 +1218,7 @@ class CustomerPasswordReset(caerp_base):
 #     deleted_on              = Column(DateTime, default=None)
 
 
+
 class ProductRating(caerp_base):
     __tablename__ = 'product_rating'
 
@@ -1311,11 +1337,14 @@ class ViewProductModulePrice(caerp_base):
     effective_to_date       = Column(Date, default=None)
 
 
+
 class OfferCategory(caerp_base):
     __tablename__ ='offer_category'
 
     id              = Column(Integer, primary_key=True, index=True)
     offer_category  = Column(String, nullable=False)
+
+
 
 class OfferMaster(caerp_base):
     __tablename__ = "offer_master"
@@ -1335,6 +1364,8 @@ class OfferMaster(caerp_base):
     deleted_by              = Column(Integer, default=None)
     deleted_on              = Column(DateTime, default=None)
 
+
+
 class OfferDetails(caerp_base):
     __tablename__ = 'offer_details'
 
@@ -1348,6 +1379,8 @@ class OfferDetails(caerp_base):
     is_deleted              = Column(Enum('yes', 'no'), nullable=False, default='no')
     deleted_by              = Column(Integer, default=None)
     deleted_on              = Column(DateTime, default=None)
+
+
 
 class OfferDetailsView(caerp_base):
     __tablename__ = 'view_offer_details'
@@ -1373,6 +1406,7 @@ class OfferDetailsView(caerp_base):
     offer_details_deleted_on     = Column(DateTime, default=None)
 
 
+
 class CartDetails(caerp_base):
     __tablename__ = 'cart_details'
 
@@ -1381,6 +1415,8 @@ class CartDetails(caerp_base):
     customer_id         = Column(Integer, nullable=False)
     saved_for_later     = Column(Enum('yes', 'no'), nullable=False, default='no') 
     is_deleted          = Column(Enum('yes', 'no'), nullable=False, default='no')                     
+
+
 
 class CouponMaster(caerp_base):
     __tablename__ = 'coupon_master'
@@ -1400,6 +1436,8 @@ class CouponMaster(caerp_base):
     deleted_by              = Column(Integer, default=None)
     deleted_on              = Column(DateTime, default=None)
 
+
+
 class CouponDetails(caerp_base):
     __tablename__ = 'coupon_details'
 
@@ -1414,12 +1452,16 @@ class CouponDetails(caerp_base):
     deleted_by              = Column(Integer, default=None)
     deleted_on              = Column(DateTime, default=None)    
 
+
+
 class PracticingAs(caerp_base):
     __tablename__ = 'app_practicing_as'
 
     id                  = Column(Integer, primary_key=True, index=True)
     practicing_type         = Column(String(50), nullable=False)
     display_number         = Column(Integer, nullable=False)
+
+
 
 class AreaOfPracticing(caerp_base):
     __tablename__ = 'app_area_of_practicing'
@@ -1428,12 +1470,15 @@ class AreaOfPracticing(caerp_base):
     practicing_type     = Column(String(50), nullable=False)
     display_number      = Column(Integer, nullable=False)
 
+
+
 class ProfessionalQualification(caerp_base):
     __tablename__ ='app_professional_qualification'
 
     id              = Column(Integer, primary_key=True, index=True)
     qualification   = Column(String(50), nullable=False)
     display_number  = Column(Integer, nullable=False)
+
 
 
 class CustomerAreaOfPracticing(caerp_base):
@@ -1448,6 +1493,7 @@ class CustomerAreaOfPracticing(caerp_base):
     is_deleted      = Column(Enum('yes', 'no'), nullable=False, default='no')
 
 
+
 class CustomerPracticingAs(caerp_base):
     __tablename__ = 'customer_practicing_as'
 
@@ -1458,6 +1504,8 @@ class CustomerPracticingAs(caerp_base):
     created_on      = Column(DateTime, nullable=False)
     modified_on     = Column(DateTime, default=None)
     is_deleted      = Column(Enum('yes', 'no'), nullable=False, default='no')
+
+
 
 class CustomerProfessionalQualification(caerp_base):
     __tablename__ = 'customer_professional_qualification'
@@ -1470,4 +1518,5 @@ class CustomerProfessionalQualification(caerp_base):
     created_on      = Column(DateTime, nullable=False)
     modified_on     = Column(DateTime, default=None)
     is_deleted      = Column(Enum('yes', 'no'), nullable=False, default='no')
+
 

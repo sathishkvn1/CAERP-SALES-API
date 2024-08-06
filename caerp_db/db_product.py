@@ -5,8 +5,8 @@ from UserDefinedConstants.user_defined_constants import DeletedStatus,Operator,S
 from UserDefinedConstants.user_defined_constants import ActiveStatus, InstallmentStatus
 from caerp_auth.authentication import authenticate_user
 from caerp_db.models import  AdminUser,ProductMasterPrice,OfferDetails,OfferMaster,OfferCategory,ProductModulePrice, Designation,ProductRating,ViewProductModulePrice,CustomerRegister,ViewProductMasterPrice,InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
-from caerp_db.models import CartDetails,CouponMaster,ProductFeatures, ProductGroup, CouponDetails
-from caerp_schemas import AdminUserBaseForDelete,CartDetailsSchema,CouponMasterSchema, InstallmentDetailsResponse,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema, ProductFeaturesSchema, ProductFeaturesSchemaResponse, ProductMasterSchemaResponse, SaveCouponDetails, CouponDetailsSchema, CouponMasterSchemaResponse,OfferMasterSchemaResponse, InstallmentDetailsForGet,UpdateInstallmentRequest
+from caerp_db.models import CartDetails,CouponMaster,ProductFeatures, ProductGroup, CouponDetails, CustomerCompanyProfile, CustomerProfessionalQualification,ProductTrialFeatures
+from caerp_schemas import AdminUserBaseForDelete,CartDetailsSchema,CouponMasterSchema, InstallmentDetailsResponse,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema, ProductFeaturesSchema, ProductFeaturesSchemaResponse, ProductMasterSchemaResponse, SaveCouponDetails, CouponDetailsSchema, CouponMasterSchemaResponse,OfferMasterSchemaResponse, InstallmentDetailsForGet,UpdateInstallmentRequest, ProductTrialFeatureSchema
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 from sqlalchemy import text, select
@@ -544,6 +544,56 @@ def delete_product_feature(db: Session, feature_id: int):
     }
 
 
+####################################################################################################################
+
+
+def save_product_trial_features(db: Session,  request: ProductTrialFeatureSchema, product_trial_feature_id: int):
+
+    if product_trial_feature_id == 0:
+        # Add operation
+        product_trial_feature_data_dict = request.dict()
+        new_product_trial_feature = ProductTrialFeatures(**product_trial_feature_data_dict)
+        db.add(new_product_trial_feature)
+        db.commit()
+        db.refresh(new_product_trial_feature)
+        return new_product_trial_feature
+    else:
+        # Update operation
+        product_trial_feature = db.query(ProductTrialFeatures).filter(ProductTrialFeatures.id == product_trial_feature_id).first()
+        
+        if product_trial_feature is None:
+           return []
+        
+        product_trial_feature_data_dict = request.dict(exclude_unset=True)
+        for key, value in product_trial_feature_data_dict.items():
+            setattr(product_trial_feature, key, value)
+                
+        db.commit()
+        db.refresh(product_trial_feature)
+        return product_trial_feature
+
+
+
+
+def get_product_trial_features(db: Session, product_master_id: int, trial_features_id: Optional[int] = None):
+    
+    query = db.query(ProductTrialFeatures).filter(
+        ProductTrialFeatures.product_master_id == product_master_id,
+        ProductTrialFeatures.is_deleted == 'no'
+    )
+    
+    if trial_features_id:
+        query = query.filter(ProductTrialFeatures.id == trial_features_id)
+        trial_feature_data = query.first()
+        if trial_feature_data:
+            return [trial_feature_data]  # Return as a list
+        else:
+            return []
+    else:
+        trial_feature_data = query.all()
+        return trial_feature_data
+
+
 #################################################################################################################   
 
 def create_installments(db: Session, installment_data: InstallmentCreate, user_id: int):
@@ -603,28 +653,28 @@ def update_installment_details(db: Session, installment_id: int, data: dict, use
     return None
 
 
-def delete_installment_master(db: Session, id: int, deleted_by: int):
-    existing_installment_master = db.query(InstallmentMaster).filter(InstallmentMaster.id == id).first()
+# def delete_installment_master(db: Session, id: int, deleted_by: int):
+#     existing_installment_master = db.query(InstallmentMaster).filter(InstallmentMaster.id == id).first()
 
-    if existing_installment_master is None:
-       return []
+#     if existing_installment_master is None:
+#        return []
 
-    # Mark the installment master as deleted
-    existing_installment_master.is_deleted = 'yes'
-    existing_installment_master.deleted_by = deleted_by
-    existing_installment_master.deleted_on = datetime.utcnow()
+#     # Mark the installment master as deleted
+#     existing_installment_master.is_deleted = 'yes'
+#     existing_installment_master.deleted_by = deleted_by
+#     existing_installment_master.deleted_on = datetime.utcnow()
 
-    # Mark related installment details as deleted
-    db.query(InstallmentDetails).filter(InstallmentDetails.installment_master_id == id).update({
-        InstallmentDetails.is_deleted: 'yes',
-        InstallmentDetails.deleted_by: deleted_by,
-        InstallmentDetails.deleted_on: datetime.utcnow()
-    }, synchronize_session=False)
+#     # Mark related installment details as deleted
+#     db.query(InstallmentDetails).filter(InstallmentDetails.installment_master_id == id).update({
+#         InstallmentDetails.is_deleted: 'yes',
+#         InstallmentDetails.deleted_by: deleted_by,
+#         InstallmentDetails.deleted_on: datetime.utcnow()
+#     }, synchronize_session=False)
 
-    db.commit()
-    return {
-        "message": "Installment master and related details deleted successfully",
-    }
+#     db.commit()
+#     return {
+#         "message": "Installment master and related details deleted successfully",
+#     }
 
 
 
@@ -771,8 +821,8 @@ def set_new_price(
     # Check if the product is deleted
     product = db.query(ProductMaster).filter(ProductMaster.id == product_master_id).first()
     if product and product.is_deleted == 'yes':
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot set price for a deleted product")
-
+       return {"message": "Cannot set price for a deleted product"} 
+    
     # Check if there is an existing price list for the product
     price_list = db.query(ProductMasterPrice).filter(ProductMasterPrice.product_master_id == product_master_id).first()
     if price_list and price_list.base_price == 0:
@@ -976,15 +1026,7 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
                    
     # Query for total rating count and average rating
     if product_id:
-
-        # discount_query = text(
-        #     "SELECT product_master_id, offer_details_id,offer_name,offer_percentage,offer_amount "
-        #     "effective_from_date , effective_to_date,"
-        #     "FROM off_view_offer_details "
-        #     # "WHERE product_master_id = :product_id AND effective_from_date<= :requested_date AND effective_to_date>= :requested_date"
-        #    "WHERE product_master_id = :product_id AND effective_from_date <= :requested_date AND effective_to_date >= :requested_date" 
-        # )
-        # discount_details = db.execute(discount_query, {'product_id': product_id,'requested_date':requested_date}).fetchall()
+       
         discount_query = text(
             "SELECT product_master_id, offer_details_id, offer_name, offer_percentage, "
             "effective_from_date, effective_to_date "
@@ -1673,7 +1715,8 @@ def save_offer_details(
                # Check if the product is deleted
                product = db.query(ProductMaster).filter(ProductMaster.id == product_master_id).first()
                if product and product.is_deleted == 'yes':
-                  raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot give offers for a deleted product")
+                  return {"message": "Cannot give offers for a deleted product"} 
+                  #raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot give offers for a deleted product")
 
                new_detail_data.update({
                         "offer_master_id": new_master.id,
@@ -1708,7 +1751,7 @@ def save_offer_details(
                 # Check if the product is deleted
                 product = db.query(ProductMaster).filter(ProductMaster.id == product_master_id).first()
                 if product and product.is_deleted == 'yes':
-                  raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot give offers for a deleted product")
+                   return {"message": "Cannot give offers for a deleted product"}
 
                 new_detail_data.update({
                         "offer_master_id": id,
@@ -2031,7 +2074,7 @@ def save_coupon(db: Session , id: int, coupon_data: SaveCouponDetails, user_id: 
                # Check if the product is deleted
                product = db.query(ProductMaster).filter(ProductMaster.id == product_master_id).first()
                if product and product.is_deleted == 'yes':
-                  raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot give coupon for a deleted product")
+                  return {"message": "Cannot give coupon for a deleted product"}
 
                new_detail_data.update({
                         "coupon_master_id": new_coupon.id,
@@ -2063,7 +2106,7 @@ def save_coupon(db: Session , id: int, coupon_data: SaveCouponDetails, user_id: 
                # Check if the product is deleted
                product = db.query(ProductMaster).filter(ProductMaster.id == product_master_id).first()
                if product and product.is_deleted == 'yes':
-                  raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot give coupon for a deleted product")
+                  return {"message": "Cannot give coupon for a deleted product"}
 
                new_detail_data.update({
                   "coupon_master_id": id,
@@ -2233,160 +2276,160 @@ def delete_coupon_master(db, coupon_master_id,action_type,deleted_by):
 
 
 
-# def get_all_installments(
-#                         db : Session,
-#                         status : InstallmentStatus,
-#                         installment_master_id : Optional[int]=None,
-#                         installment_detail_id : Optional[int] = None,
-#                     ):
-#     if installment_master_id is None and installment_detail_id is None:
-#        query = db.query(InstallmentMaster)
+def get_all_installments(
+                        db : Session,
+                        status : InstallmentStatus,
+                        installment_master_id : Optional[int]=None,
+                        installment_detail_id : Optional[int] = None,
+                    ):
+    if installment_master_id is None and installment_detail_id is None:
+       query = db.query(InstallmentMaster)
 
-#        # Filter by status
-#        if InstallmentStatus:
-#           if status == InstallmentStatus.ACTIVE:
-#              query = query.filter(InstallmentMaster.is_active == 'yes')
-#           elif status == InstallmentStatus.INACTIVE:
-#              query = query.filter(InstallmentMaster.is_active == 'no')
+       # Filter by status
+       if InstallmentStatus:
+          if status == InstallmentStatus.ACTIVE:
+             query = query.filter(InstallmentMaster.is_active == 'yes')
+          elif status == InstallmentStatus.INACTIVE:
+             query = query.filter(InstallmentMaster.is_active == 'no')
     
-#        # Get the results
-#        installment_masters = query.all()
+       # Get the results
+       installment_masters = query.all()
 
-#        if not installment_masters:
-#           return []
+       if not installment_masters:
+          return []
     
-#        result = []
-#        for master in installment_masters:
-#            master_details_query = db.query(InstallmentDetails).filter(InstallmentDetails.installment_master_id == master.id)
-#            master_details = master_details_query.all()
+       result = []
+       for master in installment_masters:
+           master_details_query = db.query(InstallmentDetails).filter(InstallmentDetails.installment_master_id == master.id)
+           master_details = master_details_query.all()
         
-#            details=[
-#                 InstallmentDetailsForGet(
-#                     id                    = detail.id,
-#                     # installment_master_id = detail.installment_master_id,
-#                     installment_name      = detail.installment_name,
-#                     payment_rate          = detail.payment_rate,
-#                     due_date              = detail.due_date
-#                   )
-#                 for detail in master_details
-#              ]
+           details=[
+                InstallmentDetailsForGet(
+                    id                    = detail.id,
+                    # installment_master_id = detail.installment_master_id,
+                    installment_name      = detail.installment_name,
+                    payment_rate          = detail.payment_rate,
+                    due_date              = detail.due_date
+                  )
+                for detail in master_details
+             ]
                  
-#            result.append(
-#                       InstallmentMasterForGet(
-#                       id                     = master.id,
-#                       number_of_installments = master.number_of_installments,
-#                       is_active              = master.is_active,
-#                       details                = details
-#                      )
-#              )   
-#        return result
-#     elif installment_master_id and installment_detail_id is None:
-#        query = db.query(InstallmentMaster).filter(InstallmentMaster.id == installment_master_id)
+           result.append(
+                      InstallmentMasterForGet(
+                      id                     = master.id,
+                      number_of_installments = master.number_of_installments,
+                      is_active              = master.is_active,
+                      details                = details
+                     )
+             )   
+       return result
+    elif installment_master_id and installment_detail_id is None:
+       query = db.query(InstallmentMaster).filter(InstallmentMaster.id == installment_master_id)
 
-#        # Filter by status
-#        if InstallmentStatus:
-#           if status == InstallmentStatus.ACTIVE:
-#              query = query.filter(InstallmentMaster.is_active == 'yes')
-#           elif status == InstallmentStatus.INACTIVE:
-#              query = query.filter(InstallmentMaster.is_active == 'no')
+       # Filter by status
+       if InstallmentStatus:
+          if status == InstallmentStatus.ACTIVE:
+             query = query.filter(InstallmentMaster.is_active == 'yes')
+          elif status == InstallmentStatus.INACTIVE:
+             query = query.filter(InstallmentMaster.is_active == 'no')
 
-#        # Get the results
-#        installment_master = query.all()
+       # Get the results
+       installment_master = query.all()
 
-#        if not installment_master:
-#           return []
+       if not installment_master:
+          return []
     
-#        result = []
-#        for master in installment_master:
-#            details_query = db.query(InstallmentDetails).filter(
-#             InstallmentDetails.installment_master_id == master.id
-#            )
+       result = []
+       for master in installment_master:
+           details_query = db.query(InstallmentDetails).filter(
+            InstallmentDetails.installment_master_id == master.id
+           )
         
-#            master_details = details_query.all()
+           master_details = details_query.all()
 
-#            details = [
-#             InstallmentDetailsForGet(
-#                 id                    = detail.id,
-#                 # installment_master_id = detail.installment_master_id,
-#                 installment_name      = detail.installment_name,
-#                 payment_rate          = detail.payment_rate,
-#                 due_date              = detail.due_date,
-#               )
-#                 for detail in master_details
-#              ]
+           details = [
+            InstallmentDetailsForGet(
+                id                    = detail.id,
+                # installment_master_id = detail.installment_master_id,
+                installment_name      = detail.installment_name,
+                payment_rate          = detail.payment_rate,
+                due_date              = detail.due_date,
+              )
+                for detail in master_details
+             ]
                  
-#            result.append(
-#             InstallmentMasterForGet(
-#                 id                     = master.id,
-#                 number_of_installments = master.number_of_installments,
-#                 is_active              = master.is_active,
-#                 details                = details
-#               )
-#             )   
+           result.append(
+            InstallmentMasterForGet(
+                id                     = master.id,
+                number_of_installments = master.number_of_installments,
+                is_active              = master.is_active,
+                details                = details
+              )
+            )   
     
-#            return result           
-#     elif installment_master_id is None and installment_detail_id:
-#        query = db.query(InstallmentDetails).filter(InstallmentDetails.id == installment_detail_id)
+           return result           
+    elif installment_master_id is None and installment_detail_id:
+       query = db.query(InstallmentDetails).filter(InstallmentDetails.id == installment_detail_id)
        
-#        # Get the results
-#        installment_details = query.all()
+       # Get the results
+       installment_details = query.all()
 
-#        if not installment_details:
-#           return []
+       if not installment_details:
+          return []
 
-#        details=[
-#                 InstallmentDetailsResponse(
-#                     # id                    = detail.id,
-#                     installment_master_id = detail.installment_master_id,
-#                     installment_name      = detail.installment_name,
-#                     payment_rate          = detail.payment_rate,
-#                     due_date              = detail.due_date
-#                 )
-#                 for detail in installment_details
-#             ]
-#        return details
-#     elif installment_master_id and installment_detail_id:
-#        query = db.query(InstallmentMaster).filter(InstallmentMaster.id == installment_master_id)
+       details=[
+                InstallmentDetailsResponse(
+                    # id                    = detail.id,
+                    installment_master_id = detail.installment_master_id,
+                    installment_name      = detail.installment_name,
+                    payment_rate          = detail.payment_rate,
+                    due_date              = detail.due_date
+                )
+                for detail in installment_details
+            ]
+       return details
+    elif installment_master_id and installment_detail_id:
+       query = db.query(InstallmentMaster).filter(InstallmentMaster.id == installment_master_id)
 
-#        # Filter by status
-#        if InstallmentStatus:
-#           if status == InstallmentStatus.ACTIVE:
-#              query = query.filter(InstallmentMaster.is_active == 'yes')
-#           elif status == InstallmentStatus.INACTIVE:
-#              query = query.filter(InstallmentMaster.is_active == 'no') 
+       # Filter by status
+       if InstallmentStatus:
+          if status == InstallmentStatus.ACTIVE:
+             query = query.filter(InstallmentMaster.is_active == 'yes')
+          elif status == InstallmentStatus.INACTIVE:
+             query = query.filter(InstallmentMaster.is_active == 'no') 
       
-#        result = []
-#        installment_masters = query.all()
+       result = []
+       installment_masters = query.all()
 
-#     for master in installment_masters:
-#         details_query = db.query(InstallmentDetails).filter(
-#             InstallmentDetails.id == installment_detail_id,
-#             InstallmentDetails.installment_master_id == master.id  # Ensure details are linked to the master
-#         )
+    for master in installment_masters:
+        details_query = db.query(InstallmentDetails).filter(
+            InstallmentDetails.id == installment_detail_id,
+            InstallmentDetails.installment_master_id == master.id  # Ensure details are linked to the master
+        )
         
-#         master_details = details_query.all()
+        master_details = details_query.all()
 
-#         details = [
-#             InstallmentDetailsForGet(
-#                 id                    = detail.id,
-#                 # installment_master_id = detail.installment_master_id,
-#                 installment_name      = detail.installment_name,
-#                 payment_rate          = detail.payment_rate,
-#                 due_date              = detail.due_date
-#                 )
-#             for detail in master_details
-#         ]
+        details = [
+            InstallmentDetailsForGet(
+                id                    = detail.id,
+                # installment_master_id = detail.installment_master_id,
+                installment_name      = detail.installment_name,
+                payment_rate          = detail.payment_rate,
+                due_date              = detail.due_date
+                )
+            for detail in master_details
+        ]
                  
-#         result.append(
-#             InstallmentMasterForGet(
-#                 id                     = master.id,
-#                 number_of_installments = master.number_of_installments,
-#                 is_active              = master.is_active,
-#                 details                = details
-#             )
-#         )
+        result.append(
+            InstallmentMasterForGet(
+                id                     = master.id,
+                number_of_installments = master.number_of_installments,
+                is_active              = master.is_active,
+                details                = details
+            )
+        )
     
-#     return result
+    return result
 
 
 
@@ -2394,402 +2437,211 @@ def update_installments(
     db : Session,
     request: UpdateInstallmentRequest,
     installment_status : InstallmentStatus,
-     user_id: int,
-    installment_master_id : int,
-    installment_details_id : Optional[int] = None,
-    ):
+    user_id: int,
+    installment_master_id : int
+   ):
     try:
        db_installment_master = db.query(InstallmentMaster).filter(InstallmentMaster.id == installment_master_id).first()
-       if not db_installment_master:
-           raise HTTPException(status_code=404, detail="InstallmentMaster not found")
-
+    
        for key, value in request.installment_master.dict().items():
            setattr(db_installment_master, key, value)
        db_installment_master.modified_by = user_id
        db_installment_master.modified_on = datetime.utcnow()
 
        # Update InstallmentDetails if provided
-       if installment_details_id:
-          if request.installment_details:
-             for detail in request.installment_details:
+       if request.installment_details:
+          for detail in request.installment_details:
+              if detail.id:  # Ensure the ID is provided for the details to be updated
                  db_installment_detail = db.query(InstallmentDetails).filter(
-                 and_(
                     InstallmentDetails.installment_master_id == installment_master_id,
-                    InstallmentDetails.id == installment_details_id
-                    )
+                    InstallmentDetails.id == detail.id
                  ).first()
                  if db_installment_detail:
                     for key, value in detail.dict().items():
-                        setattr(db_installment_detail, key, value)
+                        if key != 'id':  # Exclude the primary key field from being updated
+                           setattr(db_installment_detail, key, value)
                  else:
-                    raise ValueError("InstallmentDetails not found")
+                   raise ValueError(f"InstallmentDetails with id {detail.id} not found")
 
        db.commit()
        db.refresh(db_installment_master)
        return db_installment_master
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+       raise HTTPException(status_code=500, detail=str(e))
 
 
 
-#---------------------------------------------------------------------------------
-import time
+
+def customer_profile_completion(db: Session, customer_id: int):
+    try:
+       # Check CustomerRegister completeness
+       customer_register = db.query(CustomerRegister).filter(CustomerRegister.id == customer_id, CustomerRegister.is_deleted == 'no').first()
+    #    if not customer_register:
+    #       return 0
+
+       register_filled = all([
+          customer_register.first_name,
+          customer_register.last_name,
+          customer_register.gender_id,
+          customer_register.mobile_number,
+          customer_register.email_id,
+          customer_register.pin_code,
+          customer_register.post_office_id,
+          customer_register.taluk_id,
+          customer_register.district_id,
+          customer_register.state_id,
+          customer_register.country_id,
+          customer_register.password
+        ])
+
+       if not register_filled:
+         return 0
+       
+       company_profile_filled = False
+       professional_qualification_filled = False
+
+       # Check CustomerCompanyProfile completeness
+       company_profile = db.query(CustomerCompanyProfile).filter(CustomerCompanyProfile.customer_id == customer_id).first()
+       if company_profile:
+          company_profile_filled = all([
+             company_profile.company_name,
+             company_profile.pin_code,
+             company_profile.city_id,
+             company_profile.post_office_id,
+             company_profile.taluk_id,
+             company_profile.district_id,
+             company_profile.state_id,
+             company_profile.country_id,
+             company_profile.address_line_1,
+             company_profile.company_mobile,
+             company_profile.company_email_id
+            ])
+                  
+       # Check CustomerProfessionalQualification completeness
+       professional_qualifications = db.query(CustomerProfessionalQualification).filter(CustomerProfessionalQualification.customer_id == customer_id, CustomerProfessionalQualification.is_deleted == 'no').all()
+       if professional_qualifications:
+          all_professional_qualifications_filled = True
+          for qualification in professional_qualifications:
+              qualification_filled = all([
+                   qualification.profession_type_id,
+                   qualification.membership_number
+                ])
+              if not qualification_filled:
+                 all_professional_qualifications_filled = False
+                 break
+          professional_qualification_filled = all_professional_qualifications_filled    
+       
+       # Determine completeness percentage
+       if register_filled:
+          if company_profile_filled and professional_qualification_filled:
+             return 100
+          elif company_profile_filled or professional_qualification_filled:
+             return 66
+          else:
+             return 33
+       return 0
+    except Exception as e:
+       raise HTTPException(status_code=500, detail=str(e))
+
+
 # def get_all_installments(
 #     db: Session,
 #     status: InstallmentStatus,
 #     installment_master_id: Optional[int] = None,
 #     installment_detail_id: Optional[int] = None,
-# ) -> List:
-#     start_time = time.time()
-#     print("Start time",start_time)
-    
+# ):
+#     # Start with base query for InstallmentMaster
+#     query = db.query(InstallmentMaster).filter(InstallmentMaster.is_deleted == 'no')
+
+#     # Apply status filter
+#     if status == InstallmentStatus.ACTIVE:
+#         query = query.filter(InstallmentMaster.is_active == 'yes')
+#     elif status == InstallmentStatus.INACTIVE:
+#         query = query.filter(InstallmentMaster.is_active == 'no')
+
+#     # Handle cases based on provided parameters
+
+#     # Case 1: Both `installment_master_id` and `installment_detail_id` are None
 #     if installment_master_id is None and installment_detail_id is None:
-#         query_start_time = time.time()
-#         query = db.query(InstallmentMaster)
-        
-#         # Filter by status
-#         if status == InstallmentStatus.ACTIVE:
-#             query = query.filter(InstallmentMaster.is_active == 'yes')
-#         elif status == InstallmentStatus.INACTIVE:
-#             query = query.filter(InstallmentMaster.is_active == 'no')
-        
-#         # Get the results
+#         # Fetch all InstallmentMaster records
 #         installment_masters = query.all()
-#         query_duration = time.time() - query_start_time
 
-#         if not installment_masters:
-#             return []
-        
+#     # Case 2: Only `installment_master_id` is provided
+#     elif installment_master_id is not None and installment_detail_id is None:
+#         # Filter by `installment_master_id`
+#         query = query.filter(InstallmentMaster.id == installment_master_id)
+#         # Fetch relevant InstallmentMaster records
+#         installment_masters = query.all()
+
+#     # Case 3: Only `installment_detail_id` is provided
+#     elif installment_master_id is None and installment_detail_id is not None:
+#         # Fetch all InstallmentMaster records first
+#         installment_masters = query.all()
+#         # For each InstallmentMaster, filter details by `installment_detail_id`
 #         result = []
 #         for master in installment_masters:
-#             details_query_start_time = time.time()
 #             master_details_query = db.query(InstallmentDetails).filter(InstallmentDetails.installment_master_id == master.id)
+#             master_details_query = master_details_query.filter(InstallmentDetails.id == installment_detail_id)
 #             master_details = master_details_query.all()
-#             details_query_duration = time.time() - details_query_start_time
-            
 #             details = [
 #                 InstallmentDetailsForGet(
-#                     id                    = detail.id,
-#                     installment_name      = detail.installment_name,
-#                     payment_rate          = detail.payment_rate,
-#                     due_date              = detail.due_date
+#                     id=detail.id,
+#                     installment_master_id=detail.installment_master_id,
+#                     installment_name=detail.installment_name,
+#                     payment_rate=detail.payment_rate,
+#                     due_date=detail.due_date,
+#                     is_deleted=detail.is_deleted
 #                 )
 #                 for detail in master_details
 #             ]
-                 
 #             result.append(
 #                 InstallmentMasterForGet(
-#                     id                     = master.id,
-#                     number_of_installments = master.number_of_installments,
-#                     is_active              = master.is_active,
-#                     details                = details
+#                     id=master.id,
+#                     number_of_installments=master.number_of_installments,
+#                     is_active=master.is_active,
+#                     active_from_date=master.active_from_date,
+#                     is_deleted=master.is_deleted,
+#                     details=details
 #                 )
 #             )
-        
-#         total_duration = time.time() - start_time
-#         print(f"Total duration for fetching all installments: {total_duration:.2f} seconds")
-#         print(f"Query duration: {query_duration:.2f} seconds")
-#         print(f"Details query duration: {details_query_duration:.2f} seconds")
-        
 #         return result
 
-#     elif installment_master_id and installment_detail_id is None:
-#         query_start_time = time.time()
-#         query = db.query(InstallmentMaster).filter(InstallmentMaster.id == installment_master_id)
-        
-#         # Filter by status
-#         if status == InstallmentStatus.ACTIVE:
-#             query = query.filter(InstallmentMaster.is_active == 'yes')
-#         elif status == InstallmentStatus.INACTIVE:
-#             query = query.filter(InstallmentMaster.is_active == 'no')
-
-#         # Get the results
-#         installment_master = query.all()
-#         query_duration = time.time() - query_start_time
-
-#         if not installment_master:
-#             return []
-        
-#         result = []
-#         for master in installment_master:
-#             details_query_start_time = time.time()
-#             details_query = db.query(InstallmentDetails).filter(
-#                 InstallmentDetails.installment_master_id == master.id
-#             )
-#             master_details = details_query.all()
-#             details_query_duration = time.time() - details_query_start_time
-            
-#             details = [
-#                 InstallmentDetailsForGet(
-#                     id                    = detail.id,
-#                     installment_name      = detail.installment_name,
-#                     payment_rate          = detail.payment_rate,
-#                     due_date              = detail.due_date,
-#                 )
-#                 for detail in master_details
-#             ]
-                 
-#             result.append(
-#                 InstallmentMasterForGet(
-#                     id                     = master.id,
-#                     number_of_installments = master.number_of_installments,
-#                     is_active              = master.is_active,
-#                     details                = details
-#                 )
-#             )
-        
-#         total_duration = time.time() - start_time
-#         print(f"Total duration for fetching specific installment master: {total_duration:.2f} seconds")
-#         print(f"Query duration: {query_duration:.2f} seconds")
-#         print(f"Details query duration: {details_query_duration:.2f} seconds")
-        
-#         return result
-
-#     elif installment_master_id is None and installment_detail_id:
-#         query_start_time = time.time()
-#         query = db.query(InstallmentDetails).filter(InstallmentDetails.id == installment_detail_id)
-        
-#         # Get the results
-#         installment_details = query.all()
-#         query_duration = time.time() - query_start_time
-
-#         if not installment_details:
-#             return []
-
-#         details = [
-#             InstallmentDetailsResponse(
-#                 installment_master_id = detail.installment_master_id,
-#                 installment_name      = detail.installment_name,
-#                 payment_rate          = detail.payment_rate,
-#                 due_date              = detail.due_date
-#             )
-#             for detail in installment_details
-#         ]
-        
-#         total_duration = time.time() - start_time
-#         print(f"Total duration for fetching specific installment detail: {total_duration:.2f} seconds")
-#         print(f"Query duration: {query_duration:.2f} seconds")
-        
-#         return details
-
-#     elif installment_master_id and installment_detail_id:
-#         query_start_time = time.time()
-#         query = db.query(InstallmentMaster).filter(InstallmentMaster.id == installment_master_id)
-        
-#         # Filter by status
-#         if status == InstallmentStatus.ACTIVE:
-#             query = query.filter(InstallmentMaster.is_active == 'yes')
-#         elif status == InstallmentStatus.INACTIVE:
-#             query = query.filter(InstallmentMaster.is_active == 'no')
-        
+#     # Case 4: Both `installment_master_id` and `installment_detail_id` are provided
+#     elif installment_master_id is not None and installment_detail_id is not None:
+#         # Filter by `installment_master_id`
+#         query = query.filter(InstallmentMaster.id == installment_master_id)
+#         # Fetch relevant InstallmentMaster records
 #         installment_masters = query.all()
-#         query_duration = time.time() - query_start_time
-
+#         # For each InstallmentMaster, filter details by `installment_detail_id`
 #         result = []
 #         for master in installment_masters:
-#             details_query_start_time = time.time()
-#             details_query = db.query(InstallmentDetails).filter(
-#                 InstallmentDetails.id == installment_detail_id,
-#                 InstallmentDetails.installment_master_id == master.id
-#             )
-#             master_details = details_query.all()
-#             details_query_duration = time.time() - details_query_start_time
-            
+#             master_details_query = db.query(InstallmentDetails).filter(InstallmentDetails.installment_master_id == master.id)
+#             master_details_query = master_details_query.filter(InstallmentDetails.id == installment_detail_id)
+#             master_details = master_details_query.all()
 #             details = [
 #                 InstallmentDetailsForGet(
-#                     id                    = detail.id,
-#                     installment_name      = detail.installment_name,
-#                     payment_rate          = detail.payment_rate,
-#                     due_date              = detail.due_date
+#                     id=detail.id,
+#                     installment_master_id=detail.installment_master_id,
+#                     installment_name=detail.installment_name,
+#                     payment_rate=detail.payment_rate,
+#                     due_date=detail.due_date,
+#                     is_deleted=detail.is_deleted
 #                 )
 #                 for detail in master_details
 #             ]
-                 
 #             result.append(
 #                 InstallmentMasterForGet(
-#                     id                     = master.id,
-#                     number_of_installments = master.number_of_installments,
-#                     is_active              = master.is_active,
-#                     details                = details
+#                     id=master.id,
+#                     number_of_installments=master.number_of_installments,
+#                     is_active=master.is_active,
+#                     active_from_date=master.active_from_date,
+#                     is_deleted=master.is_deleted,
+#                     details=details
 #                 )
 #             )
-        
-#         total_duration = time.time() - start_time
-#         print(f"Total duration for fetching specific installment master and detail: {total_duration:.2f} seconds")
-#         print(f"Query duration: {query_duration:.2f} seconds")
-#         print(f"Details query duration: {details_query_duration:.2f} seconds")
-        
 #         return result
 
+#     return []
 
-# Start time 1722668740.6712482
-# Total duration for fetching all installments: 1.22 seconds
-# Query duration: 0.23 seconds
-# Details query duration: 0.23 seconds
-
-
-from time import time
-
-def get_all_installments(
-        db: Session,
-        status: InstallmentStatus,
-        installment_master_id: Optional[int] = None,
-        installment_detail_id: Optional[int] = None,
-    ):
-    start_time = time()  # Capture start time
-
-    result = []
-
-    if installment_master_id is None and installment_detail_id is None:
-        # Main query with status filter
-        query = db.query(InstallmentMaster)
-        if status == InstallmentStatus.ACTIVE:
-            query = query.filter(InstallmentMaster.is_active == 'yes')
-        elif status == InstallmentStatus.INACTIVE:
-            query = query.filter(InstallmentMaster.is_active == 'no')
-
-        query_start = time()
-        installment_masters = query.all()
-        query_duration = time() - query_start
-
-        for master in installment_masters:
-            details_query_start = time()
-            master_details_query = db.query(InstallmentDetails).filter(InstallmentDetails.installment_master_id == master.id)
-            master_details = master_details_query.all()
-            details_query_duration = time() - details_query_start
-
-            details = [
-                InstallmentDetailsForGet(
-                    id = detail.id,
-                    installment_name = detail.installment_name,
-                    payment_rate = detail.payment_rate,
-                    due_date = detail.due_date
-                )
-                for detail in master_details
-            ]
-
-            result.append(
-                InstallmentMasterForGet(
-                    id = master.id,
-                    number_of_installments = master.number_of_installments,
-                    is_active = master.is_active,
-                    details = details
-                )
-            )
-
-    elif installment_master_id and installment_detail_id is None:
-        # Filter by single master ID
-        query = db.query(InstallmentMaster).filter(
-            InstallmentMaster.id == installment_master_id
-        )
-        if status == InstallmentStatus.ACTIVE:
-            query = query.filter(InstallmentMaster.is_active == 'yes')
-        elif status == InstallmentStatus.INACTIVE:
-            query = query.filter(InstallmentMaster.is_active == 'no')
-
-        query_start = time()
-        installment_master = query.all()
-        query_duration = time() - query_start
-
-        for master in installment_master:
-            details_query_start = time()
-            details_query = db.query(InstallmentDetails).filter(
-                InstallmentDetails.installment_master_id == master.id
-            )
-            master_details = details_query.all()
-            details_query_duration = time() - details_query_start
-
-            details = [
-                InstallmentDetailsForGet(
-                    id = detail.id,
-                    installment_name = detail.installment_name,
-                    payment_rate = detail.payment_rate,
-                    due_date = detail.due_date
-                )
-                for detail in master_details
-            ]
-
-            result.append(
-                InstallmentMasterForGet(
-                    id = master.id,
-                    number_of_installments = master.number_of_installments,
-                    is_active = master.is_active,
-                    details = details
-                )
-            )
-
-    elif installment_master_id is None and installment_detail_id:
-        # Single detail query
-        query = db.query(InstallmentDetails).filter(
-            InstallmentDetails.id == installment_detail_id
-        )
-        query_start = time()
-        installment_details = query.all()
-        query_duration = time() - query_start
-
-        result = [
-            InstallmentDetailsResponse(
-                installment_master_id = detail.installment_master_id,
-                installment_name = detail.installment_name,
-                payment_rate = detail.payment_rate,
-                due_date = detail.due_date
-            )
-            for detail in installment_details
-        ]
-
-    elif installment_master_id and installment_detail_id:
-        # Combined query
-        query = db.query(InstallmentMaster).filter(
-            InstallmentMaster.id == installment_master_id
-        )
-        if status == InstallmentStatus.ACTIVE:
-            query = query.filter(InstallmentMaster.is_active == 'yes')
-        elif status == InstallmentStatus.INACTIVE:
-            query = query.filter(InstallmentMaster.is_active == 'no')
-
-        query_start = time()
-        installment_masters = query.all()
-        query_duration = time() - query_start
-
-        for master in installment_masters:
-            details_query_start = time()
-            details_query = db.query(InstallmentDetails).filter(
-                InstallmentDetails.id == installment_detail_id,
-                InstallmentDetails.installment_master_id == master.id
-            )
-            master_details = details_query.all()
-            details_query_duration = time() - details_query_start
-
-            details = [
-                InstallmentDetailsForGet(
-                    id = detail.id,
-                    installment_name = detail.installment_name,
-                    payment_rate = detail.payment_rate,
-                    due_date = detail.due_date
-                )
-                for detail in master_details
-            ]
-
-            result.append(
-                InstallmentMasterForGet(
-                    id = master.id,
-                    number_of_installments = master.number_of_installments,
-                    is_active = master.is_active,
-                    details = details
-                )
-            )
-
-    end_time = time()  # Capture end time
-    total_duration = end_time - start_time
-
-    print(f"Total duration for fetching all installments: {total_duration:.2f} seconds")
-    print(f"Query duration: {query_duration:.2f} seconds")
-    print(f"Details query duration: {details_query_duration:.2f} seconds")
-
-    return result
-
-
-# Total duration for fetching all installments: 1.09 seconds
-# Query duration: 0.21 seconds        
-# Details query duration: 0.12 seconds
-
+    
+                  

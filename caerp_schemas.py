@@ -7,7 +7,6 @@ from UserDefinedConstants.user_defined_constants import BooleanFlag
 
 
 
-
 class CountryCreate(BaseModel):
     id: int
     country_name_english: str
@@ -18,6 +17,8 @@ class CountryCreate(BaseModel):
 
     class Config:
         orm_mode  : True
+
+
 
 class CountryDetail(BaseModel):
     id: int
@@ -32,7 +33,6 @@ class CountryDetail(BaseModel):
         
         
 
-        
 class StateDetail(BaseModel):
     id: int
     country_id: int
@@ -40,7 +40,8 @@ class StateDetail(BaseModel):
 
     class Config:
         orm_mode  : True
- 
+
+
 #  get  the states based on country       
 class StatesByCountry(BaseModel):
     country_id: int
@@ -51,7 +52,6 @@ class StatesByCountry(BaseModel):
 
   
 
-
 class DistrictDetail(BaseModel):
     id: int
     district_name: str
@@ -59,13 +59,15 @@ class DistrictDetail(BaseModel):
     class Config:
         orm_mode = True
 
+
 class DistrictDetailByState(BaseModel):
     state_id: int
     districts: List[DistrictDetail]
 
     class Config:
         orm_mode = True
-        
+
+
 class DistrictResponse(BaseModel):
     district: DistrictDetail
 
@@ -85,7 +87,8 @@ class CityDetail(BaseModel):
 
     class Config:
         orm_mode = True
-        
+
+
 class CityResponse(BaseModel):
     country_id: int
     state_id: int
@@ -98,14 +101,17 @@ class TalukDetail(BaseModel):
     district_id: int
     taluk_name: str
 
+
 class TalukResponse(BaseModel):
     state_id: int
     taluks: List[TalukDetail]
+
 
 class TalukResponseByDistrict(BaseModel):
     district_id: int
     taluks: List[Dict[str, str]]   
        
+
 
 class CurrencyDetail(BaseModel):
     id: int
@@ -115,14 +121,17 @@ class CurrencyDetail(BaseModel):
 
     class Config:
         orm_mode = True
-        
+
+
+
 class NationalityDetail(BaseModel):
     id: int
     nationality :str
 
     class Config:
         orm_mode = True
-        
+
+
 class PostOfficeTypeDetail(BaseModel):
     id: int
     office_type: str
@@ -130,19 +139,23 @@ class PostOfficeTypeDetail(BaseModel):
     class Config:
         orm_mode = True
 
+
+
 class PostalDeliveryStatusDetail(BaseModel):
     id: int
     delivery_status: str
 
     class Config:
         orm_mode = True
-        
+
+
 class PostalCircleDetail(BaseModel):
     id: int
     circle_name: str
 
     class Config:
         orm_mode = True
+
 
 class PostalRegionDetail(BaseModel):
     id: int
@@ -152,12 +165,12 @@ class PostalRegionDetail(BaseModel):
     class Config:
         orm_mode = True
 
+
 class PostalDivisionDetail(BaseModel):
     id: int
     circle_id: int
     region_id: int
     division_name: str
-
 
 
 class PostOfficeDetail(BaseModel):
@@ -186,7 +199,8 @@ class PostOfficeDetail(BaseModel):
     
     class Config:
         orm_mode = True
-        
+
+
 class PincodeDetails(BaseModel):
     pincode: str
 
@@ -208,7 +222,6 @@ class PostOfficeListResponse(BaseModel):
 
 
     
-
 class AboutUsSchema(BaseModel):
     id: int
     about_us: str
@@ -221,12 +234,9 @@ class AboutUsSchema(BaseModel):
     class Config:
         orm_mode = True
 
+
 class AboutUsResponse(BaseModel):
     aboutus: List[AboutUsSchema]
-    
-
-
-
     
 
 class GenderSchema(BaseModel):
@@ -235,6 +245,7 @@ class GenderSchema(BaseModel):
 
     class Config:
         orm_mode = True
+
 
 class GenderSchemaResponse(BaseModel):
     gender: List[GenderSchema]
@@ -246,6 +257,7 @@ class UserRoleSchema(BaseModel):
 
     class Config:
         orm_mode = True
+
 
 class UserRoleListResponse(BaseModel):
     roles: List[UserRoleSchema]
@@ -263,21 +275,25 @@ class UserRoleDeleteSchema(BaseModel):
     role: Optional[str] = None
     deleted_by: Optional[int] = None
     deleted_on: Optional[datetime] = None
-    
+
+
 class UserRoleListResponses(BaseModel):
     id: int
     role: str
 
     class Config:
         orm_mode = True
-        
+
+
+
 class DesignationSchema(BaseModel):
     id: int
     designation: str
     
     class Config:
         orm_mode = True
-    
+
+
 class DesignationListResponse(BaseModel):
     designations: List[DesignationSchema]
 
@@ -297,10 +313,10 @@ class DesignationInputSchema(BaseModel):
 class User(BaseModel):
     id: int
     username: str
-        
+
+
 class DesignationUpdateSchema(BaseModel):
     designation: Optional[str] = None
-
 
 
 class DesignationDeleteSchema(BaseModel):
@@ -392,9 +408,11 @@ class AdminUserUpdateSchema(BaseModel):
 class AdminUserChangePasswordSchema(BaseModel):
     old_password: str
     new_password: str
-    
+
+
 class UserImageUpdateSchema(BaseModel):
     image_file: bytes
+
 
 class AdminUserDeleteSchema(BaseModel):
     message: str
@@ -402,25 +420,30 @@ class AdminUserDeleteSchema(BaseModel):
     deleted_on: Optional[datetime]
     
 
-    
 class AdminUserListResponse(BaseModel):
     users: List[AdminUserCreateSchema]
-    
+
+
 class UserLoginSchema(BaseModel):
     user_name: str
     password: str
+
 
 class UserLoginResponseSchema(BaseModel):
     message: str
     user_id: int
     token: str  
 
+
 class ProtectedResourceResponse(BaseModel):
     message: str
     user_id: int
-    
+
+
+
 class AboutUsUpdateSchema(BaseModel):
     about_us: Optional[str] = None
+
 
 
 class SubContentUpdateSchema(BaseModel):
@@ -456,12 +479,13 @@ class AdminSubMenuCreate(BaseModel):
     sub_menu_page_link: Optional[str]
     
     
-
 class AdminSubMenuDeleteSchema(BaseModel):
     message: str
     deleted_by: Optional[int]
     deleted_on: Optional[datetime]
-    
+
+
+
 class TestSchema(BaseModel):
     id: int
     name: str
@@ -473,7 +497,8 @@ class OurTeamSchema(BaseModel):
     qualification_id: Optional[int] = None
     description: Optional[str] = None
     experience: Optional[str] = None
-    
+
+
 class OurTeamSchemaforDelete(BaseModel):
     id: Optional[int]
     full_name: str
@@ -492,10 +517,10 @@ class OurTeamSchemaforDelete(BaseModel):
     class Config:
         orm_mode = True
         
-        
     
 class OurTeamSchemaResponse(BaseModel):
     team: List[OurTeamSchemaforDelete]
+
 
 class OurDirectorSchema(BaseModel):
     full_name: str
@@ -532,7 +557,6 @@ class FaqCategory(BaseModel):
     faq_category: str
     
     
-
 class FaqSchema(BaseModel):
     faq: str
     faq_answer: Optional[str] = None
@@ -549,9 +573,11 @@ class FaqCategorySchemaForDelete(BaseModel):
     is_deleted: str
     deleted_by: Optional[int] = None
     deleted_on: Optional[datetime] = None
-    
+
+
 class FaqCategoryResponse(BaseModel):
     faq: List[FaqCategorySchemaForDelete]
+
 
 class FaqSchemaForDelete(BaseModel):
     id: int
@@ -579,9 +605,6 @@ class TrendingNewsSchema(BaseModel):
         
 
 
-
-    
-
 class SocialMediaURLSchema(BaseModel):
     social_media: str
     social_media_url: Optional[str]
@@ -589,6 +612,7 @@ class SocialMediaURLSchema(BaseModel):
 
     class Config:
         orm_mode = True
+
 
 class SocialMediaSchema(BaseModel):
     id: int
@@ -605,10 +629,13 @@ class SocialMediaSchema(BaseModel):
 
     class Config:
         orm_mode = True
-        
+
+
 class SocialMediaResponse(BaseModel):
     social_media: List[SocialMediaSchema]
-  
+
+
+
 class ContactDetailsSchema(BaseModel):
     contact_us: str
     map_iframe: Optional[str] = None
@@ -636,7 +663,8 @@ class PrivacyPolicySchema(BaseModel):
 
     class Config:
         orm_mode = True
-        
+
+
 class PrivacyPolicyResponse(BaseModel):
     privacy_policy: List[PrivacyPolicySchema]
     
@@ -647,22 +675,28 @@ class TermsAndConditionSchema(BaseModel):
 
     class Config:
         orm_mode = True
-        
+
+
 class TermsAndConditionResponse(BaseModel):
     terms_and_condition: List[TermsAndConditionSchema]
-    
+
+
+
 class ImageGallerySchema(BaseModel):
     title: str
     description: Optional[str] = None
 
     class Config:
         orm_mode = True
-        
+
+
+
 class GeneralContactDetailsSchema(BaseModel):
     general_contact_details: str
     class Config:
         orm_mode = True
-        
+
+
 class GeneralContactDetailsResponse(BaseModel):
     contact_details: List[GeneralContactDetailsSchema]
     
@@ -678,6 +712,8 @@ class CompanyMasterBase(BaseModel):
     book_begin_date: date
     created_by: int
     is_deleted: str = 'no'
+
+
 
 class UserRoleForDelete(BaseModel):
     id: int
@@ -723,7 +759,6 @@ class AdminUserBaseForDelete(BaseModel):
     
 	
 
-
 class DesignationSchemaForDelete(BaseModel):
     id: int
     designation:str
@@ -743,7 +778,9 @@ class LoginRequest(BaseModel):
     username: str
     password: str
     user_type: str
-    
+
+
+
 class ImageGallerySchemaForGet(BaseModel):
     id: int
     title: str
@@ -759,7 +796,9 @@ class ImageGallerySchemaForGet(BaseModel):
 
 class ImageGalleryResponse(BaseModel):
     gallery: List[ImageGallerySchemaForGet]  
-    
+
+
+
 class TrendingNewsSchemaForDeletedStatus(BaseModel):
     id: int
     title: str
@@ -1066,7 +1105,7 @@ class CustomerSalesQueryForGet(BaseModel):
         
 class InstallmentMasterBase(BaseModel):
     # number_of_installments: int
-    is_active: str
+    is_active: str = 'no'
         
 
 class InstallmentDetailsForGet(BaseModel):
@@ -1224,6 +1263,21 @@ class ProductFeaturesSchemaResponse(BaseModel):
     feature : str
     is_deleted: str
 
+
+
+class ProductTrialFeatureSchema(BaseModel):
+    product_master_id : int
+    feature : str
+    description : str
+    icon_class : str 
+
+class ProductTrialFeatureSchemaResponse(BaseModel):
+    id : int
+    product_master_id : int
+    feature : str
+    description : str
+    icon_class : str    
+    is_deleted : str
 
 
 class CustomerInstallmentMasterBase(BaseModel):
@@ -1633,6 +1687,8 @@ class GetCustomerPasswordResetSchema(BaseModel):
     request_token 	: str
     request_timestamp :Optional[datetime]
 
+
+
 class CustomerPasswordResetSchema(BaseModel):
     email_id : str
 
@@ -1809,7 +1865,6 @@ class  OfferCategoryResponse(BaseModel):
 
     id              : int
     offer_category  : str
-
 
 
 class OfferMasterSchema(BaseModel):
