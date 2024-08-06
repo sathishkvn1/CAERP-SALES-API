@@ -34,6 +34,36 @@ router = APIRouter(
     tags=['CUSTOMER']
 )
 
+
+
+@router.get("/customer_profile_completion")
+def customer_profile_completion(
+    customer_id: int,
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2.oauth2_scheme)
+  ):
+    #Check authorization
+    if not token:
+       raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+        
+    customer_register = db.query(CustomerRegister).filter(CustomerRegister.id == customer_id, CustomerRegister.is_deleted == 'no').first()
+    if not customer_register:
+       return None
+
+    try:
+        completeness_percentage = db_customer.customer_profile_completion(db, customer_id)
+        return {"success": True,
+                 "message": f"{completeness_percentage}% completed",
+                 "percentage": completeness_percentage
+                }
+    
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))    
+    
+
+
 #---------------------------------------------------------------------------------------------------------------
 
 # @router.post('/add/customer', response_model=CustomerRegisterBase)
@@ -1151,6 +1181,7 @@ def get_customer_practicing_info(
     return result
 
 
+
 @router.post("/save_customer_practicing_info")
 def save_customer_practicing_info(
     qualification_data : CompleteCustomerQualificationSchema,    
@@ -1193,3 +1224,9 @@ async def get_customer_professional_details(
     return result
 
     
+
+
+ 
+    
+
+

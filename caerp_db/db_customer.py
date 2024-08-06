@@ -967,6 +967,78 @@ async def get_customer_professional_details(db: Session, customer_id: int):
         **area_of_practicing_result
     }
 
+
+def customer_profile_completion(db: Session, customer_id: int):
+    try:
+       # Check CustomerRegister completeness
+       customer_register = db.query(CustomerRegister).filter(CustomerRegister.id == customer_id, CustomerRegister.is_deleted == 'no').first()
+    #    if not customer_register:
+    #       return 0
+
+       register_filled = all([
+          customer_register.first_name,
+          customer_register.last_name,
+          customer_register.gender_id,
+          customer_register.mobile_number,
+          customer_register.email_id,
+          customer_register.pin_code,
+          customer_register.post_office_id,
+          customer_register.taluk_id,
+          customer_register.district_id,
+          customer_register.state_id,
+          customer_register.country_id,
+          customer_register.password
+        ])
+
+       if not register_filled:
+         return 0
+       
+       company_profile_filled = False
+       professional_qualification_filled = False
+
+       # Check CustomerCompanyProfile completeness
+       company_profile = db.query(CustomerCompanyProfile).filter(CustomerCompanyProfile.customer_id == customer_id).first()
+       if company_profile:
+          company_profile_filled = all([
+             company_profile.company_name,
+             company_profile.pin_code,
+             company_profile.city_id,
+             company_profile.post_office_id,
+             company_profile.taluk_id,
+             company_profile.district_id,
+             company_profile.state_id,
+             company_profile.country_id,
+             company_profile.address_line_1,
+             company_profile.company_mobile,
+             company_profile.company_email_id
+            ])
+                  
+       # Check CustomerProfessionalQualification completeness
+       professional_qualifications = db.query(CustomerProfessionalQualification).filter(CustomerProfessionalQualification.customer_id == customer_id, CustomerProfessionalQualification.is_deleted == 'no').all()
+       if professional_qualifications:
+          all_professional_qualifications_filled = True
+          for qualification in professional_qualifications:
+              qualification_filled = all([
+                   qualification.profession_type_id,
+                   qualification.membership_number
+                ])
+              if not qualification_filled:
+                 all_professional_qualifications_filled = False
+                 break
+          professional_qualification_filled = all_professional_qualifications_filled    
+       
+       # Determine completeness percentage
+       if register_filled:
+          if company_profile_filled and professional_qualification_filled:
+             return 100
+          elif company_profile_filled or professional_qualification_filled:
+             return 66
+          else:
+             return 33
+       return 0
+    except Exception as e:
+       raise HTTPException(status_code=500, detail=str(e))
+
     # result = {
             
     #         "qualifications": [
