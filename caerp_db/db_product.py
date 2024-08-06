@@ -5,7 +5,7 @@ from UserDefinedConstants.user_defined_constants import DeletedStatus,Operator,S
 from UserDefinedConstants.user_defined_constants import ActiveStatus, InstallmentStatus
 from caerp_auth.authentication import authenticate_user
 from caerp_db.models import  AdminUser,ProductMasterPrice,OfferDetails,OfferMaster,OfferCategory,ProductModulePrice, Designation,ProductRating,ViewProductModulePrice,CustomerRegister,ViewProductMasterPrice,InstallmentDetails, InstallmentMaster, ProductCategory, ProductMaster, ProductModule, ProductVideo, UserRole
-from caerp_db.models import CartDetails,CouponMaster,ProductFeatures, ProductGroup, CouponDetails
+from caerp_db.models import CartDetails,CouponMaster,ProductFeatures, ProductGroup, CouponDetails, CustomerCompanyProfile, CustomerProfessionalQualification
 from caerp_schemas import AdminUserBaseForDelete,CartDetailsSchema,CouponMasterSchema, InstallmentDetailsResponse,OfferDetailsSchema, SaveOfferDetailsRequest,ProductMasterPriceSchema,OfferMasterSchema,ProductModulePriceSchema, AdminUserChangePasswordSchema, AdminUserCreateSchema, AdminUserDeleteSchema, AdminUserListResponse, AdminUserUpdateSchema, DesignationDeleteSchema, DesignationInputSchema, DesignationListResponse, DesignationListResponses, DesignationSchemaForDelete, DesignationUpdateSchema, InstallmentCreate, InstallmentDetail, InstallmentDetailsBase, InstallmentDetailsCreate, InstallmentMasterBase,  InstallmentMasterForGet, ProductCategorySchema, ProductMasterSchema, ProductModuleSchema, ProductVideoSchema, User, UserImageUpdateSchema, UserLoginResponseSchema, UserLoginSchema, UserRoleDeleteSchema, UserRoleForDelete, UserRoleInputSchema, UserRoleListResponse, UserRoleListResponses, UserRoleSchema, UserRoleUpdateSchema, ProductFeaturesSchema, ProductFeaturesSchemaResponse, ProductMasterSchemaResponse, SaveCouponDetails, CouponDetailsSchema, CouponMasterSchemaResponse,OfferMasterSchemaResponse, InstallmentDetailsForGet,UpdateInstallmentRequest
 from sqlalchemy.orm import Session
 from starlette.requests import Request
@@ -976,15 +976,7 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
                    
     # Query for total rating count and average rating
     if product_id:
-
-        # discount_query = text(
-        #     "SELECT product_master_id, offer_details_id,offer_name,offer_percentage,offer_amount "
-        #     "effective_from_date , effective_to_date,"
-        #     "FROM off_view_offer_details "
-        #     # "WHERE product_master_id = :product_id AND effective_from_date<= :requested_date AND effective_to_date>= :requested_date"
-        #    "WHERE product_master_id = :product_id AND effective_from_date <= :requested_date AND effective_to_date >= :requested_date" 
-        # )
-        # discount_details = db.execute(discount_query, {'product_id': product_id,'requested_date':requested_date}).fetchall()
+       
         discount_query = text(
             "SELECT product_master_id, offer_details_id, offer_name, offer_percentage, "
             "effective_from_date, effective_to_date "
@@ -2399,9 +2391,7 @@ def update_installments(
    ):
     try:
        db_installment_master = db.query(InstallmentMaster).filter(InstallmentMaster.id == installment_master_id).first()
-    #    if not db_installment_master:
-    #       raise HTTPException(status_code=404, detail="InstallmentMaster for this id not found")
-
+    
        for key, value in request.installment_master.dict().items():
            setattr(db_installment_master, key, value)
        db_installment_master.modified_by = user_id
@@ -2409,24 +2399,96 @@ def update_installments(
 
        # Update InstallmentDetails if provided
        if request.installment_details:
-            for detail in request.installment_details:
-                if detail.id:  # Ensure the ID is provided for the details to be updated
-                    db_installment_detail = db.query(InstallmentDetails).filter(
-                        InstallmentDetails.installment_master_id == installment_master_id,
-                        InstallmentDetails.id == detail.id
-                    ).first()
-                    if db_installment_detail:
-                       for key, value in detail.dict().items():
-                           if key != 'id':  # Exclude the primary key field from being updated
-                              setattr(db_installment_detail, key, value)
-                    else:
-                      raise ValueError(f"InstallmentDetails with id {detail.id} not found")
+          for detail in request.installment_details:
+              if detail.id:  # Ensure the ID is provided for the details to be updated
+                 db_installment_detail = db.query(InstallmentDetails).filter(
+                    InstallmentDetails.installment_master_id == installment_master_id,
+                    InstallmentDetails.id == detail.id
+                 ).first()
+                 if db_installment_detail:
+                    for key, value in detail.dict().items():
+                        if key != 'id':  # Exclude the primary key field from being updated
+                           setattr(db_installment_detail, key, value)
+                 else:
+                    raise ValueError(f"InstallmentDetails with id {detail.id} not found")
 
        db.commit()
        db.refresh(db_installment_master)
        return db_installment_master
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+       raise HTTPException(status_code=500, detail=str(e))
+
+
+
+def customer_profile_completion(db: Session, customer_id: int):
+    try:
+       # Check CustomerRegister completeness
+       customer_register = db.query(CustomerRegister).filter(CustomerRegister.id == customer_id).first()
+       if not customer_register:
+          return None
+
+       register_filled = all([
+          customer_register.first_name,
+          customer_register.last_name,
+          customer_register.gender_id,
+          customer_register.mobile_number,
+          customer_register.email_id,
+          customer_register.pin_code,
+          customer_register.post_office_id,
+          customer_register.taluk_id,
+          customer_register.district_id,
+          customer_register.state_id,
+          customer_register.country_id,
+          customer_register.password
+        ])
+
+       if not register_filled:
+         return 0
+       
+       company_profile_filled = False
+       professional_qualification_filled = False
+
+       # Check CustomerCompanyProfile completeness
+       company_profile = db.query(CustomerCompanyProfile).filter(CustomerCompanyProfile.customer_id == customer_id).first()
+       if company_profile:
+        company_profile_filled = all([
+          company_profile.company_name,
+          company_profile.pin_code,
+          company_profile.city_id,
+          company_profile.post_office_id,
+          company_profile.taluk_id,
+          company_profile.district_id,
+          company_profile.state_id,
+          company_profile.country_id,
+          company_profile.address_line_1,
+          company_profile.company_mobile,
+          company_profile.company_email_id
+        ])
+       else:
+        company_profile_filled = False
+
+       # Check CustomerProfessionalQualification completeness
+       professional_qualification = db.query(CustomerProfessionalQualification).filter(CustomerProfessionalQualification.customer_id == customer_id).first()
+       if professional_qualification:
+          professional_qualification_filled = all([
+          professional_qualification.profession_type_id,
+          professional_qualification.membership_number
+       ])
+       else:
+        professional_qualification = False      
+
+       # Determine completeness percentage
+       if register_filled:
+          if company_profile_filled and professional_qualification_filled:
+             return 100
+          elif company_profile_filled or professional_qualification_filled:
+             return 66
+          else:
+             return 33
+       return 0
+    except Exception as e:
+       raise HTTPException(status_code=500, detail=str(e))
+
 
 # def get_all_installments(
 #     db: Session,

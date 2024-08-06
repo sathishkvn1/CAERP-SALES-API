@@ -1204,7 +1204,7 @@ def get_all_installments(
 def update_installments(
     data: List[UpdateInstallmentRequest],
     installment_master_id: int,
-    installment_status : InstallmentStatus = None,
+    installment_status : InstallmentStatus = InstallmentStatus.ACTIVE,
     db: Session = Depends(get_db),
     token: str = Depends(oauth2.oauth2_scheme)
 ):
@@ -1236,6 +1236,30 @@ def update_installments(
             
         return {"success": True, "message": "updated successfully"}
             
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+
+
+@router.post("/customer_profile_completion/{customer_id}")
+def customer_profile_completion(
+    customer_id: int,
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2.oauth2_scheme)
+  ):
+  
+    if not token:
+       raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+    auth_info = authenticate_user(token) 
+    user_id = auth_info["user_id"]
+
+    try:
+        completeness_percentage = db_product.customer_profile_completion(db, customer_id)
+        return {"success": True, "message": f"{completeness_percentage}% completed"}
+    
     except HTTPException as e:
         raise e
     except Exception as e:
