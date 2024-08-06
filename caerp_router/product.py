@@ -53,6 +53,8 @@ router = APIRouter(
 
 
 
+
+
 @router.post('/save_product_master/', response_model=ProductMasterSchema)
 def save_product_master(
         product_master_data: ProductMasterSchema =Depends(),
@@ -108,6 +110,7 @@ def update_product_master(
     user_id = auth_info["user_id"]
     try:
         new_product = db_product.update_product_master(db, product_master_data,product_id,user_id)
+        
         return new_product
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed operation")
@@ -157,8 +160,6 @@ def upload_product_main_video(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to upload video")
 
 
-
-
 #...........................................................
 
 @router.get("/video/get_product_master_video/{id}", response_model=dict)
@@ -167,7 +168,6 @@ def get_product_master_video(id: int):
     product_master_video_filename = f"{id}.mp4"  
     # BASE_URL="http://127.0.0.1:8010/"
     return {"photo_url": f"{BASE_URL}/product/save_product_master/{product_master_video_filename}"}
-
 
 
 
@@ -196,9 +196,7 @@ def update_admin_user_image(
     # Return the updated user data
     return product
 
-
-
-
+  
 @router.get("/image/get_product_master_image/{id}", response_model=dict)
 def get_product_master_image(id: int):
     
@@ -216,14 +214,11 @@ def get_product_master_by_id(product_id: int, db: Session = Depends(get_db)):
     return product_master_details
 
 
-
 @router.get("/get_product_master_by_code/{product_code}", response_model=List[ProductMasterSchemaResponse])
 def get_product_master_by_code(product_code: str, db: Session = Depends(get_db)):
     
     product_master_details = db_product.get_product_master_by_code(db, product_code)
     return product_master_details if product_master_details is not None else []
-
-
 
 
 @router.get("/get_all_productmaster/", response_model=List[ProductMasterSchemaResponse])
@@ -270,6 +265,8 @@ def delete_product_master(
     user_id = auth_info["user_id"]
      
     return db_product.delete_product_master(db, product_id,action_type,deleted_by=user_id)
+
+
 
 
 # @router.delete("/delete/product_master/{product_id}")
@@ -382,7 +379,6 @@ def save_product_module(
 
 
 
-
 @router.post('/update_product_module/{module_id}', response_model=ProductModuleSchema)
 def update_product_module(
         product_module_data: ProductModuleSchema =Depends(),
@@ -402,7 +398,6 @@ def update_product_module(
 
 
 #_____________________________________________________
-
 @router.post('/update_product_module_image/{id}', response_model=ProductModuleSchemaResponse)
 def update_admin_user_image(
         id: int,
@@ -428,6 +423,8 @@ def update_admin_user_image(
 
     # Return the updated user data
     return user
+
+
 
 
 #_____________________________________________________
@@ -479,6 +476,7 @@ def delete_product_module(
     auth_info = authenticate_user(token)
     user_id = auth_info["user_id"]
     
+    
     return db_product.delete_product_module(db, module_id,action_type,deleted_by=user_id)
 
 
@@ -493,10 +491,9 @@ async def get_all_product_video(deleted_status: DeletedStatus = DeletedStatus.NO
     return product
 
 
+
 import logging
 logger = logging.getLogger(__name__)
-
-
 
 @router.post('/save_product_additional_videos/', response_model=ProductVideoSchema)
 def save_product_video(
@@ -697,19 +694,19 @@ def edit_installments(
     return {"message": "Installment updated successfully"}
 
 
-# @router.delete("/delete/installment_master/{id}")
-# def delete_installment_master(
+@router.delete("/delete/installment_master/{id}")
+def delete_installment_master(
                      
-#                      id: int,
-#                      db: Session = Depends(get_db),s
-#                      token: str = Depends(oauth2.oauth2_scheme)):
-#     if not token:
-#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+                     id: int,
+                     db: Session = Depends(get_db),
+                     token: str = Depends(oauth2.oauth2_scheme)):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     
-#     auth_info = authenticate_user(token) 
-#     user_id = auth_info["user_id"]
+    auth_info = authenticate_user(token) 
+    user_id = auth_info["user_id"]
 
-#     return db_product.delete_installment_master(db, id, deleted_by=user_id)
+    return db_product.delete_installment_master(db, id, deleted_by=user_id)
 
 #====================================================================================================
 
@@ -909,7 +906,8 @@ def save_product_rating(
         token: str = Depends(oauth2.oauth2_scheme)):
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-        
+    
+    
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
     # try:
@@ -921,7 +919,6 @@ def save_product_rating(
         "message": "Review submitted successfully"
         # "product_rating_id": product_rating_id
         }
-
 
 
 @router.get("/get_product_complete_details")
@@ -1184,84 +1181,99 @@ def get_all_installments(
     status : InstallmentStatus = InstallmentStatus.ACTIVE,
     db: Session = Depends(get_db)
 ):
-    """
-    Endpoint to get all installment master details in the installment master table and details table.
-
-    Parameters:
-   
-    -**installment_master_id** : id of the installment master.
-    -**installment_details_id** : id of the installment details.
-    -**status** : it indicates the status of retrieved installments. The values are ACTIVE and INACTIVE
-    - ACTIVE : currently active installments.
-    - INACTIVE : currently inactive installments.
-   
-    """
+    
     installment_list= db_product.get_all_installments(db,status,installment_master_id,installment_details_id)
     return installment_list if installment_list is not None else []
+
+# import time
+# @router.get("/check_execution_time/get_all_installments", response_model=ExecutionTimeResponse)
+# async def get_all_installments(
+#     status: InstallmentStatus,
+#     db: Session = Depends(get_db),
+#     installment_master_id: Optional[int] = None,
+#     installment_detail_id: Optional[int] = None,
+# ):
+#     start_time = time.perf_counter()  # Capture start time
+
+#     # Fetch the data
+#     result = db_product.get_all_installments(
+       
+#         status=status,
+#         db=db,
+#         installment_master_id=installment_master_id,
+#         installment_detail_id=installment_detail_id
+#     )
+
+#     end_time = time.perf_counter()  # Capture end time
+#     execution_time = end_time - start_time  # Calculate execution time
+
+#     return {
+#         "result": result if result is not None else [],
+#         "execution_time": execution_time
+#     }
 
 
 @router.post("/update_installments/{installment_master_id}")
 def update_installments(
     data: List[UpdateInstallmentRequest],
     installment_master_id: int,
-    installment_status : InstallmentStatus = InstallmentStatus.ACTIVE,
+    installment_details_id: Optional[int] = None,
+    installment_status : InstallmentStatus = None,
     db: Session = Depends(get_db),
     token: str = Depends(oauth2.oauth2_scheme)
 ):
-    """
-    Endpoint to update installment master and installment details.
-
-    Parameters:
-    - data (List[UpdateInstallmentRequest]): The list of installment data to update. This data contains both master data and details.
-    - installment_master_id: The id of installment master to update.
-    - db (Session): The database session dependency.
-    - token (str): The authorization token dependency.
-
-    Returns:
-    - JSON response with the status of the operation.
-    """
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
     
     auth_info = authenticate_user(token) 
     user_id = auth_info["user_id"]
-    
-    db_installment_master = db.query(InstallmentMaster).filter(InstallmentMaster.id == installment_master_id).first()
-    if not db_installment_master:
-        return {"success": False, "message": f"Installment master for installment_master_id {installment_master_id} not found"} 
 
     try:
         for installment in data:
-            db_product.update_installments(db,installment,installment_status,user_id,installment_master_id)
-            
-        return {"success": True, "message": "updated successfully"}
+            db_product.update_installments(
+              db,installment,installment_status,user_id,installment_master_id,installment_details_id
+            )
+            return {"success": True, "message": "updated successfully"}
             
     except HTTPException as e:
         raise e
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-    
 
+#------------------------------------------------------------------------------------------    
+# @router.get('/get_work_order_list', response_model=List[OffWorkOrderMasterSchema])
+# def get_work_order_list(
+    
+   
+#     work_order_number 	: Optional[str]= None,
+#     work_order_from_date  	: Optional[date]= None,
+#     work_order_to_date  	: Optional[date]= None,
+#     work_order_status_id 	: Optional[int]= None,
+#     mobile_number  	    : Optional[str]= None,
+#     email_id            : Optional[str]= None,
+#     db: Session = Depends(get_db)
+# ):
+#     """
+#     Retrieve a list of work orders based on the provided filter criteria.
 
-@router.post("/customer_profile_completion/{customer_id}")
-def customer_profile_completion(
-    customer_id: int,
-    db: Session = Depends(get_db),
-    token: str = Depends(oauth2.oauth2_scheme)
-  ):
-  
-    if not token:
-       raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-    auth_info = authenticate_user(token) 
-    user_id = auth_info["user_id"]
+#     Parameters:
+#     - work_order_number (str, optional): The number of the work order to filter by.
+#     - work_order_from_date (date, optional): The start date to filter work orders.
+#     - work_order_to_date (date, optional): The end date to filter work orders.
+#     - work_order_status_id (int, optional): The status ID to filter work orders.
+#     - mobile_number (str, optional): The mobile number to filter work orders by associated contact.
+#     - email_id (str, optional): The email ID to filter work orders by associated contact.
 
-    try:
-        completeness_percentage = db_product.customer_profile_completion(db, customer_id)
-        return {"success": True, "message": f"{completeness_percentage}% completed"}
-    
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-    
+#     Returns:
+#     - List[OffWorkOrderMasterSchema]: A list of work orders matching the filter criteria.
+
+#     Responses:
+#     - 200: Successful retrieval of the work order list.
+#     - 404: No data present based on the filter criteria.
+#     """
+#     results = db_office_master.get_work_order_list(
+#          db,work_order_number,work_order_from_date,work_order_to_date, work_order_status_id, mobile_number, email_id)
+#     if not results:
+#         return JSONResponse(status_code=404, content={"message": "No data present"})
+#     return results
+
