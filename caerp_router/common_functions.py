@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 # from caerp_db.models import Employee
 from caerp_db.database import get_db
 # from caerp_db.office import db_office_master
-from caerp_db.models import ProductMasterPrice,ProductModulePrice,OfferCategory,OfferDetails,AreaOfPracticing,PracticingAs
-from caerp_db.models import ProfessionalQualification,ProductCategory,CouponMaster,ProductGroup
+from caerp_db.models import ProductMasterPrice,ProductModulePrice,OfferCategory,OfferDetails,AreaOfPracticing,PracticingAs, ProductTrialFeatures
+from caerp_db.models import ProfessionalQualification,ProductCategory,CouponMaster,ProductGroup, ProductFeatures
 from caerp_auth import oauth2
 
 from typing import Optional
@@ -26,16 +26,18 @@ from api_library.api_library import DynamicAPI
 from typing import List, Type
 
 TABLE_MODEL_MAPPING = {
-    "ProductMasterPrice" : ProductMasterPrice,
-    "ProductModulePrice" : ProductModulePrice,
-    "OfferCategory"      : OfferCategory,
-    "OfferDetails"       : OfferDetails,
-    "PracticingAs"       : PracticingAs,
-    "AreaOfPracticing"   : AreaOfPracticing,
+    "ProductMasterPrice"        : ProductMasterPrice,
+    "ProductModulePrice"        : ProductModulePrice,
+    "OfferCategory"             : OfferCategory,
+    "OfferDetails"              : OfferDetails,
+    "PracticingAs"              : PracticingAs,
+    "AreaOfPracticing"          : AreaOfPracticing,
     "ProfessionalQualification" : ProfessionalQualification,
-    "ProductCategory" : ProductCategory,
-    "CouponMaster"     : CouponMaster,
-    "ProductGroup"     : ProductGroup
+    "ProductCategory"           : ProductCategory,
+    "CouponMaster"              : CouponMaster,
+    "ProductGroup"              : ProductGroup,
+    "ProductFeatures"           : ProductFeatures,
+    "ProductTrialFeatures"      : ProductTrialFeatures
     # coupon delete
 }
 
