@@ -51,10 +51,11 @@ def customer_profile_completion(
        return None
 
     try:
-        completeness_percentage = db_customer.customer_profile_completion(db, customer_id)
+        completeness_percentage, incomplete_tables = db_customer.customer_profile_completion(db, customer_id)
         return {"success": True,
                  "message": f"{completeness_percentage}% completed",
-                 "percentage": completeness_percentage
+                 "percentage": completeness_percentage,
+                 "incomplete tables" : incomplete_tables
                 }
     
     except HTTPException as e:

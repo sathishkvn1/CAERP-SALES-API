@@ -968,8 +968,12 @@ async def get_customer_professional_details(db: Session, customer_id: int):
     }
 
 
+
+
 def customer_profile_completion(db: Session, customer_id: int):
     try:
+       
+       incomplete_tables = []
        # Check CustomerRegister completeness
        customer_register = db.query(CustomerRegister).filter(CustomerRegister.id == customer_id, CustomerRegister.is_deleted == 'no').first()
     #    if not customer_register:
@@ -991,7 +995,8 @@ def customer_profile_completion(db: Session, customer_id: int):
         ])
 
        if not register_filled:
-         return 0
+          incomplete_tables.append("CustomerRegister")
+          return 0, incomplete_tables
        
        company_profile_filled = False
        professional_qualification_filled = False
@@ -1012,7 +1017,12 @@ def customer_profile_completion(db: Session, customer_id: int):
              company_profile.company_mobile,
              company_profile.company_email_id
             ])
-                  
+          if not company_profile_filled:
+             incomplete_tables.append("CustomerCompanyProfile")
+       else:      
+          incomplete_tables.append("CustomerCompanyProfile")
+
+
        # Check CustomerProfessionalQualification completeness
        professional_qualifications = db.query(CustomerProfessionalQualification).filter(CustomerProfessionalQualification.customer_id == customer_id, CustomerProfessionalQualification.is_deleted == 'no').all()
        if professional_qualifications:
@@ -1024,18 +1034,21 @@ def customer_profile_completion(db: Session, customer_id: int):
                 ])
               if not qualification_filled:
                  all_professional_qualifications_filled = False
+                 incomplete_tables.append("CustomerProfessionalQualification")
                  break
           professional_qualification_filled = all_professional_qualifications_filled    
-       
+       else:
+        incomplete_tables.append("CustomerProfessionalQualification")
+        
        # Determine completeness percentage
        if register_filled:
           if company_profile_filled and professional_qualification_filled:
-             return 100
+             return 100, incomplete_tables
           elif company_profile_filled or professional_qualification_filled:
-             return 66
+             return 66, incomplete_tables
           else:
-             return 33
-       return 0
+             return 33, incomplete_tables
+       return 0, incomplete_tables
     except Exception as e:
        raise HTTPException(status_code=500, detail=str(e))
 
