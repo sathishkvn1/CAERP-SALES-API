@@ -40,7 +40,6 @@ router = APIRouter(
 def customer_profile_completion(
     # customer_id: int,
     db: Session = Depends(get_db),
-    
     token: str = Depends(oauth2.oauth2_scheme)
   ):
     #Check authorization
@@ -59,7 +58,7 @@ def customer_profile_completion(
         return {"success": True,
                  "message": f"{completeness_percentage}% completed",
                  "percentage": completeness_percentage,
-                 "incomplete tables" : incomplete_tables
+                 "incomplete_tables" : incomplete_tables
                 }
     
     except HTTPException as e:
