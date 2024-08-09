@@ -38,20 +38,24 @@ router = APIRouter(
 
 @router.get("/customer_profile_completion")
 def customer_profile_completion(
-    customer_id: int,
+    # customer_id: int,
     db: Session = Depends(get_db),
+    
     token: str = Depends(oauth2.oauth2_scheme)
   ):
     #Check authorization
     if not token:
        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-        
-    customer_register = db.query(CustomerRegister).filter(CustomerRegister.id == customer_id, CustomerRegister.is_deleted == 'no').first()
+
+    auth_info = authenticate_user(token)
+    user_id = auth_info["user_id"] 
+   
+    customer_register = db.query(CustomerRegister).filter(CustomerRegister.id == user_id, CustomerRegister.is_deleted == 'no').first()
     if not customer_register:
        return None
 
     try:
-        completeness_percentage, incomplete_tables = db_customer.customer_profile_completion(db, customer_id)
+        completeness_percentage, incomplete_tables = db_customer.customer_profile_completion(db, user_id)
         return {"success": True,
                  "message": f"{completeness_percentage}% completed",
                  "percentage": completeness_percentage,

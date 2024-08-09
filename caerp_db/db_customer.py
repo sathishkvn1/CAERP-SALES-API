@@ -214,17 +214,13 @@ def update_customer(db: Session, user_id: int, customer_data: CustomerRegisterBa
     db.commit()
     db.refresh(customer)
     return customer
-        
-
-
+     
 
 
 
 
 def get_all_customers(db: Session):
     return db.query(CustomerRegister).all()
-
-
 
 
 # def get_all_customers(db: Session, filter_condition: Optional[dict] = None):
@@ -261,9 +257,6 @@ def get_active_customers(db: Session, active_status: ActiveStatus):
     
     
 
-
-
-
 def get_customer_by_state_id(db: Session,parameter: str,id: int):
         
         return db.query(CustomerRegister).filter(getattr(CustomerRegister, parameter)== id).all()
@@ -281,13 +274,13 @@ def get_customer_between_dates(db: Session, start_date: date, end_date: date):
     
 def add_customer(db: Session, request: CustomerRegisterBase):
     customer_data = request.dict()
-    
-    
+ 
     new_customer= CustomerRegister(**customer_data)
     db.add(new_customer)
     db.commit()
     db.refresh(new_customer)
     return new_customer
+
 
 def save_customer(db: Session, customer_data: CustomerRegisterBase):
     # Hash the password before saving
@@ -300,8 +293,6 @@ def save_customer(db: Session, customer_data: CustomerRegisterBase):
     db.commit()
     db.refresh(new_customer)
     return new_customer
-
-
 
 
 
@@ -364,7 +355,9 @@ def inactive_customer(db: Session, customer_id: int):
         "message": "Customer marked as inactive successfully",
 
     }
-    
+
+
+
 def reset_password(db: Session, customer_id: int, password: str):
     hashed_password =Hash.bcrypt(password)
     existing_customer = db.query(CustomerRegister).filter(CustomerRegister.id == customer_id).first()
@@ -379,12 +372,9 @@ def reset_password(db: Session, customer_id: int, password: str):
     except Exception as e:
         db.rollback()  # Rollback changes if an error occurs
         raise HTTPException(status_code=500, detail=f"Failed to reset password: {str(e)}")
-
-
     return {
         "message": "Password reset successful",
-
-    }
+   }
 
 
 
@@ -403,22 +393,14 @@ def update_customer_type(db: Session, customer_id: int, type: int):
         db.rollback()  # Rollback changes if an error occurs
         raise HTTPException(status_code=500, detail=f"Failed to reset password: {str(e)}")
 
-
     return {
         "message": "Password reset successful",
-
     }
     
     
 
-
-
-
-
-
 def get_customer_by_customer_id(db: Session, id: int):
     return db.query(CustomerCompanyProfile).filter(CustomerCompanyProfile.customer_id== id).first()
-
 
 
 def get_company_logo(db: Session, company_id: int):
@@ -467,6 +449,7 @@ def get_company_logo(db: Session, company_id: int):
 #     except Exception as e:
 #         error_message = f"Failed to save customer news: {e}"
 #         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_message)
+
 
 def save_customer_news(db: Session, data: CustomerNewsBase, id: int, user_id: int):
     try:
@@ -539,6 +522,7 @@ def get_customer_sales_queries_by_id(db: Session, id: int):
 
 def get_all_customer_sales_queries(db: Session):
     return db.query(CustomerSalesQuery).all()
+
 
 
 def save_customer_installment_master(db: Session, data: CustomerInstallmentMasterBase, id: int):
@@ -663,8 +647,6 @@ def save_customer_password_reset_request(db: Session, customer_id:int, email: st
         # Handle email sending failure
         # For example, log the error and inform the user that email verification failed
         return {"Value": "Error", "Message": f"Failed to send password reset link. Error: {str(e)}. Please try again later."}
-
-
 
 
 
@@ -901,6 +883,8 @@ def save_customer_practicing_info(
         db.commit()
     return {"message": "Success", "success": True}
 
+
+
 async def get_customer_professional_details(db: Session, customer_id: int):
     # customer_id= 232
     qualification_data = db.query(CustomerProfessionalQualification, ProfessionalQualification).join(
@@ -922,8 +906,6 @@ async def get_customer_professional_details(db: Session, customer_id: int):
     ).filter(
         CustomerAreaOfPracticing.customer_id==customer_id,
         CustomerAreaOfPracticing.is_deleted=='no')
-
-
 
     qualifications_result = {
         "qualifications": [
@@ -970,12 +952,12 @@ async def get_customer_professional_details(db: Session, customer_id: int):
 
 
 
-def customer_profile_completion(db: Session, customer_id: int):
+def customer_profile_completion(db: Session, user_id: int):
     try:
-       
        incomplete_tables = []
+
        # Check CustomerRegister completeness
-       customer_register = db.query(CustomerRegister).filter(CustomerRegister.id == customer_id, CustomerRegister.is_deleted == 'no').first()
+       customer_register = db.query(CustomerRegister).filter(CustomerRegister.id == user_id, CustomerRegister.is_deleted == 'no').first()
     #    if not customer_register:
     #       return 0
 
@@ -1002,7 +984,7 @@ def customer_profile_completion(db: Session, customer_id: int):
        professional_qualification_filled = False
 
        # Check CustomerCompanyProfile completeness
-       company_profile = db.query(CustomerCompanyProfile).filter(CustomerCompanyProfile.customer_id == customer_id).first()
+       company_profile = db.query(CustomerCompanyProfile).filter(CustomerCompanyProfile.customer_id == user_id).first()
        if company_profile:
           company_profile_filled = all([
              company_profile.company_name,
@@ -1022,9 +1004,8 @@ def customer_profile_completion(db: Session, customer_id: int):
        else:      
           incomplete_tables.append("CustomerCompanyProfile")
 
-
        # Check CustomerProfessionalQualification completeness
-       professional_qualifications = db.query(CustomerProfessionalQualification).filter(CustomerProfessionalQualification.customer_id == customer_id, CustomerProfessionalQualification.is_deleted == 'no').all()
+       professional_qualifications = db.query(CustomerProfessionalQualification).filter(CustomerProfessionalQualification.customer_id == user_id, CustomerProfessionalQualification.is_deleted == 'no').all()
        if professional_qualifications:
           all_professional_qualifications_filled = True
           for qualification in professional_qualifications:
@@ -1038,8 +1019,8 @@ def customer_profile_completion(db: Session, customer_id: int):
                  break
           professional_qualification_filled = all_professional_qualifications_filled    
        else:
-        incomplete_tables.append("CustomerProfessionalQualification")
-        
+          incomplete_tables.append("CustomerProfessionalQualification")
+
        # Determine completeness percentage
        if register_filled:
           if company_profile_filled and professional_qualification_filled:
