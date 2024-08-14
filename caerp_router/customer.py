@@ -25,15 +25,16 @@ import send_message
 from settings import BASE_URL
 from sqlalchemy import func
 
+
+
 UPLOAD_DIR_COMPANYLOGO = "uploads/company_logo"
 UPLOAD_DIR_CUSTOMER_NEWS = "uploads/customer_news"
 UPLOAD_DIR_CUSTOMER_PROFILE = "uploads/customer_profile_photo"
 DEFAULT_IMAGE_FILENAME="default.jpg"
-router = APIRouter(
-  
-    tags=['CUSTOMER']
-)
 
+router = APIRouter(
+     tags=['CUSTOMER']
+)
 
 
 @router.get("/customer_profile_completion")
@@ -48,16 +49,17 @@ def customer_profile_completion(
 
     auth_info = authenticate_user(token)
     user_id = auth_info["user_id"] 
-   
-    customer_register = db.query(CustomerRegister).filter(CustomerRegister.id == user_id, CustomerRegister.is_deleted == 'no').first()
-    if not customer_register:
-       return None
-
+    
     try:
+        customer_register = db.query(CustomerRegister).filter(CustomerRegister.id == user_id, CustomerRegister.is_deleted == 'no').first()
+        if not customer_register:
+           return None
+        
         completeness_percentage, incomplete_tables = db_customer.customer_profile_completion(db, user_id)
-        return {"success": True,
-                 "message": f"{completeness_percentage}% completed",
-                 "percentage": completeness_percentage,
+        return { 
+                 "success" : True,
+                 "message" : f"{completeness_percentage}% completed",
+                 "percentage" : completeness_percentage,
                  "incomplete_tables" : incomplete_tables
                 }
     
