@@ -971,7 +971,7 @@ def customer_profile_completion(db: Session, user_id: int):
         ])
 
        if register_filled:
-          completeness_percentage = 33
+          completeness_percentage += 20
        else:
           incomplete_tables.append("CustomerRegister")
        
@@ -992,9 +992,7 @@ def customer_profile_completion(db: Session, user_id: int):
              company_profile.company_mobile,
              company_profile.company_email_id
             ])
-          if company_profile_filled:
-            completeness_percentage = 66  # CustomerRegister and CustomerCompanyProfile are filled
-          else:
+          if not company_profile_filled:
             incomplete_tables.append("CustomerCompanyProfile")
        else:      
           incomplete_tables.append("CustomerCompanyProfile")
@@ -1005,23 +1003,37 @@ def customer_profile_completion(db: Session, user_id: int):
            CustomerProfessionalQualification.is_deleted == 'no'
           ).all()
        if professional_qualifications:
+          all_professional_qualifications_filled = True
           for qualification in professional_qualifications:
-              professional_qualification_filled = all([
+              qualification_filled = all([
                 qualification.profession_type_id,
                 qualification.membership_number,
-             ])
+              ])
+              if not qualification_filled:
+                 all_professional_qualifications_filled = False
+                 incomplete_tables.append("CustomerProfessionalQualification")
+                 break
+          professional_qualification_filled = all_professional_qualifications_filled
+       else:
+          incomplete_tables.append("CustomerProfessionalQualification")
        
        area_of_practicing_filled = False
        # Check if CustomerAreaOfPracticing is filled
-       area_of_practicing_records = db.query(CustomerAreaOfPracticing).filter(
-        CustomerAreaOfPracticing.customer_id == user_id,
-        CustomerAreaOfPracticing.is_deleted == 'no'
-        ).all()
-       if area_of_practicing_records:
-          for record in area_of_practicing_records:
-              area_of_practicing_filled = all([
-                record.area_of_practicing_id
-              ])
+       area_of_practicings = db.query(CustomerAreaOfPracticing).filter(
+          CustomerAreaOfPracticing.customer_id == user_id,
+          CustomerAreaOfPracticing.is_deleted == 'no'
+         ).all()
+       if area_of_practicings:
+          all_area_of_practicing_filled = True
+          for area in area_of_practicings:
+              area_filled = area.area_of_practicing_id
+              if not area_filled:
+                 all_area_of_practicing_filled = False
+                 incomplete_tables.append("CustomerAreaOfPracticing")
+                 break
+          area_of_practicing_filled = all_area_of_practicing_filled
+       else:
+          incomplete_tables.append("CustomerAreaOfPracticing")
 
        practicing_as_filled = False
        # Check if CustomerPracticingAs is filled
@@ -1030,29 +1042,34 @@ def customer_profile_completion(db: Session, user_id: int):
         CustomerPracticingAs.is_deleted == 'no'
        ).all()
        if practicing_as_records:
-          for record in practicing_as_records: 
-              practicing_as_filled = all([
-               record.practicing_type_id
-             ])
-
-       # If all three sections are filled, consider this in completeness calculation
-       all_additional_filled = all([
-         professional_qualification_filled,
-         area_of_practicing_filled,
-         practicing_as_filled
-        ])
-
-       if all_additional_filled and not company_profile_filled:
-          completeness_percentage = 66  # CustomerRegister and all other sections except CustomerCompanyProfile are filled
-       elif all_additional_filled and company_profile_filled:
-          completeness_percentage = 100  # All required tables are filled
+          all_practicing_as_filled = True
+          for practice in practicing_as_records:
+              practice_filled = practice.practicing_type_id
+              if not practice_filled:
+                 all_practicing_as_filled = False
+                 incomplete_tables.append("CustomerPracticingAs")
+                 break
+          practicing_as_filled = all_practicing_as_filled
        else:
-          if not professional_qualification_filled:
-             incomplete_tables.append("CustomerProfessionalQualification")
-          if not area_of_practicing_filled:
-             incomplete_tables.append("CustomerAreaOfPracticing")
-          if not practicing_as_filled:
-             incomplete_tables.append("CustomerPracticingAs")    
+          incomplete_tables.append("CustomerPracticingAs")
+
+       # Calculate completeness percentage
+       if register_filled:
+          filled_sections = sum([
+            company_profile_filled, 
+            professional_qualification_filled, 
+            area_of_practicing_filled, 
+            practicing_as_filled
+          ])
+
+       if filled_sections == 1:
+          completeness_percentage += 20  # 20% for one additional table filled
+       elif filled_sections == 2:
+            completeness_percentage += 40  # 40% for two additional tables filled
+       elif filled_sections == 3:
+            completeness_percentage += 60  # 60% for three additional tables filled
+       elif filled_sections == 4:
+            completeness_percentage += 80  # 80% for all four additional tables filled
           
        return completeness_percentage, incomplete_tables
     except Exception as e:
