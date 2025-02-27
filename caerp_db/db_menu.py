@@ -10,7 +10,12 @@ from datetime import datetime
 
 
 def get_menu_data_by_role(db: Session, role_id: int):
-    return db.query(AdminMainMenuPermission).filter_by(main_menu_permission_role_id=role_id).all()
+    try:
+        admin_main_menus = db.query(AdminMainMenuPermission).filter_by(main_menu_permission_role_id=role_id).all()
+        return admin_main_menus
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed operation: {str(e)}")
+
 
 def get_menu_data_by_role_with_sub_menu(db: Session, role_id: int):
     return db.query(AdminMainMenuPermission).filter(
@@ -64,6 +69,38 @@ def save_admin_main_menu(db: Session, request: AdminMainMenuCreate, id: int, use
         db.commit()
         db.refresh(menu_to_update)
         return menu_to_update
+
+
+# def save_or_update_admin_main_menu(db: Session, request: AdminMainMenuCreate, id: int, user_id: int):
+#     if id == 0:
+#         # Add operation
+#         menu_data_dict = request.dict()
+#         menu_data_dict["created_on"] = datetime.utcnow()
+#         menu_data_dict["created_by"] = user_id
+
+#         new_menu = AdminMainMenu(**menu_data_dict)
+#         db.add(new_menu)
+#         db.commit()
+#         db.refresh(new_menu)
+#         return new_menu
+
+#     else:
+#         # Update operation
+#         menu_to_update = db.query(AdminMainMenu).filter(AdminMainMenu.main_menu_id == id).first()
+#         if not menu_to_update:
+#             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Menu not found")
+
+#         menu_data_dict = request.dict(exclude_unset=True)  # Avoid overwriting existing values
+#         for key, value in menu_data_dict.items():
+#             setattr(menu_to_update, key, value)
+
+#         menu_to_update.modified_by = user_id
+#         menu_to_update.modified_on = datetime.utcnow()
+
+#         db.commit()
+#         db.refresh(menu_to_update)
+#         return menu_to_update
+
 
 
  
