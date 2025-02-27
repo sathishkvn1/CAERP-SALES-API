@@ -347,11 +347,41 @@ def delete_product_category(
 
 
 
+# @router.post('/save_product_module/', response_model=ProductModuleSchema)
+# def save_product_module(
+#         display_order: int =1,
+#         product_module_data: ProductModuleSchema =Depends(),
+#         image_file: UploadFile = File(None),
+#         db: Session = Depends(get_db),
+#         token: str = Depends(oauth2.oauth2_scheme)
+       
+# ):
+#     if not token:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+#     auth_info = authenticate_user(token) 
+#     user_id = auth_info["user_id"]
+#     try:
+#         new_product = db_product.save_product_module(db, product_module_data,display_order,user_id)
+#         if image_file:
+            
+#                 module_id = new_product.id
+#                 file_content = image_file.file.read()
+#                 file_path = f"{UPLOAD_DIR_MODULE}/{module_id}.jpg"
+#                 with open(file_path, "wb") as f:
+#                     f.write(file_content)
+  
+#         return new_product    
+#     except Exception as e:
+#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed operation")
+
+from sqlalchemy.exc import SQLAlchemyError
+
 @router.post('/save_product_module/', response_model=ProductModuleSchema)
 def save_product_module(
         display_order: int =1,
         product_module_data: ProductModuleSchema =Depends(),
-        image_file: UploadFile = File(None),
+         image_file: UploadFile = File(None),
         db: Session = Depends(get_db),
         token: str = Depends(oauth2.oauth2_scheme)
        
@@ -363,18 +393,32 @@ def save_product_module(
     user_id = auth_info["user_id"]
     try:
         new_product = db_product.save_product_module(db, product_module_data,display_order,user_id)
-        if image_file:
+        # if image_file:
             
-                module_id = new_product.id
-                file_content = image_file.file.read()
-                file_path = f"{UPLOAD_DIR_MODULE}/{module_id}.jpg"
-                with open(file_path, "wb") as f:
-                    f.write(file_content)
-  
+        #         module_id = new_product.id
+        #         file_content = image_file.file.read()
+        #         file_path = f"{UPLOAD_DIR_MODULE}/{module_id}.jpg"
+        #         os.makedirs(UPLOAD_DIR_MODULE, exist_ok=True)
+
+        #         # with open(file_path, "wb") as f:
+        #         #     f.write(file_content)
+
+        #         with open(file_path, "wb") as f:
+        #             for chunk in iter(lambda: image_file.file.read(4096), b""):
+        #                 f.write(chunk)
+        # if image_file and isinstance(image_file, UploadFile):  # Ensure it's a valid file
+        if image_file and image_file.filename:
+            module_id = new_product.id
+            file_path = f"{UPLOAD_DIR_MODULE}/{module_id}.jpg"
+
+            os.makedirs(UPLOAD_DIR_MODULE, exist_ok=True)
+
+            with open(file_path, "wb") as f:
+                for chunk in iter(lambda: image_file.file.read(4096), b""):
+                    f.write(chunk)
         return new_product    
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed operation")
-
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed operation: {str(e)}")
 
 
 @router.post('/update_product_module/{module_id}', response_model=ProductModuleSchema)
@@ -666,7 +710,6 @@ def save_product_trial_feature(
          trial_features = db_product.save_product_trial_features(db, product_trial_feature_data,trial_feature_id)
          if trial_features:
             return {"success": True, "message": "saved successfully"} 
-        
     except Exception as e:
        raise HTTPException(status_code=500, detail=str(e))
     
