@@ -32,21 +32,44 @@ logger = logging.getLogger(__name__)
 
 
 
-def save_product_video(db: Session,  request: ProductVideoSchema, user_id: int):
+# def save_product_video(db: Session,  request: ProductVideoSchema, user_id: int):
 
-    # if product_video_id == 0:
-        # Add operation
-        product_video_data_dict = request.dict()
-        product_video_data_dict["created_on"] = datetime.utcnow()
-        product_video_data_dict["created_by"] = user_id
+#     # if product_video_id == 0:
+#         # Add operation
+#         product_video_data_dict = request.dict()
+#         product_video_data_dict["created_on"] = datetime.utcnow()
+#         product_video_data_dict["created_by"] = user_id
+#         new_product_video = ProductVideo(**product_video_data_dict)
+#         db.add(new_product_video)
+#         db.commit()
+#         db.refresh(new_product_video)
+#         return new_product_video
+
+
+
+
+def save_product_video_in_db(db: Session, product_master_id: int, video_title: str, video_description: str, user_id: int):
+    try:
+        product_video_data_dict = {
+            "product_master_id": product_master_id,
+            "video_title": video_title,
+            "video_description": video_description,
+            "created_on": datetime.utcnow(),
+            "created_by": user_id
+        }
+
         new_product_video = ProductVideo(**product_video_data_dict)
         db.add(new_product_video)
         db.commit()
         db.refresh(new_product_video)
+
         return new_product_video
 
+    except Exception as e:
+        print("DB Error:", str(e))
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Database operation failed")
 
-    
 def update_product_video(db: Session,  request: ProductVideoSchema, video_id: int, user_id: int):
 
         # Update operation

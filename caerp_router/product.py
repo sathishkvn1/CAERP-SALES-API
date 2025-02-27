@@ -1,6 +1,6 @@
 
 
-from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File,Query,Request
+from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File,Query,Request,Form
 from typing import List, Optional,Dict
 from UserDefinedConstants.user_defined_constants import  DeletedStatus,Operator,Status,ActiveStatus,ActionType,ApplyTo,RecordActionType
 from UserDefinedConstants.user_defined_constants import ActiveStatus, ApplyTo, InstallmentStatus
@@ -531,34 +531,68 @@ logger = logging.getLogger(__name__)
 
 
 
-@router.post('/save_product_additional_videos/', response_model=ProductVideoSchema)
+# @router.post('/save_product_additional_videos/', response_model=ProductVideoSchema)
+# def save_product_video(
+#         product_video_data: ProductVideoSchema = Depends(),
+#         video_file: UploadFile = File(None),
+#         db: Session = Depends(get_db),
+#         token: str = Depends(oauth2.oauth2_scheme)
+# ):
+#     if not token:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
+    
+#     auth_info = authenticate_user(token) 
+#     user_id = auth_info["user_id"]
+#     try:
+#         new_product_video = db_product.save_product_video(db, product_video_data, user_id)
+#         if video_file:
+#             # if video_id==0:
+#             video_id = new_product_video.id
+#             file_content = video_file.file.read()
+#             file_path = f"{UPLOAD_DIR_VIDEO}/{video_id}.mp4"
+#             with open(file_path, "wb") as f:
+#                 f.write(file_content)
+        
+#         return new_product_video
+#     except Exception as e:
+#         logger.exception("Failed to save product video")
+#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed operation")
+
+
+
+@router.post('/save_product_additional_videos/')
 def save_product_video(
-        product_video_data: ProductVideoSchema = Depends(),
-        video_file: UploadFile = File(None),
-        db: Session = Depends(get_db),
-        token: str = Depends(oauth2.oauth2_scheme)
+    product_master_id: int = Form(...),
+    video_title: str = Form(None),
+    video_description: str = Form(None),
+    video_file: UploadFile = File(None),
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2.oauth2_scheme)
 ):
     if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing")
-    
-    auth_info = authenticate_user(token) 
-    user_id = auth_info["user_id"]
+        raise HTTPException(status_code=401, detail="Token is missing")
+
     try:
-        new_product_video = db_product.save_product_video(db, product_video_data, user_id)
+        auth_info = authenticate_user(token)  
+        user_id = auth_info["user_id"]
+
+        # Save video details in DB
+        new_product_video = db_product.save_product_video_in_db(db, product_master_id, video_title, video_description, user_id)
+
+        # If a file is uploaded, save it
         if video_file:
-            # if video_id==0:
             video_id = new_product_video.id
             file_content = video_file.file.read()
             file_path = f"{UPLOAD_DIR_VIDEO}/{video_id}.mp4"
             with open(file_path, "wb") as f:
                 f.write(file_content)
-        
-        return new_product_video
-    except Exception as e:
-        logger.exception("Failed to save product video")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed operation")
 
-    
+        return new_product_video
+
+    except Exception as e:
+        print("Exception:", str(e))
+        raise HTTPException(status_code=500, detail="Failed operation")
+
 
 @router.post('/update_product_additional_video_details/{video_id}', response_model=ProductVideoSchema)
 def update_product_video(
