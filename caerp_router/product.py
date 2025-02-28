@@ -1,5 +1,6 @@
 
 
+import traceback
 from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File,Query,Request,Form
 from typing import List, Optional,Dict
 from UserDefinedConstants.user_defined_constants import  DeletedStatus,Operator,Status,ActiveStatus,ActionType,ApplyTo,RecordActionType
@@ -573,6 +574,7 @@ def save_product_video(
         raise HTTPException(status_code=401, detail="Token is missing")
 
     try:
+        # Authenticate user
         auth_info = authenticate_user(token)  
         user_id = auth_info["user_id"]
 
@@ -583,6 +585,10 @@ def save_product_video(
         if video_file:
             video_id = new_product_video.id
             file_content = video_file.file.read()
+
+            if not file_content:
+                raise HTTPException(status_code=400, detail="Uploaded file is empty")
+
             file_path = f"{UPLOAD_DIR_VIDEO}/{video_id}.mp4"
             with open(file_path, "wb") as f:
                 f.write(file_content)
@@ -590,8 +596,10 @@ def save_product_video(
         return new_product_video
 
     except Exception as e:
+        error_details = traceback.format_exc()  # Capture full error details
         print("Exception:", str(e))
-        raise HTTPException(status_code=500, detail="Failed operation")
+        print("Traceback:", error_details)
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 
 @router.post('/update_product_additional_video_details/{video_id}', response_model=ProductVideoSchema)

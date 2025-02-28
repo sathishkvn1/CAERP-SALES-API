@@ -1,4 +1,5 @@
 
+import traceback
 from fastapi import APIRouter, Depends,HTTPException, UploadFile,status,File
 from typing import List, Optional,Dict,Any
 from UserDefinedConstants.user_defined_constants import DeletedStatus,Operator,Status,RecordActionType,ApplyTo
@@ -66,9 +67,13 @@ def save_product_video_in_db(db: Session, product_master_id: int, video_title: s
         return new_product_video
 
     except Exception as e:
+        error_details = traceback.format_exc()
         print("DB Error:", str(e))
+        print("Traceback:", error_details)
         db.rollback()
-        raise HTTPException(status_code=500, detail="Database operation failed")
+        raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
+
+
 
 def update_product_video(db: Session,  request: ProductVideoSchema, video_id: int, user_id: int):
 
