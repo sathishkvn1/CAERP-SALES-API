@@ -1030,7 +1030,7 @@ def save_product_rating(db: Session, request: ProductRating, id: int,user_id: in
         return product_rating
    
    
-     
+
 def get_product_complete_details(product_id : Optional[int]=None, page: Optional[int] = None, page_size: Optional[int] = None, db: Session = Depends(get_db)):
     requested_date = datetime.today()
     requested_date = requested_date.date()
@@ -1106,8 +1106,9 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
               "total_rating_count": row[1],
             "average_rating"      : row[2],
             "total_review_count"  : row[3]            
-        }
 
+            # "total_review_count"  : float(row[3] )            
+        }
     discount_data ={}
     for row in discount_details:
         discount_data[row[0]] = {
@@ -1116,7 +1117,6 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
             # "offer_amount" : row[4],
             "offer_percentage":row[3]
         }
-    # print("discount_data ------------------",discount_data)
     if product_id:
         individual_query = text(
             "SELECT product_master_id, rating, COUNT(rating) AS rating_count "
@@ -1230,7 +1230,8 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
             params = {'group_id': group_id}
         
             group_name = db.execute(group_query, params).first()
-            
+            if group_name:
+                group_name= group_name[0]
             prod_master_query = text(
                 "SELECT has_instalments,min_no_of_users,max_no_of_users,is_deleted "
                 "FROM product_master "
@@ -1271,7 +1272,7 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
                 "category_id"            : category_id,
                 "category_name"          : category_name[0],
                 "group_id"               : group_id,
-                "group_name"             : group_name,
+                "group_name"             :  group_name,
                 "image_url"              : image_path,                
                 # "price"        : product_data.price,
                 # "inclusive_of_taxes": True,
@@ -1395,6 +1396,7 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
            # field_name = 'category_name' 
            # category_name = get_info(field_name,ProductCategory,product_data.category_id)
            category_id=product_data.product_category_category_id
+
            category_query = text(
             "SELECT category_name "
             "FROM product_category "
@@ -1417,7 +1419,8 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
            params = {'group_id': group_id}
         
            group_name = db.execute(group_query, params).first()
-           
+           if group_name :
+               group_name = group_name[0]
            # Fetch product features
            feature_query = text(
               "SELECT feature "
@@ -1458,7 +1461,7 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
             "category_id"            : category_id,
             "category_name"          : category_name[0],
             "group_id"               : group_id,
-            "group_name"             : group_name,
+            "group_name"             :  group_name,
             "has_module"             : product_data.product_master_has_module,
             "minimum_user"           : min_no_of_users,
             "maximum_user"           : max_no_of_users,
@@ -1482,9 +1485,9 @@ def get_product_complete_details(product_id : Optional[int]=None, page: Optional
         
            # Append the response item to the response list
            response["products"].append(response_item)
-       
         return response
 
+    
     
 
 # def get_product_rating_comments(db: Session , product_id: Optional[int]=None)-> List[Dict[str, Any]]:
